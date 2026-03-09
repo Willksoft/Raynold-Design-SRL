@@ -174,7 +174,11 @@ const AdminServices = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Título</label>
-                  <input type="text" required value={editingService.title} onChange={e => setEditingService({ ...editingService, title: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
+                  <input type="text" required value={editingService.title} onChange={e => {
+                    const val = e.target.value;
+                    const autoSlug = val.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s-]/g, '').replace(/[\s-]+/g, '-');
+                    setEditingService({ ...editingService, title: val, slug: autoSlug });
+                  }} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Slug (URL)</label>
