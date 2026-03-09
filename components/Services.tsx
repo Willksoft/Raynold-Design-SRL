@@ -109,7 +109,7 @@ const Services: React.FC = () => {
                   onMouseLeave={handleMouseLeave}
                 >
                   <TiltCard className="flex-1 flex flex-col">
-                    <div className="flex-1 group relative p-8 bg-black/90 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl flex flex-col">
+                    <div className="group relative p-8 bg-black/90 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl flex flex-col min-h-[320px]">
                       {/* Background Image Overlay */}
                       {service.image && (
                         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
