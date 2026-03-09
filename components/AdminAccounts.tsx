@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, Building2, ArrowRightLeft, DollarSign, List as ListIcon, LayoutGrid, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building2, ArrowRightLeft, LayoutGrid, List as ListIcon, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 export type AccountType = 'BANK' | 'CASH' | 'CARD_PROCESSOR' | 'OTHER';
 
@@ -9,7 +10,7 @@ export interface Account {
   type: AccountType;
   bankName?: string;
   accountNumber?: string;
-  accountSubType?: string; // Corriente, Ahorros, etc.
+  accountSubType?: string;
   balance: number;
   isDefaultReceiving?: boolean;
   isDefaultPaying?: boolean;
@@ -26,12 +27,6 @@ export interface Transaction {
   toAccountId?: string;
 }
 
-const defaultAccounts: Account[] = [
-  { id: 'acc-1', name: 'Caja Chica', type: 'CASH', balance: 5000, isDefaultReceiving: true, isDefaultPaying: true },
-  { id: 'acc-2', name: 'Banco Popular', type: 'BANK', bankName: 'Banco Popular', accountNumber: '123456789', accountSubType: 'Corriente', balance: 150000 },
-  { id: 'acc-3', name: 'Carnet Azul', type: 'CARD_PROCESSOR', balance: 0 }
-];
-
 const AdminAccounts = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -41,171 +36,97 @@ const AdminAccounts = () => {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   const [accountForm, setAccountForm] = useState<Partial<Account>>({
-    name: '',
-    type: 'BANK',
-    bankName: '',
-    accountNumber: '',
-    accountSubType: '',
-    balance: 0,
-    isDefaultReceiving: false,
-    isDefaultPaying: false
+    name: '', type: 'BANK', bankName: '', accountNumber: '', accountSubType: '',
+    balance: 0, isDefaultReceiving: false, isDefaultPaying: false
   });
 
-  const [transferForm, setTransferForm] = useState({
-    fromAccountId: '',
-    toAccountId: '',
-    amount: 0,
-    description: ''
-  });
+  const [transferForm, setTransferForm] = useState({ fromAccountId: '', toAccountId: '', amount: 0, description: '' });
 
-  useEffect(() => {
-    const savedAccounts = localStorage.getItem('admin_accounts');
-    if (savedAccounts) {
-      setAccounts(JSON.parse(savedAccounts));
-    } else {
-      setAccounts(defaultAccounts);
-      localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
-    }
-
-    const savedTransactions = localStorage.getItem('admin_transactions');
-    if (savedTransactions) {
-      setTransactions(JSON.parse(savedTransactions));
-    }
-  }, []);
-
-  const saveAccounts = (newAccounts: Account[]) => {
-    setAccounts(newAccounts);
-    localStorage.setItem('admin_accounts', JSON.stringify(newAccounts));
+  const fetchData = async () => {
+    const [{ data: accs }, { data: txs }] = await Promise.all([
+      supabase.from('accounts').select('*').order('name'),
+      supabase.from('account_transactions').select('*').order('date', { ascending: false }).limit(100)
+    ]);
+    if (accs) setAccounts(accs.map(a => ({
+      id: a.id, name: a.name, type: a.type as AccountType, bankName: a.bank_name || '',
+      accountNumber: a.account_number || '', accountSubType: a.account_sub_type || '',
+      balance: Number(a.balance), isDefaultReceiving: a.is_default_receiving, isDefaultPaying: a.is_default_paying
+    })));
+    if (txs) setTransactions(txs.map(t => ({
+      id: t.id, date: t.date || t.created_at, accountId: t.account_id,
+      type: t.type as 'INCOME' | 'EXPENSE' | 'TRANSFER', amount: Number(t.amount),
+      reference: t.reference || '', description: t.description || '', toAccountId: t.to_account_id || ''
+    })));
   };
 
-  const saveTransactions = (newTransactions: Transaction[]) => {
-    setTransactions(newTransactions);
-    localStorage.setItem('admin_transactions', JSON.stringify(newTransactions));
-  };
+  useEffect(() => { fetchData(); }, []);
 
-  const handleAccountSubmit = (e: React.FormEvent) => {
+  const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let updatedAccounts = [...accounts];
-
-    // Handle defaults
-    if (accountForm.isDefaultReceiving) {
-      updatedAccounts = updatedAccounts.map(a => ({ ...a, isDefaultReceiving: false }));
-    }
-    if (accountForm.isDefaultPaying) {
-      updatedAccounts = updatedAccounts.map(a => ({ ...a, isDefaultPaying: false }));
-    }
-
+    const row = {
+      name: accountForm.name, type: accountForm.type, bank_name: accountForm.bankName,
+      account_number: accountForm.accountNumber, account_sub_type: accountForm.accountSubType,
+      balance: accountForm.balance, is_default_receiving: accountForm.isDefaultReceiving,
+      is_default_paying: accountForm.isDefaultPaying
+    };
     if (editingAccount) {
-      updatedAccounts = updatedAccounts.map(a => 
-        a.id === editingAccount.id ? { ...a, ...accountForm } as Account : a
-      );
+      await supabase.from('accounts').update(row).eq('id', editingAccount.id);
     } else {
-      const newAccount: Account = {
-        ...(accountForm as Account),
-        id: Date.now().toString(),
-      };
-      updatedAccounts.push(newAccount);
+      await supabase.from('accounts').insert([row]);
     }
-
-    saveAccounts(updatedAccounts);
     setIsAccountModalOpen(false);
     setEditingAccount(null);
+    fetchData();
   };
 
-  const handleTransferSubmit = (e: React.FormEvent) => {
+  const handleTransferSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (transferForm.fromAccountId === transferForm.toAccountId) {
-      alert('No puedes transferir a la misma cuenta.');
-      return;
-    }
-    if (transferForm.amount <= 0) {
-      alert('El monto debe ser mayor a 0.');
-      return;
-    }
-
+    if (transferForm.fromAccountId === transferForm.toAccountId) { alert('No puedes transferir a la misma cuenta.'); return; }
+    if (transferForm.amount <= 0) { alert('El monto debe ser mayor a 0.'); return; }
     const fromAcc = accounts.find(a => a.id === transferForm.fromAccountId);
-    if (!fromAcc || fromAcc.balance < transferForm.amount) {
-      alert('Fondos insuficientes en la cuenta de origen.');
-      return;
-    }
+    if (!fromAcc || fromAcc.balance < transferForm.amount) { alert('Fondos insuficientes.'); return; }
 
-    const updatedAccounts = accounts.map(a => {
-      if (a.id === transferForm.fromAccountId) return { ...a, balance: a.balance - transferForm.amount };
-      if (a.id === transferForm.toAccountId) return { ...a, balance: a.balance + transferForm.amount };
-      return a;
-    });
-
-    const newTransaction: Transaction = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      accountId: transferForm.fromAccountId,
-      toAccountId: transferForm.toAccountId,
-      type: 'TRANSFER',
-      amount: transferForm.amount,
-      reference: `TRF-${Date.now().toString().slice(-4)}`,
-      description: transferForm.description || 'Transferencia entre cuentas'
-    };
-
-    saveAccounts(updatedAccounts);
-    saveTransactions([newTransaction, ...transactions]);
+    await supabase.from('accounts').update({ balance: fromAcc.balance - transferForm.amount }).eq('id', transferForm.fromAccountId);
+    const toAcc = accounts.find(a => a.id === transferForm.toAccountId);
+    if (toAcc) await supabase.from('accounts').update({ balance: toAcc.balance + transferForm.amount }).eq('id', transferForm.toAccountId);
+    await supabase.from('account_transactions').insert([{
+      account_id: transferForm.fromAccountId, to_account_id: transferForm.toAccountId,
+      type: 'TRANSFER', amount: transferForm.amount, description: transferForm.description || 'Transferencia entre cuentas',
+      reference: `TRF-${Date.now().toString().slice(-4)}`
+    }]);
     setIsTransferModalOpen(false);
     setTransferForm({ fromAccountId: '', toAccountId: '', amount: 0, description: '' });
+    fetchData();
   };
 
-  const handleDeleteAccount = (id: string) => {
+  const handleDeleteAccount = async (id: string) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar esta cuenta?')) {
-      saveAccounts(accounts.filter(a => a.id !== id));
+      await supabase.from('accounts').delete().eq('id', id);
+      fetchData();
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(amount);
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Building2 className="text-raynold-red" />
-          Cuentas y Flujo de Dinero
+          <Building2 className="text-raynold-red" /> Cuentas y Flujo de Dinero
         </h1>
         <div className="flex gap-3">
           <div className="flex bg-[#0A0A0A] border border-white/10 rounded-lg p-1">
-            <button 
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-              title="Vista de Cuentas"
-            >
-              <LayoutGrid size={18} />
-            </button>
-            <button 
-              onClick={() => setViewMode('transactions')}
-              className={`p-2 rounded-md transition-colors ${viewMode === 'transactions' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-              title="Flujo de Dinero"
-            >
-              <ListIcon size={18} />
-            </button>
+            <button onClick={() => setViewMode('grid')} className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`} title="Vista de Cuentas"><LayoutGrid size={18} /></button>
+            <button onClick={() => setViewMode('transactions')} className={`p-2 rounded-md transition-colors ${viewMode === 'transactions' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`} title="Flujo de Dinero"><ListIcon size={18} /></button>
           </div>
-          <button
-            onClick={() => {
-              setTransferForm({ fromAccountId: accounts[0]?.id || '', toAccountId: accounts[1]?.id || '', amount: 0, description: '' });
-              setIsTransferModalOpen(true);
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <ArrowRightLeft size={20} />
-            Transferir
+          <button onClick={() => { setTransferForm({ fromAccountId: accounts[0]?.id || '', toAccountId: accounts[1]?.id || '', amount: 0, description: '' }); setIsTransferModalOpen(true); }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+            <ArrowRightLeft size={20} /> Transferir
           </button>
-          <button
-            onClick={() => {
-              setEditingAccount(null);
-              setAccountForm({ name: '', bankName: '', accountNumber: '', accountType: '', balance: 0, isDefaultReceiving: false, isDefaultPaying: false });
-              setIsAccountModalOpen(true);
-            }}
-            className="bg-raynold-red hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Plus size={20} />
-            Nueva Cuenta
+          <button onClick={() => { setEditingAccount(null); setAccountForm({ name: '', type: 'BANK', bankName: '', accountNumber: '', accountSubType: '', balance: 0, isDefaultReceiving: false, isDefaultPaying: false }); setIsAccountModalOpen(true); }}
+            className="bg-raynold-red hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+            <Plus size={20} /> Nueva Cuenta
           </button>
         </div>
       </div>
@@ -218,9 +139,7 @@ const AdminAccounts = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-xl font-bold text-white">{account.name}</h3>
-                    <span className="text-[10px] px-2 py-0.5 bg-white/5 text-gray-400 rounded uppercase tracking-wider border border-white/10">
-                      {account.type}
-                    </span>
+                    <span className="text-[10px] px-2 py-0.5 bg-white/5 text-gray-400 rounded uppercase tracking-wider border border-white/10">{account.type}</span>
                   </div>
                   {account.bankName && <p className="text-sm text-gray-400">{account.bankName} - {account.accountSubType}</p>}
                   {account.accountNumber && <p className="text-xs font-mono text-gray-500 mt-1">{account.accountNumber}</p>}
@@ -264,14 +183,8 @@ const AdminAccounts = () => {
                   </td>
                   <td className="px-6 py-4 text-sm">
                     {tx.type === 'TRANSFER' ? (
-                      <>
-                        <span className="text-red-400">{accounts.find(a => a.id === tx.accountId)?.name}</span>
-                        {' → '}
-                        <span className="text-green-400">{accounts.find(a => a.id === tx.toAccountId)?.name}</span>
-                      </>
-                    ) : (
-                      accounts.find(a => a.id === tx.accountId)?.name
-                    )}
+                      <><span className="text-red-400">{accounts.find(a => a.id === tx.accountId)?.name}</span>{' → '}<span className="text-green-400">{accounts.find(a => a.id === tx.toAccountId)?.name}</span></>
+                    ) : accounts.find(a => a.id === tx.accountId)?.name}
                   </td>
                   <td className="px-6 py-4 text-sm">{tx.description}</td>
                   <td className={`px-6 py-4 text-right font-bold ${tx.type === 'EXPENSE' ? 'text-red-400' : 'text-green-400'}`}>
@@ -279,33 +192,28 @@ const AdminAccounts = () => {
                   </td>
                 </tr>
               ))}
-              {transactions.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No hay transacciones registradas.</td>
-                </tr>
-              )}
+              {transactions.length === 0 && <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">No hay transacciones registradas.</td></tr>}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Account Modal */}
       {isAccountModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/10 flex justify-between items-center">
               <h2 className="text-xl font-bold text-white">{editingAccount ? 'Editar Cuenta' : 'Nueva Cuenta'}</h2>
-              <button onClick={() => setIsAccountModalOpen(false)} className="text-gray-400 hover:text-white"><Trash2 size={20} className="hidden" /><span className="text-2xl leading-none">&times;</span></button>
+              <button onClick={() => setIsAccountModalOpen(false)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleAccountSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Nombre de la Cuenta *</label>
-                  <input required type="text" value={accountForm.name} onChange={e => setAccountForm({...accountForm, name: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. Banco Popular USD" />
+                  <input required type="text" value={accountForm.name} onChange={e => setAccountForm({ ...accountForm, name: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. Banco Popular USD" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Cuenta *</label>
-                  <select required value={accountForm.type} onChange={e => setAccountForm({...accountForm, type: e.target.value as AccountType})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
+                  <select required value={accountForm.type} onChange={e => setAccountForm({ ...accountForm, type: e.target.value as AccountType })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
                     <option value="BANK">Banco</option>
                     <option value="CASH">Efectivo / Caja</option>
                     <option value="CARD_PROCESSOR">Procesador de Tarjeta</option>
@@ -313,38 +221,31 @@ const AdminAccounts = () => {
                   </select>
                 </div>
               </div>
-
               {accountForm.type === 'BANK' && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-1">Nombre del Banco</label>
-                    <input type="text" value={accountForm.bankName} onChange={e => setAccountForm({...accountForm, bankName: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. Banco Popular" />
+                    <input type="text" value={accountForm.bankName} onChange={e => setAccountForm({ ...accountForm, bankName: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-1">Sub-tipo (Ahorro/Corriente)</label>
-                      <input type="text" value={accountForm.accountSubType} onChange={e => setAccountForm({...accountForm, accountSubType: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. Ahorro" />
+                      <label className="block text-sm font-medium text-gray-400 mb-1">Sub-tipo</label>
+                      <input type="text" value={accountForm.accountSubType} onChange={e => setAccountForm({ ...accountForm, accountSubType: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. Ahorro" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-400 mb-1">Número de Cuenta</label>
-                      <input type="text" value={accountForm.accountNumber} onChange={e => setAccountForm({...accountForm, accountNumber: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. 123456789" />
+                      <input type="text" value={accountForm.accountNumber} onChange={e => setAccountForm({ ...accountForm, accountNumber: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
                     </div>
                   </div>
                 </>
               )}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Balance Inicial</label>
-                <input type="number" step="0.01" value={accountForm.balance} onChange={e => setAccountForm({...accountForm, balance: parseFloat(e.target.value) || 0})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" disabled={!!editingAccount} />
+                <input type="number" step="0.01" value={accountForm.balance} onChange={e => setAccountForm({ ...accountForm, balance: parseFloat(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" disabled={!!editingAccount} />
               </div>
               <div className="flex flex-col gap-2 mt-4">
-                <label className="flex items-center gap-2 text-gray-300">
-                  <input type="checkbox" checked={accountForm.isDefaultReceiving} onChange={e => setAccountForm({...accountForm, isDefaultReceiving: e.target.checked})} className="rounded bg-black border-white/20 text-raynold-red focus:ring-raynold-red" />
-                  Cuenta por defecto para recibir pagos (Facturación)
-                </label>
-                <label className="flex items-center gap-2 text-gray-300">
-                  <input type="checkbox" checked={accountForm.isDefaultPaying} onChange={e => setAccountForm({...accountForm, isDefaultPaying: e.target.checked})} className="rounded bg-black border-white/20 text-raynold-red focus:ring-raynold-red" />
-                  Cuenta por defecto para pagar a proveedores (Gastos)
-                </label>
+                <label className="flex items-center gap-2 text-gray-300"><input type="checkbox" checked={accountForm.isDefaultReceiving} onChange={e => setAccountForm({ ...accountForm, isDefaultReceiving: e.target.checked })} className="rounded bg-black border-white/20 text-raynold-red" /> Cuenta por defecto para recibir pagos</label>
+                <label className="flex items-center gap-2 text-gray-300"><input type="checkbox" checked={accountForm.isDefaultPaying} onChange={e => setAccountForm({ ...accountForm, isDefaultPaying: e.target.checked })} className="rounded bg-black border-white/20 text-raynold-red" /> Cuenta por defecto para pagar a proveedores</label>
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setIsAccountModalOpen(false)} className="px-4 py-2 rounded-lg font-medium text-gray-300 hover:bg-white/5">Cancelar</button>
@@ -355,36 +256,35 @@ const AdminAccounts = () => {
         </div>
       )}
 
-      {/* Transfer Modal */}
       {isTransferModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-[#141414] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/10 flex justify-between items-center">
               <h2 className="text-xl font-bold text-white">Transferir Fondos</h2>
-              <button onClick={() => setIsTransferModalOpen(false)} className="text-gray-400 hover:text-white"><span className="text-2xl leading-none">&times;</span></button>
+              <button onClick={() => setIsTransferModalOpen(false)} className="text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
             </div>
             <form onSubmit={handleTransferSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Cuenta de Origen</label>
-                <select required value={transferForm.fromAccountId} onChange={e => setTransferForm({...transferForm, fromAccountId: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
+                <select required value={transferForm.fromAccountId} onChange={e => setTransferForm({ ...transferForm, fromAccountId: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
                   <option value="">Seleccionar cuenta...</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Cuenta de Destino</label>
-                <select required value={transferForm.toAccountId} onChange={e => setTransferForm({...transferForm, toAccountId: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
+                <select required value={transferForm.toAccountId} onChange={e => setTransferForm({ ...transferForm, toAccountId: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
                   <option value="">Seleccionar cuenta...</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Monto a Transferir</label>
-                <input required type="number" step="0.01" min="0.01" value={transferForm.amount || ''} onChange={e => setTransferForm({...transferForm, amount: parseFloat(e.target.value) || 0})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
+                <input required type="number" step="0.01" min="0.01" value={transferForm.amount || ''} onChange={e => setTransferForm({ ...transferForm, amount: parseFloat(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Descripción</label>
-                <input type="text" value={transferForm.description} onChange={e => setTransferForm({...transferForm, description: e.target.value})} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. Reposición de caja chica" />
+                <input type="text" value={transferForm.description} onChange={e => setTransferForm({ ...transferForm, description: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="Ej. Reposición de caja chica" />
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setIsTransferModalOpen(false)} className="px-4 py-2 rounded-lg font-medium text-gray-300 hover:bg-white/5">Cancelar</button>
