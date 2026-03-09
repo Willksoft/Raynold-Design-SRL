@@ -92,7 +92,7 @@ export const AdminLayout = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Cotizaciones@raynolddesignssrl.com"
+                placeholder="Correo administrativo"
                 className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:border-raynold-red focus:outline-none transition-colors"
                 required
               />
