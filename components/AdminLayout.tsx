@@ -20,6 +20,8 @@ import AdminAccounts from './AdminAccounts';
 import AdminFooter from './AdminFooter';
 import AdminAbout from './AdminAbout';
 import AdminMedia from './AdminMedia';
+import AdminProcess from './AdminProcess';
+import AdminFeatures from './AdminFeatures';
 
 export const AdminLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -321,6 +323,18 @@ export const AdminLayout = () => {
                   <span className="font-bold text-xs">Multimedia (Storage)</span>
                 </Link>
                 <Link
+                  to="/admin/process"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/process') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Proceso (Pasos)</span>
+                </Link>
+                <Link
+                  to="/admin/features"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/features') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Ventajas (Features)</span>
+                </Link>
+                <Link
                   to="/admin/settings"
                   className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/settings') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                 >
@@ -543,6 +557,8 @@ export const AdminLayout = () => {
             <Route path="/brands" element={<AdminBrands />} />
             <Route path="/projects" element={<AdminProjects />} />
             <Route path="/settings" element={<AdminSettings />} />
+            <Route path="/process" element={<AdminProcess />} />
+            <Route path="/features" element={<AdminFeatures />} />
           </Routes>
         </div>
       </div>
