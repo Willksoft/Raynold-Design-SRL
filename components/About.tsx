@@ -153,13 +153,12 @@ const About: React.FC = () => {
         {/* Team */}
         <div className="mb-24">
           <div className="flex flex-col items-center mb-16">
-            <span className="text-raynold-green font-mono text-sm tracking-widest uppercase mb-2">Humanos Detrás del Código</span>
             <h2 className="text-4xl font-futuristic font-black text-white text-center">
               NUESTRO <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-500">EQUIPO</span>
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex flex-wrap justify-center gap-8">
             {team.map((member, index) => (
               <motion.div
                 key={member.id}
@@ -168,7 +167,7 @@ const About: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ y: -10 }}
-                className="group relative"
+                className="group relative w-full sm:w-[calc(50%-1rem)] lg:w-[calc(25%-1.5rem)] max-w-sm"
               >
                 <div className={`relative overflow-hidden rounded-2xl bg-gray-900 border border-white/10 group-hover:${member.color} transition-colors duration-500`}>
                   <div className="aspect-[3/4] overflow-hidden relative">
