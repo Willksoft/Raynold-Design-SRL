@@ -5,6 +5,12 @@ import { servicesData, ServiceDetail } from '../data/services';
 import TiltCard from './TiltCard';
 import { useUI } from '../context/UIContext';
 import { supabase } from '../lib/supabaseClient';
+import { Monitor, Printer, Image as ImageIcon, Wrench, Truck, Gift, Building2, PenTool, Video, Smartphone, Palette, Camera, Briefcase, Layers, Layout, Megaphone } from 'lucide-react';
+
+const ICONS_MAP: Record<string, React.ElementType> = {
+  Monitor, Printer, Image: ImageIcon, Wrench, Truck, Gift, Building2,
+  PenTool, Video, Smartphone, Palette, Camera, Briefcase, Layers, Layout, Megaphone
+};
 
 // Helper for specific color styles to ensure Tailwind detects them
 const getColorStyles = (color: 'red' | 'green' | 'white') => {
@@ -43,13 +49,14 @@ const Services: React.FC = () => {
       if (data && data.length > 0) {
         setServices(data.map((s: any) => {
           const original = servicesData.find(os => os.slug === s.slug);
+          const IconComponent = s.icon && ICONS_MAP[s.icon] ? ICONS_MAP[s.icon] : (original?.icon ?? Monitor);
           return {
             ...s,
-            icon: original?.icon ?? servicesData[0].icon,
+            icon: IconComponent,
             color: (s.color || 'white') as 'red' | 'green' | 'white',
             features: Array.isArray(s.features) ? s.features : [],
-            benefits: s.benefits || [],
-            fullDescription: s.full_description || s.description,
+            benefits: s.benefits || original?.benefits || [],
+            fullDescription: s.full_description || s.description || '',
           };
         }));
       }

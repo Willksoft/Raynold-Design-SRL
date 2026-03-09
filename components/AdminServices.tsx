@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Copy, LayoutGrid, List as ListIcon, Save, X, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy, LayoutGrid, List as ListIcon, Save, X, Loader2, Monitor, Printer, Image, Wrench, Truck, Gift, Building2, PenTool, Video, Smartphone, Palette, Camera, Briefcase, Layers, Layout, Megaphone } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+
+const AVAILABLE_ICONS = [
+  { name: 'Monitor', icon: Monitor },
+  { name: 'Printer', icon: Printer },
+  { name: 'Image', icon: Image },
+  { name: 'Wrench', icon: Wrench },
+  { name: 'Truck', icon: Truck },
+  { name: 'Gift', icon: Gift },
+  { name: 'Building2', icon: Building2 },
+  { name: 'PenTool', icon: PenTool },
+  { name: 'Video', icon: Video },
+  { name: 'Smartphone', icon: Smartphone },
+  { name: 'Palette', icon: Palette },
+  { name: 'Camera', icon: Camera },
+  { name: 'Briefcase', icon: Briefcase },
+  { name: 'Layers', icon: Layers },
+  { name: 'Layout', icon: Layout },
+  { name: 'Megaphone', icon: Megaphone }
+];
 
 interface Service {
   id: string;
@@ -13,6 +32,7 @@ interface Service {
   features: string[];
   sort_order: number;
   is_active: boolean;
+  icon: string;
 }
 
 const AdminServices = () => {
@@ -41,7 +61,7 @@ const AdminServices = () => {
   const handleOpenModal = (service?: Service) => {
     setEditingService(service ?? {
       id: '', slug: '', title: '', description: '', full_description: '',
-      color: 'white', image: '', features: [], sort_order: services.length + 1, is_active: true
+      color: 'white', image: '', features: [], sort_order: services.length + 1, is_active: true, icon: 'Monitor'
     });
     setIsModalOpen(true);
   };
@@ -55,7 +75,7 @@ const AdminServices = () => {
       description: editingService.description, full_description: editingService.full_description,
       color: editingService.color, image: editingService.image,
       features: editingService.features, sort_order: editingService.sort_order,
-      is_active: editingService.is_active,
+      is_active: editingService.is_active, icon: editingService.icon
     };
     if (editingService.id) {
       await supabase.from('services').update(payload).eq('id', editingService.id);
@@ -206,6 +226,22 @@ const AdminServices = () => {
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Orden</label>
                     <input type="number" value={editingService.sort_order} onChange={e => setEditingService({ ...editingService, sort_order: +e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Ícono Principal</label>
+                  <div className="grid grid-cols-8 gap-2 bg-black border border-white/20 rounded-lg p-3 h-40 overflow-y-auto custom-scrollbar">
+                    {AVAILABLE_ICONS.map(IconObj => (
+                      <button
+                        key={IconObj.name}
+                        type="button"
+                        onClick={() => setEditingService({ ...editingService, icon: IconObj.name })}
+                        className={`p-2 rounded flex items-center justify-center transition-colors ${editingService.icon === IconObj.name ? 'bg-raynold-red text-white' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                        title={IconObj.name}
+                      >
+                        <IconObj.icon size={20} />
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div>
