@@ -101,7 +101,7 @@ const Services: React.FC = () => {
               <Link
                 to={`/services/${service.slug}`}
                 key={service.id}
-                className="gsap-reveal w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(25%-1.5rem)] flex flex-col"
+                className="gsap-reveal w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] flex flex-col"
               >
                 <motion.div
                   className="flex-1 flex flex-col"

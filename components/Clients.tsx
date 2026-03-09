@@ -9,10 +9,10 @@ interface Brand {
 }
 
 const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
-  <div className="mx-6 flex-shrink-0 flex flex-col items-center justify-center gap-3 w-[180px]">
+  <div className="mx-8 flex-shrink-0 flex flex-col items-center justify-center gap-3 w-[220px]">
     {brand.logo ? (
       <div
-        className="w-full h-24 rounded-xl flex items-center justify-center px-4 py-3 transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-70"
+        className="w-full h-32 rounded-xl flex items-center justify-center px-4 py-3 transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-70"
         style={{
           backgroundColor: brand.bg_color && brand.bg_color !== '#ffffff' ? brand.bg_color : 'rgba(255,255,255,0.06)',
         }}
@@ -20,7 +20,7 @@ const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
         <img
           src={brand.logo}
           alt={brand.name}
-          className="max-h-16 w-auto max-w-full object-contain"
+          className="max-h-20 w-auto max-w-full object-contain"
           loading="lazy"
         />
       </div>
@@ -71,7 +71,7 @@ const Clients: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex w-[200%] animate-scroll">
+      <div className="flex w-[200%] animate-scroll hover:[animation-play-state:paused]">
         <div className="flex items-center">
           {brands.map((brand) => (
             <BrandLogo key={brand.id} brand={brand} />
