@@ -228,8 +228,15 @@ const AdminInvoices = () => {
     setInvoices([...invoices, duplicated]);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('¿Estás seguro de eliminar este documento?')) {
+      // First delete from Supabase
+      const { error } = await supabase.from('invoices').delete().eq('id', id);
+      if (error) {
+        console.error('Error deleting from supabase:', error);
+        alert('Error al eliminar el documento en la base de datos.');
+        return;
+      }
       setInvoices(invoices.filter(i => i.id !== id));
     }
   };
