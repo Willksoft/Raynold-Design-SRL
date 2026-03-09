@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign } from 'lucide-react';
+import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2 } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
-
 import { Account } from './AdminAccounts';
+import { supabase } from '../lib/supabaseClient';
 
 interface InvoiceItem {
   id: string;
@@ -70,9 +70,9 @@ const defaultCompanySettings: CompanySettings = {
   subtitle: 'DESIGNS SRL',
   rnc: '131-76560-2',
   address1: 'Calle Juan Pablo Duarte, Lotificacion Veron II',
-  address2: '2300 punta cana, republica dominicana.',
+  address2: '2300 Punta Cana, República Dominicana.',
   phone: '829-580-7411',
-  logoUrl: ''
+  logoUrl: 'https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-negro.svg'
 };
 
 const defaultInvoice: Invoice = {
@@ -108,7 +108,7 @@ const AdminInvoices = () => {
   const [view, setView] = useState<'list' | 'editor'>('list');
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  
+
   // Payment Modal State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [newPayment, setNewPayment] = useState<Payment>({
@@ -119,37 +119,72 @@ const AdminInvoices = () => {
     accountId: '',
     reference: ''
   });
-  
+
   // Item Modal State
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InvoiceItem | null>(null);
 
   // Load data
   useEffect(() => {
-    const savedInvoices = localStorage.getItem('raynold_invoices');
-    if (savedInvoices) setInvoices(JSON.parse(savedInvoices));
+    // Load invoices from Supabase first, fall back to localStorage
+    supabase.from('invoices').select('*').order('created_at', { ascending: false }).then(({ data }) => {
+      if (data && data.length > 0) {
+        setInvoices(data.map((inv: any) => ({
+          ...inv,
+          items: Array.isArray(inv.items) ? inv.items : [],
+          payments: Array.isArray(inv.payments) ? inv.payments : [],
+        })));
+      } else {
+        const savedInvoices = localStorage.getItem('raynold_invoices');
+        if (savedInvoices) setInvoices(JSON.parse(savedInvoices));
+      }
+    });
 
-    const savedClients = localStorage.getItem('raynold_clients');
-    if (savedClients) setClients(JSON.parse(savedClients));
+    // Load clients from Supabase
+    supabase.from('clients').select('*').order('name').then(({ data }) => {
+      if (data && data.length > 0) {
+        setClients(data.map(c => ({ id: c.id, name: c.name, company: c.company || '', rnc: c.rnc || '', phone: c.phone || '', email: c.email || '' })));
+      } else {
+        const savedClients = localStorage.getItem('raynold_clients');
+        if (savedClients) setClients(JSON.parse(savedClients));
+      }
+    });
 
-    const savedServices = localStorage.getItem('raynold_services');
-    if (savedServices) setServices(JSON.parse(savedServices));
+    // Load services from Supabase
+    supabase.from('services').select('id, title, description').eq('is_active', true).then(({ data }) => {
+      if (data && data.length > 0) setServices(data as any);
+      else {
+        const savedServices = localStorage.getItem('raynold_services');
+        if (savedServices) setServices(JSON.parse(savedServices));
+      }
+    });
 
     const savedCompanySettings = localStorage.getItem('raynold_company_settings');
-    if (savedCompanySettings) setCompanySettings(JSON.parse(savedCompanySettings));
-
-    const savedAccounts = localStorage.getItem('admin_accounts');
-    if (savedAccounts) {
-      const parsed = JSON.parse(savedAccounts);
-      setAccounts(parsed);
-      const defaultAcc = parsed.find((a: Account) => a.isDefaultReceiving) || parsed[0];
-      if (defaultAcc) {
-        setNewPayment(prev => ({ ...prev, accountId: defaultAcc.id, method: defaultAcc.name }));
-      }
+    if (savedCompanySettings) {
+      const parsed = JSON.parse(savedCompanySettings);
+      // Always use the official logo for PDFs
+      setCompanySettings({ ...parsed, logoUrl: 'https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-negro.svg' });
     }
+
+    // Load accounts from Supabase
+    supabase.from('accounts').select('*').order('name').then(({ data }) => {
+      if (data && data.length > 0) {
+        setAccounts(data as any);
+        const defaultAcc = data.find((a: any) => a.is_default_receiving) || data[0];
+        if (defaultAcc) setNewPayment(prev => ({ ...prev, accountId: defaultAcc.id, method: defaultAcc.name }));
+      } else {
+        const savedAccounts = localStorage.getItem('admin_accounts');
+        if (savedAccounts) {
+          const parsed = JSON.parse(savedAccounts);
+          setAccounts(parsed);
+          const defaultAcc = parsed.find((a: Account) => a.isDefaultReceiving) || parsed[0];
+          if (defaultAcc) setNewPayment(prev => ({ ...prev, accountId: defaultAcc.id, method: defaultAcc.name }));
+        }
+      }
+    });
   }, []);
 
-  // Save invoices
+  // Save invoices to localStorage as backup
   useEffect(() => {
     localStorage.setItem('raynold_invoices', JSON.stringify(invoices));
   }, [invoices]);
@@ -211,7 +246,7 @@ const AdminInvoices = () => {
     setView('list');
   };
 
-  const handleSave = (status: 'BORRADOR' | 'EMITIDA' = 'EMITIDA') => {
+  const handleSave = async (status: 'BORRADOR' | 'EMITIDA' = 'EMITIDA') => {
     if (!currentInvoice) return;
     const invoiceToSave = { ...currentInvoice, status };
     const exists = invoices.find(i => i.id === currentInvoice.id);
@@ -221,6 +256,33 @@ const AdminInvoices = () => {
       setInvoices([...invoices, invoiceToSave]);
     }
     setCurrentInvoice(invoiceToSave);
+
+    // Persist to Supabase
+    const { error } = await supabase.from('invoices').upsert({
+      id: invoiceToSave.id,
+      type: invoiceToSave.type,
+      payment_type: invoiceToSave.paymentType,
+      status: invoiceToSave.status,
+      ncf_type: invoiceToSave.ncfType,
+      ncf: invoiceToSave.ncf,
+      date: invoiceToSave.date,
+      number: invoiceToSave.number,
+      client_id: invoiceToSave.clientId || null,
+      client_name: invoiceToSave.clientName,
+      company_name: invoiceToSave.companyName,
+      client_rnc: invoiceToSave.clientRnc,
+      client_phone: invoiceToSave.clientPhone,
+      seller_id: invoiceToSave.sellerId || null,
+      seller_name: invoiceToSave.sellerName,
+      items: invoiceToSave.items,
+      notes: invoiceToSave.notes,
+      payment_terms: invoiceToSave.paymentTerms,
+      template_id: invoiceToSave.templateId,
+      payments: invoiceToSave.payments,
+      payment_status: invoiceToSave.paymentStatus,
+      apply_tax: invoiceToSave.applyTax,
+    });
+    if (error) console.error('Supabase save error:', error.message);
     alert(`Documento guardado como ${status}`);
   };
 
@@ -238,14 +300,14 @@ const AdminInvoices = () => {
 
   const updateCurrentInvoice = (field: keyof Invoice, value: any) => {
     if (!currentInvoice) return;
-    
+
     let updates: Partial<Invoice> = { [field]: value };
 
     // Auto-generate NCF if type changes to FACTURA
     if (field === 'type' && value === 'FACTURA' && !currentInvoice.ncf) {
       updates.ncf = generateNCF(currentInvoice.ncfType);
     }
-    
+
     // Auto-generate NCF if ncfType changes
     if (field === 'ncfType' && currentInvoice.type === 'FACTURA') {
       updates.ncf = generateNCF(value);
@@ -286,7 +348,7 @@ const AdminInvoices = () => {
 
   const saveItem = () => {
     if (!currentInvoice || !editingItem) return;
-    
+
     const exists = currentInvoice.items.find(i => i.id === editingItem.id);
     let newItems;
     if (exists) {
@@ -294,7 +356,7 @@ const AdminInvoices = () => {
     } else {
       newItems = [...currentInvoice.items, editingItem];
     }
-    
+
     setCurrentInvoice({ ...currentInvoice, items: newItems });
     setIsItemModalOpen(false);
   };
@@ -315,7 +377,7 @@ const AdminInvoices = () => {
       const numericPrice = parseFloat(product.price?.replace(/[^0-9.-]+/g, "") || "0") || 0;
       setEditingItem({
         ...editingItem,
-        reference: product.reference || product.id.substring(0,6),
+        reference: product.reference || product.id.substring(0, 6),
         description: product.title,
         unitPrice: numericPrice
       });
@@ -327,7 +389,7 @@ const AdminInvoices = () => {
     if (service && editingItem) {
       setEditingItem({
         ...editingItem,
-        reference: `SRV-${service.id.substring(0,4)}`,
+        reference: `SRV-${service.id.substring(0, 4)}`,
         description: service.title,
         unitPrice: service.price || 0
       });
@@ -348,24 +410,24 @@ const AdminInvoices = () => {
 
   const handleAddPayment = () => {
     if (!currentInvoice || newPayment.amount <= 0 || !newPayment.accountId) return;
-    
+
     const account = accounts.find(a => a.id === newPayment.accountId);
     const payment: Payment = {
       ...newPayment,
       id: Math.random().toString(36).substr(2, 9),
       method: account?.name || 'DESCONOCIDO'
     };
-    
+
     const updatedPayments = [...(currentInvoice.payments || []), payment];
     const newTotalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
-    
+
     let newStatus: 'PENDIENTE' | 'PARCIAL' | 'PAGADA' = 'PENDIENTE';
     if (newTotalPaid >= total - 0.01) { // allow small rounding diff
       newStatus = 'PAGADA';
     } else if (newTotalPaid > 0) {
       newStatus = 'PARCIAL';
     }
-    
+
     // Update account balance and record transaction
     const savedAccounts = localStorage.getItem('admin_accounts');
     let allAccounts = savedAccounts ? JSON.parse(savedAccounts) : accounts;
@@ -394,7 +456,7 @@ const AdminInvoices = () => {
       payments: updatedPayments,
       paymentStatus: newStatus
     });
-    
+
     setIsPaymentModalOpen(false);
     setNewPayment({
       id: '',
@@ -408,17 +470,17 @@ const AdminInvoices = () => {
 
   const handleRemovePayment = (paymentId: string) => {
     if (!currentInvoice) return;
-    
+
     const updatedPayments = currentInvoice.payments.filter(p => p.id !== paymentId);
     const newTotalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
-    
+
     let newStatus: 'PENDIENTE' | 'PARCIAL' | 'PAGADA' = 'PENDIENTE';
     if (newTotalPaid >= total - 0.01) {
       newStatus = 'PAGADA';
     } else if (newTotalPaid > 0) {
       newStatus = 'PARCIAL';
     }
-    
+
     setCurrentInvoice({
       ...currentInvoice,
       payments: updatedPayments,
@@ -429,7 +491,8 @@ const AdminInvoices = () => {
   if (view === 'editor' && currentInvoice) {
     return (
       <div className="flex flex-col h-full bg-gray-100 text-black overflow-hidden print:bg-white print:h-auto print:overflow-visible">
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style dangerouslySetInnerHTML={{
+          __html: `
           @media print {
             @page {
               margin: 0.5in;
@@ -464,7 +527,7 @@ const AdminInvoices = () => {
             }
           }
         ` }} />
-        
+
         {/* Top Bar */}
         <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200 shadow-sm print:hidden shrink-0 z-10">
           <button onClick={handleBack} className="flex items-center gap-2 text-gray-600 hover:text-black font-medium">
@@ -484,7 +547,7 @@ const AdminInvoices = () => {
         </div>
 
         <div className="flex flex-1 overflow-hidden print:overflow-visible print:block">
-          
+
           {/* Left Panel: Settings (Hidden on Print) */}
           <div className="w-80 bg-white border-r border-gray-200 p-6 overflow-y-auto print:hidden shrink-0 shadow-lg z-10">
             <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
@@ -495,7 +558,7 @@ const AdminInvoices = () => {
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Plantilla</label>
-                <select 
+                <select
                   value={currentInvoice.templateId}
                   onChange={(e) => updateCurrentInvoice('templateId', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
@@ -508,7 +571,7 @@ const AdminInvoices = () => {
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Documento</label>
-                <select 
+                <select
                   value={currentInvoice.type}
                   onChange={(e) => updateCurrentInvoice('type', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
@@ -520,7 +583,7 @@ const AdminInvoices = () => {
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Pago</label>
-                <select 
+                <select
                   value={currentInvoice.paymentType}
                   onChange={(e) => updateCurrentInvoice('paymentType', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
@@ -531,8 +594,8 @@ const AdminInvoices = () => {
               </div>
 
               <div className="flex items-center gap-2 py-2">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   id="applyTax"
                   checked={currentInvoice.applyTax !== false}
                   onChange={(e) => updateCurrentInvoice('applyTax', e.target.checked)}
@@ -545,7 +608,7 @@ const AdminInvoices = () => {
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Comprobante (NCF)</label>
-                    <select 
+                    <select
                       value={currentInvoice.ncfType}
                       onChange={(e) => updateCurrentInvoice('ncfType', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
@@ -555,8 +618,8 @@ const AdminInvoices = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Número de NCF</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={currentInvoice.ncf}
                       onChange={(e) => updateCurrentInvoice('ncf', e.target.value)}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red font-mono"
@@ -567,7 +630,7 @@ const AdminInvoices = () => {
 
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Seleccionar Cliente</label>
-                <select 
+                <select
                   value={currentInvoice.clientId}
                   onChange={(e) => handleClientSelect(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red mb-3"
@@ -577,7 +640,7 @@ const AdminInvoices = () => {
                     <option key={c.id} value={c.id}>{c.company || c.name}</option>
                   ))}
                 </select>
-                
+
                 <div className="space-y-2">
                   <input type="text" placeholder="Nombre" value={currentInvoice.clientName} onChange={(e) => updateCurrentInvoice('clientName', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
                   <input type="text" placeholder="Empresa" value={currentInvoice.companyName} onChange={(e) => updateCurrentInvoice('companyName', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
@@ -607,9 +670,9 @@ const AdminInvoices = () => {
               <div className="pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase">Pagos Registrados</label>
-                  <button 
+                  <button
                     onClick={() => {
-                      setNewPayment({...newPayment, amount: balanceDue > 0 ? balanceDue : 0});
+                      setNewPayment({ ...newPayment, amount: balanceDue > 0 ? balanceDue : 0 });
                       setIsPaymentModalOpen(true);
                     }}
                     className="text-xs bg-raynold-red text-white px-2 py-1 rounded hover:bg-red-700 transition-colors flex items-center gap-1"
@@ -617,7 +680,7 @@ const AdminInvoices = () => {
                     <Plus size={12} /> Añadir Pago
                   </button>
                 </div>
-                
+
                 {currentInvoice.payments && currentInvoice.payments.length > 0 ? (
                   <div className="space-y-2">
                     {currentInvoice.payments.map(payment => (
@@ -649,11 +712,11 @@ const AdminInvoices = () => {
 
           {/* Right Panel: Document Preview (8.5x11) */}
           <div className="flex-1 overflow-y-auto bg-gray-200 p-8 print:p-0 print:bg-white flex justify-center invoice-container">
-            
+
             <div className="w-[8.5in] min-h-[11in] bg-white shadow-2xl print:shadow-none relative print-content">
               {currentInvoice.templateId === 'classic' && (
                 <div className="p-10 md:p-12 h-full flex flex-col">
-                  
+
                   {/* Header */}
                   <div className="flex justify-between items-start mb-8">
                     <div className="w-64">
@@ -675,7 +738,7 @@ const AdminInvoices = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-right text-xs text-gray-600 space-y-1">
                       <p>Rnc: {companySettings.rnc}</p>
                       <p>{companySettings.address1}</p>
@@ -713,7 +776,7 @@ const AdminInvoices = () => {
                         <div className="flex gap-2"><span className="text-gray-600 w-16">Telefono:</span> <span>{currentInvoice.clientPhone}</span></div>
                       )}
                     </div>
-                    
+
                     <div className="w-48 space-y-4 text-right">
                       <div className="font-bold">Fecha: {currentInvoice.date}</div>
                       <div>
@@ -737,8 +800,8 @@ const AdminInvoices = () => {
                       </thead>
                       <tbody>
                         {currentInvoice.items.map((item, index) => (
-                          <tr 
-                            key={item.id} 
+                          <tr
+                            key={item.id}
                             onClick={() => openItemModal(item)}
                             className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-100'} cursor-pointer hover:bg-blue-50 transition-colors group relative print:break-inside-avoid`}
                           >
@@ -757,7 +820,7 @@ const AdminInvoices = () => {
                             </td>
                           </tr>
                         ))}
-                        
+
                         {/* Empty rows for visual padding */}
                         {[...Array(Math.max(0, 5 - currentInvoice.items.length))].map((_, i) => (
                           <tr key={`empty-${i}`} className={(currentInvoice.items.length + i) % 2 === 0 ? 'bg-white' : 'bg-gray-100'}>
@@ -766,9 +829,9 @@ const AdminInvoices = () => {
                         ))}
                       </tbody>
                     </table>
-                    
+
                     <div className="mt-4 print:hidden flex justify-center">
-                      <button 
+                      <button
                         onClick={() => openItemModal()}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 font-medium transition-colors border border-gray-300 border-dashed"
                       >
@@ -788,7 +851,7 @@ const AdminInvoices = () => {
                         <p className="text-red-600 font-bold uppercase whitespace-pre-wrap">{currentInvoice.paymentTerms}</p>
                       </div>
                     </div>
-                    
+
                     <div className="w-2/5">
                       <div className="flex justify-between py-1">
                         <span className="text-red-600 font-bold">SUB TOTAL</span>
@@ -814,7 +877,7 @@ const AdminInvoices = () => {
                           </div>
                         </>
                       )}
-                      
+
                       {currentInvoice.paymentStatus === 'PAGADA' && (
                         <div className="mt-4 border-4 border-green-600 text-green-600 text-center py-2 font-black text-2xl uppercase tracking-widest transform -rotate-6 opacity-80">
                           PAGADO
@@ -852,7 +915,7 @@ const AdminInvoices = () => {
                         <p>Tel: {companySettings.phone}</p>
                       </div>
                     </div>
-                    
+
                     <div className="text-right">
                       <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase mb-2">
                         {currentInvoice.type === 'FACTURA' ? 'FACTURA' : 'COTIZACIÓN'}
@@ -904,8 +967,8 @@ const AdminInvoices = () => {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {currentInvoice.items.map((item) => (
-                          <tr 
-                            key={item.id} 
+                          <tr
+                            key={item.id}
                             onClick={() => openItemModal(item)}
                             className="hover:bg-gray-50 cursor-pointer transition-colors group relative print:break-inside-avoid"
                           >
@@ -925,9 +988,9 @@ const AdminInvoices = () => {
                         ))}
                       </tbody>
                     </table>
-                    
+
                     <div className="p-4 print:hidden flex justify-center border-t border-gray-100 bg-gray-50">
-                      <button 
+                      <button
                         onClick={() => openItemModal()}
                         className="px-4 py-2 text-raynold-red hover:bg-red-50 rounded-lg flex items-center gap-2 font-bold transition-colors text-sm"
                       >
@@ -952,7 +1015,7 @@ const AdminInvoices = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="w-72 bg-gray-900 text-white p-6 rounded-xl shadow-lg flex flex-col justify-center">
                       <div className="space-y-3 mb-4 text-sm">
                         <div className="flex justify-between text-gray-400">
@@ -968,7 +1031,7 @@ const AdminInvoices = () => {
                         <span className="text-sm font-medium text-gray-400 uppercase tracking-wider">Total</span>
                         <span className="text-2xl font-black text-raynold-red">{formatCurrency(total).replace('DOP', '$')}</span>
                       </div>
-                      
+
                       {totalPaid > 0 && (
                         <div className="pt-4 border-t border-gray-700 mt-4 space-y-2">
                           <div className="flex justify-between text-green-400">
@@ -981,7 +1044,7 @@ const AdminInvoices = () => {
                           </div>
                         </div>
                       )}
-                      
+
                       {currentInvoice.paymentStatus === 'PAGADA' && (
                         <div className="mt-6 bg-green-500/20 text-green-400 text-center py-2 rounded-lg font-bold uppercase tracking-widest border border-green-500/30">
                           Factura Pagada
@@ -1020,7 +1083,7 @@ const AdminInvoices = () => {
                       <p>{companySettings.address2}</p>
                       <p>{companySettings.phone}</p>
                     </div>
-                    
+
                     <div className="w-1/3 space-y-1 text-gray-500">
                       <p className="font-bold text-gray-900 mb-2">Para</p>
                       {currentInvoice.clientName && <p>{currentInvoice.clientName}</p>}
@@ -1052,8 +1115,8 @@ const AdminInvoices = () => {
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {currentInvoice.items.map((item) => (
-                          <tr 
-                            key={item.id} 
+                          <tr
+                            key={item.id}
                             onClick={() => openItemModal(item)}
                             className="hover:bg-gray-50 cursor-pointer transition-colors group relative print:break-inside-avoid"
                           >
@@ -1075,9 +1138,9 @@ const AdminInvoices = () => {
                         ))}
                       </tbody>
                     </table>
-                    
+
                     <div className="mt-4 print:hidden flex justify-start">
-                      <button 
+                      <button
                         onClick={() => openItemModal()}
                         className="text-gray-400 hover:text-gray-900 flex items-center gap-2 font-medium transition-colors text-sm"
                       >
@@ -1102,7 +1165,7 @@ const AdminInvoices = () => {
                           <span className="font-bold text-gray-900">Total a Pagar</span>
                           <span className="text-2xl font-black text-gray-900">{formatCurrency(total).replace('DOP', '$')}</span>
                         </div>
-                        
+
                         {totalPaid > 0 && (
                           <>
                             <div className="flex justify-between text-gray-500 pt-2">
@@ -1115,7 +1178,7 @@ const AdminInvoices = () => {
                             </div>
                           </>
                         )}
-                        
+
                         {currentInvoice.paymentStatus === 'PAGADA' && (
                           <div className="mt-4 text-center py-1 border-y border-gray-900 font-bold tracking-widest uppercase text-gray-900">
                             PAGADO EN SU TOTALIDAD
@@ -1154,12 +1217,12 @@ const AdminInvoices = () => {
                 <h3 className="font-bold text-lg">Editar Línea</h3>
                 <button onClick={() => setIsItemModalOpen(false)} className="text-gray-400 hover:text-black"><X size={20} /></button>
               </div>
-              
+
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Catálogo de Productos</label>
-                    <select 
+                    <select
                       onChange={(e) => handleProductSelect(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                     >
@@ -1171,7 +1234,7 @@ const AdminInvoices = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Catálogo de Servicios</label>
-                    <select 
+                    <select
                       onChange={(e) => handleServiceSelect(e.target.value)}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                     >
@@ -1185,20 +1248,20 @@ const AdminInvoices = () => {
 
                 <div className="pt-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Referencia (Opcional)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editingItem.reference}
-                    onChange={(e) => setEditingItem({...editingItem, reference: e.target.value})}
+                    onChange={(e) => setEditingItem({ ...editingItem, reference: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red font-mono"
                   />
                 </div>
 
                 <div className="pt-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción Manual</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editingItem.description}
-                    onChange={(e) => setEditingItem({...editingItem, description: e.target.value})}
+                    onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red uppercase"
                   />
                 </div>
@@ -1206,19 +1269,19 @@ const AdminInvoices = () => {
                 <div className="flex gap-4">
                   <div className="w-1/3">
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cantidad</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={editingItem.quantity}
-                      onChange={(e) => setEditingItem({...editingItem, quantity: parseFloat(e.target.value) || 0})}
+                      onChange={(e) => setEditingItem({ ...editingItem, quantity: parseFloat(e.target.value) || 0 })}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-center"
                     />
                   </div>
                   <div className="w-2/3">
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Precio Unitario ($)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={editingItem.unitPrice}
-                      onChange={(e) => setEditingItem({...editingItem, unitPrice: parseFloat(e.target.value) || 0})}
+                      onChange={(e) => setEditingItem({ ...editingItem, unitPrice: parseFloat(e.target.value) || 0 })}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-right"
                     />
                   </div>
@@ -1244,14 +1307,14 @@ const AdminInvoices = () => {
                 </h3>
                 <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-black"><X size={20} /></button>
               </div>
-              
+
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Monto a Pagar (DOP)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={newPayment.amount}
-                    onChange={(e) => setNewPayment({...newPayment, amount: parseFloat(e.target.value) || 0})}
+                    onChange={(e) => setNewPayment({ ...newPayment, amount: parseFloat(e.target.value) || 0 })}
                     className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-raynold-red text-xl font-bold"
                   />
                   <p className="text-xs text-gray-500 mt-1">Balance pendiente: {formatCurrency(balanceDue)}</p>
@@ -1260,18 +1323,18 @@ const AdminInvoices = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha</label>
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       value={newPayment.date}
-                      onChange={(e) => setNewPayment({...newPayment, date: e.target.value})}
+                      onChange={(e) => setNewPayment({ ...newPayment, date: e.target.value })}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cuenta de Destino</label>
-                    <select 
+                    <select
                       value={newPayment.accountId}
-                      onChange={(e) => setNewPayment({...newPayment, accountId: e.target.value})}
+                      onChange={(e) => setNewPayment({ ...newPayment, accountId: e.target.value })}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                     >
                       <option value="">Seleccionar cuenta...</option>
@@ -1284,10 +1347,10 @@ const AdminInvoices = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Referencia / Comprobante (Opcional)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newPayment.reference}
-                    onChange={(e) => setNewPayment({...newPayment, reference: e.target.value})}
+                    onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                     placeholder="Nº de transacción, cheque, etc."
                   />
@@ -1315,14 +1378,14 @@ const AdminInvoices = () => {
           <p className="text-gray-400">Historial de documentos emitidos.</p>
         </div>
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={() => setIsCompanyModalOpen(true)}
             className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg flex items-center gap-2 transition-colors"
           >
             <Settings size={18} />
             Empresa
           </button>
-          <button 
+          <button
             onClick={handleCreateNew}
             className="px-6 py-3 btn-animated font-bold rounded-lg flex items-center gap-2"
           >
@@ -1351,7 +1414,7 @@ const AdminInvoices = () => {
                 const subtotal = invoice.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
                 const applyTax = invoice.applyTax !== false;
                 const total = subtotal + (applyTax ? subtotal * 0.18 : 0);
-                
+
                 return (
                   <tr key={invoice.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="p-4">
@@ -1378,11 +1441,10 @@ const AdminInvoices = () => {
                       {invoice.status === 'BORRADOR' ? (
                         <span className="px-2 py-1 text-xs rounded-full bg-gray-500/20 text-gray-400">Borrador</span>
                       ) : (
-                        <span className={`px-2 py-1 text-xs rounded-full font-bold ${
-                          invoice.paymentStatus === 'PAGADA' ? 'bg-green-500/20 text-green-400' :
+                        <span className={`px-2 py-1 text-xs rounded-full font-bold ${invoice.paymentStatus === 'PAGADA' ? 'bg-green-500/20 text-green-400' :
                           invoice.paymentStatus === 'PARCIAL' ? 'bg-yellow-500/20 text-yellow-400' :
-                          'bg-red-500/20 text-red-400'
-                        }`}>
+                            'bg-red-500/20 text-red-400'
+                          }`}>
                           {invoice.paymentStatus || 'PENDIENTE'}
                         </span>
                       )}
@@ -1392,30 +1454,30 @@ const AdminInvoices = () => {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => handleDuplicate(invoice)}
-                          className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors" 
+                          className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors"
                           title="Duplicar"
                         >
                           <Copy size={16} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handlePrintFromList(invoice)}
-                          className="p-2 bg-purple-500/20 text-purple-400 rounded hover:bg-purple-500/40 transition-colors" 
+                          className="p-2 bg-purple-500/20 text-purple-400 rounded hover:bg-purple-500/40 transition-colors"
                           title="Descargar / Imprimir PDF"
                         >
                           <Download size={16} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleEdit(invoice)}
-                          className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors" 
+                          className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"
                           title="Editar / Ver"
                         >
                           <FileText size={16} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(invoice.id)}
-                          className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors" 
+                          className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 size={16} />
@@ -1450,7 +1512,7 @@ const AdminInvoices = () => {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto flex-grow space-y-4 text-gray-800">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Logo de la Empresa</label>
@@ -1458,8 +1520,8 @@ const AdminInvoices = () => {
                   {companySettings.logoUrl && (
                     <img src={companySettings.logoUrl} alt="Logo" className="h-16 object-contain border border-gray-200 rounded p-1 bg-white" />
                   )}
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     accept="image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -1474,7 +1536,7 @@ const AdminInvoices = () => {
                     className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
                   />
                   {companySettings.logoUrl && (
-                    <button 
+                    <button
                       onClick={() => setCompanySettings({ ...companySettings, logoUrl: '' })}
                       className="p-2 text-red-500 hover:bg-red-50 rounded"
                     >
@@ -1487,60 +1549,60 @@ const AdminInvoices = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={companySettings.name}
-                    onChange={(e) => setCompanySettings({...companySettings, name: e.target.value})}
+                    onChange={(e) => setCompanySettings({ ...companySettings, name: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Subtítulo</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={companySettings.subtitle}
-                    onChange={(e) => setCompanySettings({...companySettings, subtitle: e.target.value})}
+                    onChange={(e) => setCompanySettings({ ...companySettings, subtitle: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">RNC</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={companySettings.rnc}
-                  onChange={(e) => setCompanySettings({...companySettings, rnc: e.target.value})}
+                  onChange={(e) => setCompanySettings({ ...companySettings, rnc: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Teléfono</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={companySettings.phone}
-                  onChange={(e) => setCompanySettings({...companySettings, phone: e.target.value})}
+                  onChange={(e) => setCompanySettings({ ...companySettings, phone: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dirección Línea 1</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={companySettings.address1}
-                  onChange={(e) => setCompanySettings({...companySettings, address1: e.target.value})}
+                  onChange={(e) => setCompanySettings({ ...companySettings, address1: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Dirección Línea 2</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={companySettings.address2}
-                  onChange={(e) => setCompanySettings({...companySettings, address2: e.target.value})}
+                  onChange={(e) => setCompanySettings({ ...companySettings, address2: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
                 />
               </div>

@@ -4,6 +4,7 @@ import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { Seller } from './AdminSellers';
 import { Account } from './AdminAccounts';
+import { supabase } from '../lib/supabaseClient';
 
 interface CartItem {
   id: string;
@@ -20,53 +21,76 @@ const AdminPOS = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  
+
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [selectedSeller, setSelectedSeller] = useState<string>('');
   const [invoiceType, setInvoiceType] = useState<'FACTURA' | 'COTIZACION'>('FACTURA');
   const [paymentType, setPaymentType] = useState<'CONTADO' | 'CREDITO'>('CONTADO');
-  
+
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isQuickProductModalOpen, setIsQuickProductModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [applyTax, setApplyTax] = useState(true);
-  
+
   // Payment state
   const [paymentMethod1, setPaymentMethod1] = useState<string>('');
   const [amountPaid1, setAmountPaid1] = useState<number>(0);
   const [paymentMethod2, setPaymentMethod2] = useState<string>('');
   const [amountPaid2, setAmountPaid2] = useState<number>(0);
-  
+
   const [newProduct, setNewProduct] = useState({ title: '', price: '', reference: '' });
-  
+
   // Print state
   const [lastInvoice, setLastInvoice] = useState<any>(null);
 
   useEffect(() => {
-    const savedClients = localStorage.getItem('raynold_clients');
-    if (savedClients) setClients(JSON.parse(savedClients));
-    
-    const savedSellers = localStorage.getItem('admin_sellers');
-    if (savedSellers) setSellers(JSON.parse(savedSellers));
-    
-    const savedAccounts = localStorage.getItem('admin_accounts');
-    if (savedAccounts) {
-      const parsed = JSON.parse(savedAccounts);
-      setAccounts(parsed);
-      const defaultAcc = parsed.find((a: Account) => a.isDefaultReceiving) || parsed[0];
-      if (defaultAcc) setPaymentMethod1(defaultAcc.id);
-    }
+    // Load clients from Supabase
+    supabase.from('clients').select('*').order('name').then(({ data }) => {
+      if (data && data.length > 0) setClients(data as any);
+      else {
+        const saved = localStorage.getItem('raynold_clients');
+        if (saved) setClients(JSON.parse(saved));
+      }
+    });
+
+    // Load sellers from Supabase
+    supabase.from('sellers').select('*').order('name').then(({ data }) => {
+      if (data && data.length > 0) setSellers(data as any);
+      else {
+        const saved = localStorage.getItem('admin_sellers');
+        if (saved) setSellers(JSON.parse(saved));
+      }
+    });
+
+    // Load accounts from Supabase
+    supabase.from('accounts').select('*').order('name').then(({ data }) => {
+      if (data && data.length > 0) {
+        setAccounts(data as any);
+        const defaultAcc = (data as any).find((a: any) => a.is_default_receiving) || data[0];
+        if (defaultAcc) setPaymentMethod1(defaultAcc.id);
+      } else {
+        const saved = localStorage.getItem('admin_accounts');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setAccounts(parsed);
+          const defaultAcc = parsed.find((a: Account) => a.isDefaultReceiving) || parsed[0];
+          if (defaultAcc) setPaymentMethod1(defaultAcc.id);
+        }
+      }
+    });
   }, []);
 
-  const filteredProducts = products.filter(p => 
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+
+
+  const filteredProducts = products.filter(p =>
+    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.reference?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const addToCart = (product: any) => {
     const numericPrice = parseFloat(product.price?.toString().replace(/[^0-9.-]+/g, "") || "0") || 0;
     const existing = cart.find(item => item.id === product.id);
-    
+
     if (existing) {
       setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
     } else {
@@ -75,7 +99,7 @@ const AdminPOS = () => {
         title: product.title,
         price: numericPrice,
         quantity: 1,
-        reference: product.reference || product.id.substring(0,6)
+        reference: product.reference || product.id.substring(0, 6)
       }]);
     }
   };
@@ -121,11 +145,11 @@ const AdminPOS = () => {
       image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
       type: 'product' as const
     };
-    
+
     const updatedProducts = [...products, newProd];
     setProducts(updatedProducts);
     localStorage.setItem('raynold_products', JSON.stringify(updatedProducts));
-    
+
     addToCart(newProd);
     setIsQuickProductModalOpen(false);
     setNewProduct({ title: '', price: '', reference: '' });
@@ -134,14 +158,14 @@ const AdminPOS = () => {
   const processSale = (shouldPrint: boolean = true, status: 'BORRADOR' | 'EMITIDA' = 'BORRADOR') => {
     const savedInvoices = localStorage.getItem('raynold_invoices');
     let invoices = savedInvoices ? JSON.parse(savedInvoices) : [];
-    
+
     const nextNumber = String(Math.max(...invoices.map((i: any) => parseInt(i.number) || 0), 1000) + 1).padStart(4, '0');
-    
+
     const client = clients.find(c => c.id === selectedClient);
     const seller = sellers.find(s => s.id === selectedSeller);
-    
+
     const totalPaid = amountPaid1 + amountPaid2;
-    
+
     const payments = [];
     const savedTransactions = localStorage.getItem('admin_transactions');
     let transactions = savedTransactions ? JSON.parse(savedTransactions) : [];
@@ -195,7 +219,7 @@ const AdminPOS = () => {
       localStorage.setItem('admin_transactions', JSON.stringify(transactions));
       setAccounts(updatedAccounts);
     }
-    
+
     const newInvoice = {
       id: Math.random().toString(36).substr(2, 9),
       type: invoiceType,
@@ -229,12 +253,39 @@ const AdminPOS = () => {
 
     invoices.push(newInvoice);
     localStorage.setItem('raynold_invoices', JSON.stringify(invoices));
-    
+
+    // Persist to Supabase for cross-device sync
+    supabase.from('invoices').upsert({
+      id: newInvoice.id,
+      type: newInvoice.type,
+      payment_type: newInvoice.paymentType,
+      status: newInvoice.status,
+      ncf_type: newInvoice.ncfType,
+      ncf: newInvoice.ncf,
+      date: newInvoice.date,
+      number: newInvoice.number,
+      client_id: newInvoice.clientId || null,
+      client_name: newInvoice.clientName,
+      company_name: newInvoice.companyName,
+      client_rnc: newInvoice.clientRnc,
+      client_phone: newInvoice.clientPhone,
+      seller_id: newInvoice.sellerId || null,
+      seller_name: newInvoice.sellerName,
+      items: newInvoice.items,
+      notes: newInvoice.notes,
+      payment_terms: newInvoice.paymentTerms,
+      template_id: newInvoice.templateId,
+      payments: newInvoice.payments,
+      payment_status: newInvoice.paymentStatus,
+      apply_tax: newInvoice.applyTax,
+    }).then(({ error }) => { if (error) console.error('POS Supabase:', error.message); });
+
     setLastInvoice(newInvoice);
-    
+
+
     setCart([]);
     setIsCheckoutModalOpen(false);
-    
+
     if (shouldPrint) {
       // Trigger print after a short delay to allow render
       setTimeout(() => {
@@ -252,7 +303,7 @@ const AdminPOS = () => {
   const handlePreview = () => {
     const client = clients.find(c => c.id === selectedClient);
     const seller = sellers.find(s => s.id === selectedSeller);
-    
+
     const previewInvoice = {
       number: 'PREVIEW',
       date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
@@ -269,14 +320,15 @@ const AdminPOS = () => {
       total,
       ncf: invoiceType === 'FACTURA' ? 'B02XXXXXXXX' : ''
     };
-    
+
     setLastInvoice(previewInvoice);
     setIsPreviewModalOpen(true);
   };
 
   return (
     <div className="flex h-full overflow-hidden bg-[#050505] print:bg-white">
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           @page {
             margin: 0;
@@ -290,7 +342,7 @@ const AdminPOS = () => {
           }
         }
       ` }} />
-      
+
       {/* Left Side: Products Grid */}
       <div className="flex-1 flex flex-col border-r border-white/10 print:hidden">
         <div className="p-4 border-b border-white/10 flex flex-col gap-4">
@@ -299,14 +351,14 @@ const AdminPOS = () => {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
                 <span className="text-xs font-bold text-gray-400 uppercase">ITBIS (18%)</span>
-                <button 
+                <button
                   onClick={() => setApplyTax(!applyTax)}
                   className={`w-10 h-5 rounded-full relative transition-colors ${applyTax ? 'bg-raynold-red' : 'bg-gray-600'}`}
                 >
                   <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${applyTax ? 'right-1' : 'left-1'}`}></div>
                 </button>
               </div>
-              <button 
+              <button
                 onClick={() => setIsQuickProductModalOpen(true)}
                 className="bg-raynold-red hover:bg-red-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold"
               >
@@ -317,8 +369,8 @@ const AdminPOS = () => {
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Buscar productos o servicios..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -326,12 +378,12 @@ const AdminPOS = () => {
             />
           </div>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredProducts.map(product => (
-              <div 
-                key={product.id} 
+              <div
+                key={product.id}
                 onClick={() => addToCart(product)}
                 className="bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden hover:border-raynold-red cursor-pointer transition-colors group flex flex-col"
               >
@@ -368,7 +420,7 @@ const AdminPOS = () => {
               <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
                 <FileText size={14} /> Documento
               </label>
-              <select 
+              <select
                 value={invoiceType}
                 onChange={(e) => setInvoiceType(e.target.value as 'FACTURA' | 'COTIZACION')}
                 className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
@@ -381,7 +433,7 @@ const AdminPOS = () => {
               <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
                 <DollarSign size={14} /> Tipo Pago
               </label>
-              <select 
+              <select
                 value={paymentType}
                 onChange={(e) => setPaymentType(e.target.value as 'CONTADO' | 'CREDITO')}
                 className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
@@ -395,7 +447,7 @@ const AdminPOS = () => {
             <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
               <User size={14} /> Cliente
             </label>
-            <select 
+            <select
               value={selectedClient}
               onChange={(e) => setSelectedClient(e.target.value)}
               className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
@@ -410,7 +462,7 @@ const AdminPOS = () => {
             <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
               <User size={14} /> Vendedor
             </label>
-            <select 
+            <select
               value={selectedSeller}
               onChange={(e) => setSelectedSeller(e.target.value)}
               className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
@@ -470,7 +522,7 @@ const AdminPOS = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <button 
+            <button
               onClick={saveAsDraft}
               disabled={cart.length === 0}
               className="py-3 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -478,7 +530,7 @@ const AdminPOS = () => {
               <FileText size={20} />
               Borrador
             </button>
-            <button 
+            <button
               onClick={handleCheckout}
               disabled={cart.length === 0}
               className="py-3 bg-raynold-red text-white font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -503,29 +555,29 @@ const AdminPOS = () => {
             <form onSubmit={handleQuickProductSubmit} className="p-4 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Nombre</label>
-                <input 
+                <input
                   type="text" required
                   value={newProduct.title}
-                  onChange={(e) => setNewProduct({...newProduct, title: e.target.value})}
+                  onChange={(e) => setNewProduct({ ...newProduct, title: e.target.value })}
                   className="w-full bg-black border border-white/20 rounded-lg p-2 text-white focus:border-raynold-red focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Precio</label>
-                  <input 
+                  <input
                     type="number" required step="0.01"
                     value={newProduct.price}
-                    onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                    onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                     className="w-full bg-black border border-white/20 rounded-lg p-2 text-white focus:border-raynold-red focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Referencia</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newProduct.reference}
-                    onChange={(e) => setNewProduct({...newProduct, reference: e.target.value})}
+                    onChange={(e) => setNewProduct({ ...newProduct, reference: e.target.value })}
                     className="w-full bg-black border border-white/20 rounded-lg p-2 text-white focus:border-raynold-red focus:outline-none"
                   />
                 </div>
@@ -548,7 +600,7 @@ const AdminPOS = () => {
                 Procesar Pago
               </h3>
             </div>
-            
+
             <div className="p-6 space-y-6 overflow-y-auto">
               <div className="text-center">
                 <p className="text-gray-400 text-sm mb-1">Total a Cobrar</p>
@@ -561,7 +613,7 @@ const AdminPOS = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase">Método 1</label>
                   <span className="text-xs text-gray-500">Requerido</span>
                 </div>
-                <select 
+                <select
                   value={paymentMethod1}
                   onChange={(e) => setPaymentMethod1(e.target.value)}
                   className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
@@ -571,8 +623,8 @@ const AdminPOS = () => {
                     <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>
                   ))}
                 </select>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   value={amountPaid1}
                   onChange={(e) => setAmountPaid1(parseFloat(e.target.value) || 0)}
                   className="w-full bg-black border border-white/20 rounded-lg p-3 text-white focus:border-raynold-red focus:outline-none text-xl font-bold text-center"
@@ -590,7 +642,7 @@ const AdminPOS = () => {
                     </button>
                   )}
                 </div>
-                <select 
+                <select
                   value={paymentMethod2}
                   onChange={(e) => setPaymentMethod2(e.target.value)}
                   className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
@@ -601,8 +653,8 @@ const AdminPOS = () => {
                   ))}
                 </select>
                 {paymentMethod2 && (
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={amountPaid2}
                     onChange={(e) => setAmountPaid2(parseFloat(e.target.value) || 0)}
                     className="w-full bg-black border border-white/20 rounded-lg p-3 text-white focus:border-raynold-red focus:outline-none text-xl font-bold text-center"
@@ -610,7 +662,7 @@ const AdminPOS = () => {
                   />
                 )}
               </div>
-              
+
               {/* Change Calculation */}
               {(amountPaid1 + amountPaid2) > total && (
                 <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
@@ -628,14 +680,14 @@ const AdminPOS = () => {
 
             <div className="p-4 border-t border-white/10 bg-black flex flex-col gap-3 shrink-0">
               <div className="grid grid-cols-2 gap-3">
-                <button 
-                  onClick={() => setIsCheckoutModalOpen(false)} 
+                <button
+                  onClick={() => setIsCheckoutModalOpen(false)}
                   className="py-3 text-gray-400 hover:text-white font-bold transition-colors border border-white/10 rounded-lg"
                 >
                   Cancelar
                 </button>
-                <button 
-                  onClick={handlePreview} 
+                <button
+                  onClick={handlePreview}
                   className="py-3 bg-white/10 text-white font-bold rounded-lg hover:bg-white/20 transition-colors flex items-center justify-center gap-2"
                 >
                   <FileText size={18} />
@@ -643,15 +695,15 @@ const AdminPOS = () => {
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <button 
-                  onClick={() => processSale(false, 'BORRADOR')} 
+                <button
+                  onClick={() => processSale(false, 'BORRADOR')}
                   className="py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Save size={18} />
                   Solo Guardar
                 </button>
-                <button 
-                  onClick={() => processSale(true, 'BORRADOR')} 
+                <button
+                  onClick={() => processSale(true, 'BORRADOR')}
                   className="py-3 bg-raynold-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Printer size={18} />
@@ -673,7 +725,7 @@ const AdminPOS = () => {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto font-mono text-sm leading-tight bg-white">
               <div className="text-center mb-4">
                 <h2 className="font-bold text-lg uppercase">RAYNOLD DESIGN</h2>
@@ -686,12 +738,12 @@ const AdminPOS = () => {
                 {lastInvoice.ncf && <p>NCF: {lastInvoice.ncf}</p>}
                 <p>--------------------------------</p>
               </div>
-              
+
               <div className="mb-2">
                 <p>Cliente: {lastInvoice.clientName}</p>
                 {lastInvoice.sellerName && <p>Vendedor: {lastInvoice.sellerName}</p>}
               </div>
-              
+
               <p>--------------------------------</p>
               <div className="w-full mb-2">
                 <div className="flex justify-between font-bold border-b border-black border-dashed pb-1 mb-1">
@@ -708,7 +760,7 @@ const AdminPOS = () => {
                 ))}
               </div>
               <p>--------------------------------</p>
-              
+
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
@@ -725,22 +777,22 @@ const AdminPOS = () => {
                   <span>{formatCurrency(lastInvoice.total || total)}</span>
                 </div>
               </div>
-              
+
               <div className="mt-6 text-center text-[10px]">
                 <p>¡Gracias por su compra!</p>
                 <p>Raynold Design SRL</p>
               </div>
             </div>
-            
+
             <div className="p-4 border-t border-gray-200 bg-gray-50 flex gap-3">
-              <button 
-                onClick={() => setIsPreviewModalOpen(false)} 
+              <button
+                onClick={() => setIsPreviewModalOpen(false)}
                 className="flex-1 py-2 bg-gray-200 text-gray-800 font-bold rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cerrar
               </button>
-              <button 
-                onClick={() => { setIsPreviewModalOpen(false); processSale(true); }} 
+              <button
+                onClick={() => { setIsPreviewModalOpen(false); processSale(true); }}
                 className="flex-1 py-2 bg-raynold-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
               >
                 Confirmar e Imprimir
@@ -765,12 +817,12 @@ const AdminPOS = () => {
               {lastInvoice.ncf && <p>NCF: {lastInvoice.ncf}</p>}
               <p>================================</p>
             </div>
-            
+
             <div className="mb-2">
               <p>Cliente: {lastInvoice.clientName}</p>
               {lastInvoice.sellerName && <p>Vendedor: {lastInvoice.sellerName}</p>}
             </div>
-            
+
             <p>================================</p>
             <div className="w-full mb-2">
               <div className="flex justify-between font-bold border-b border-black border-dashed pb-1 mb-1">
@@ -787,22 +839,22 @@ const AdminPOS = () => {
               ))}
             </div>
             <p>================================</p>
-            
+
             <div className="text-right space-y-1 mb-4">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>{formatCurrency(lastInvoice.items.reduce((s:number, i:any) => s + (i.quantity*i.unitPrice), 0))}</span>
+                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: any) => s + (i.quantity * i.unitPrice), 0))}</span>
               </div>
               <div className="flex justify-between">
                 <span>ITBIS:</span>
-                <span>{formatCurrency(lastInvoice.items.reduce((s:number, i:any) => s + (i.quantity*i.unitPrice), 0) * 0.18)}</span>
+                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: any) => s + (i.quantity * i.unitPrice), 0) * 0.18)}</span>
               </div>
               <div className="flex justify-between font-bold text-sm mt-1 border-t border-black border-dashed pt-1">
                 <span>TOTAL:</span>
-                <span>{formatCurrency(lastInvoice.items.reduce((s:number, i:any) => s + (i.quantity*i.unitPrice), 0) * 1.18)}</span>
+                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: any) => s + (i.quantity * i.unitPrice), 0) * 1.18)}</span>
               </div>
             </div>
-            
+
             {lastInvoice.payments && lastInvoice.payments.length > 0 && (
               <div className="mb-4">
                 <p>================================</p>
@@ -815,7 +867,7 @@ const AdminPOS = () => {
                 ))}
               </div>
             )}
-            
+
             <div className="text-center mt-6">
               <p>¡Gracias por su compra!</p>
               <p>Visítenos en raynolddesign.com</p>
