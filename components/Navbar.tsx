@@ -87,9 +87,9 @@ const Navbar: React.FC = () => {
                   onMouseLeave={() => setMegaMenuOpen(false)}
                 >
                   <button
-                    className="flex items-center gap-1 font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors focus:outline-none cursor-pointer"
+                    className="flex items-center gap-1 font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors focus:outline-none cursor-pointer uppercase tracking-wide"
                   >
-                    SOLUCIONES <ChevronDown size={14} />
+                    PRODUCTOS Y SERVICIOS <ChevronDown size={14} />
                   </button>
 
                   <AnimatePresence>

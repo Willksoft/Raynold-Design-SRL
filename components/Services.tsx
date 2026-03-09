@@ -104,13 +104,25 @@ const Services: React.FC = () => {
                   onMouseLeave={handleMouseLeave}
                 >
                   <TiltCard className="h-full">
-                    <div className="group relative p-8 bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl h-full">
+                    <div className="group relative p-8 bg-black/90 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl h-full">
+                      {/* Background Image Overlay */}
+                      {service.image && (
+                        <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
+                          <img
+                            src={service.image}
+                            alt={service.title}
+                            className="w-full h-full object-cover opacity-30 group-hover:opacity-50 group-hover:scale-110 transition-all duration-700"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent"></div>
+                        </div>
+                      )}
+
                       {/* Corner Gradient */}
-                      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${styles.corner} to-transparent rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110 opacity-60`}></div>
+                      <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${styles.corner} to-transparent rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110 opacity-60 z-10`}></div>
 
                       <div className="relative z-10">
                         {/* Icon Container */}
-                        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-8 border transition-all duration-300 ${styles.wrapper} ${styles.hoverBorder} group-hover:scale-105`}>
+                        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-8 border transition-all duration-300 ${styles.wrapper} ${styles.hoverBorder} group-hover:scale-105 backdrop-blur-md`}>
                           {service.icon && <service.icon className={`w-10 h-10 ${styles.icon}`} strokeWidth={1.5} />}
                         </div>
 
