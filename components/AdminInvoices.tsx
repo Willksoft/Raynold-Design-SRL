@@ -126,6 +126,9 @@ const AdminInvoices = () => {
   // Item Modal State
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InvoiceItem | null>(null);
+  const [showNewProductForm, setShowNewProductForm] = useState(false);
+  const [newProductData, setNewProductData] = useState({ title: '', price: '', reference: '' });
+  const [savingProduct, setSavingProduct] = useState(false);
 
   // Load data
   useEffect(() => {
@@ -342,6 +345,8 @@ const AdminInvoices = () => {
 
   // Item Modal Functions
   const openItemModal = (item?: InvoiceItem) => {
+    setShowNewProductForm(false);
+    setNewProductData({ title: '', price: '', reference: '' });
     if (item) {
       setEditingItem(item);
     } else {
@@ -404,6 +409,31 @@ const AdminInvoices = () => {
         unitPrice: service.price || 0
       });
     }
+  };
+
+  const handleCreateAndUseProduct = async () => {
+    if (!newProductData.title || !editingItem) return;
+    setSavingProduct(true);
+    const price = parseFloat(newProductData.price) || 0;
+    const { data, error } = await supabase.from('products').insert([{
+      title: newProductData.title,
+      price: `$${price.toFixed(2)}`,
+      reference: newProductData.reference || undefined,
+      is_active: true
+    }]).select().single();
+    if (!error && data) {
+      setEditingItem({
+        ...editingItem,
+        reference: data.reference || data.id.substring(0, 6),
+        description: data.title,
+        unitPrice: price
+      });
+      setShowNewProductForm(false);
+      setNewProductData({ title: '', price: '', reference: '' });
+    } else {
+      alert('Error al crear producto: ' + error?.message);
+    }
+    setSavingProduct(false);
   };
 
   // Calculations
@@ -1254,6 +1284,63 @@ const AdminInvoices = () => {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Quick Create Product */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewProductForm(!showNewProductForm)}
+                    className="w-full flex items-center justify-between px-4 py-2 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-bold text-gray-600"
+                  >
+                    <span className="flex items-center gap-2"><Plus size={15} /> Crear nuevo producto rápido</span>
+                    <span className="text-xs text-gray-400">{showNewProductForm ? '▲ Cerrar' : '▼ Abrir'}</span>
+                  </button>
+                  {showNewProductForm && (
+                    <div className="p-4 space-y-3 bg-blue-50 border-t border-blue-100">
+                      <p className="text-xs text-blue-600 font-semibold">El producto se guardará en el catálogo y se añadirá a esta línea automáticamente.</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-2">
+                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre del producto *</label>
+                          <input
+                            type="text"
+                            value={newProductData.title}
+                            onChange={e => setNewProductData({ ...newProductData, title: e.target.value })}
+                            placeholder="ej: Letrero Neon 60x30cm"
+                            className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Precio (DOP)</label>
+                          <input
+                            type="number"
+                            value={newProductData.price}
+                            onChange={e => setNewProductData({ ...newProductData, price: e.target.value })}
+                            placeholder="0.00"
+                            className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-blue-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Referencia (Opcional)</label>
+                          <input
+                            type="text"
+                            value={newProductData.reference}
+                            onChange={e => setNewProductData({ ...newProductData, reference: e.target.value })}
+                            placeholder="REF-001"
+                            className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-blue-400 font-mono"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleCreateAndUseProduct}
+                        disabled={savingProduct || !newProductData.title}
+                        className="w-full py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {savingProduct ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                        {savingProduct ? 'Guardando...' : 'Crear y usar este producto'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-2">
