@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { servicesData, ServiceDetail } from '../data/services';
 import TiltCard from './TiltCard';
 import { useUI } from '../context/UIContext';
+import { supabase } from '../lib/supabaseClient';
 
 // Helper for specific color styles to ensure Tailwind detects them
 const getColorStyles = (color: 'red' | 'green' | 'white') => {
@@ -38,31 +39,33 @@ const Services: React.FC = () => {
   const [services, setServices] = useState<ServiceDetail[]>(servicesData);
 
   useEffect(() => {
-    const saved = localStorage.getItem('admin_services_data');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Restore icons from servicesData by ID
-      const restored = parsed.map((s: any) => {
-        const original = servicesData.find(os => os.id === s.id);
-        return {
-          ...s,
-          icon: original ? original.icon : null
-        };
-      });
-      setServices(restored);
-    }
+    supabase.from('services').select('*').eq('is_active', true).order('sort_order').then(({ data }) => {
+      if (data && data.length > 0) {
+        setServices(data.map((s: any) => {
+          const original = servicesData.find(os => os.slug === s.slug);
+          return {
+            ...s,
+            icon: original?.icon ?? servicesData[0].icon,
+            color: (s.color || 'white') as 'red' | 'green' | 'white',
+            features: Array.isArray(s.features) ? s.features : [],
+            benefits: s.benefits || [],
+            fullDescription: s.full_description || s.description,
+          };
+        }));
+      }
+    });
   }, []);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>, title: string) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
-    
+
     setDroneTarget({
-        x,
-        y,
-        active: true,
-        text: `ANALIZANDO: ${title.toUpperCase()}`
+      x,
+      y,
+      active: true,
+      text: `ANALIZANDO: ${title.toUpperCase()}`
     });
   };
 
@@ -72,7 +75,7 @@ const Services: React.FC = () => {
 
   return (
     <section id="services" className="py-24 bg-raynold-black relative">
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-futuristic font-bold text-white mb-4 gsap-reveal">
             Nuestros <span className="text-raynold-red">Servicios</span>
@@ -86,7 +89,7 @@ const Services: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, index) => {
             const styles = getColorStyles(service.color);
-            
+
             return (
               <Link to={`/services/${service.slug}`} key={service.id} className="gsap-reveal">
                 <motion.div
@@ -97,23 +100,23 @@ const Services: React.FC = () => {
                     <div className="group relative p-8 bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl h-full">
                       {/* Corner Gradient */}
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${styles.corner} to-transparent rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110 opacity-60`}></div>
-                      
+
                       <div className="relative z-10">
                         {/* Icon Container */}
                         <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-8 border transition-all duration-300 ${styles.wrapper} ${styles.hoverBorder} group-hover:scale-105`}>
                           {service.icon && <service.icon className={`w-10 h-10 ${styles.icon}`} strokeWidth={1.5} />}
                         </div>
-                        
+
                         <h3 className="text-2xl font-bold text-white font-futuristic mb-4 group-hover:text-raynold-red transition-colors">
                           {service.title}
                         </h3>
-                        
+
                         <p className="text-gray-400 leading-relaxed text-base font-light">
                           {service.description}
                         </p>
-                        
+
                         <div className="mt-6 flex items-center text-sm font-bold text-gray-500 group-hover:text-white transition-colors">
-                           Ver Detalles &rarr;
+                          Ver Detalles &rarr;
                         </div>
                       </div>
 
