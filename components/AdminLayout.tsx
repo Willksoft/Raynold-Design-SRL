@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import AdminDashboard from './AdminDashboard';
 import AdminPanel from './AdminPanel';
@@ -28,8 +28,65 @@ export const AdminLayout = () => {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<{
+    clients: any[];
+    products: any[];
+    invoices: any[];
+  }>({ clients: [], products: [], invoices: [] });
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Close dropdowns on route change
+  useEffect(() => {
+    setIsAddMenuOpen(false);
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  }, [location.pathname]);
+
+  // Global Search Logic
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults({ clients: [], products: [], invoices: [] });
+      setIsSearchOpen(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setIsSearching(true);
+
+      const [clientsRes, productsRes, invoicesRes] = await Promise.all([
+        supabase
+          .from('clients')
+          .select('id, name, company')
+          .or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%`)
+          .limit(3),
+        supabase
+          .from('products')
+          .select('id, title, reference')
+          .or(`title.ilike.%${searchQuery}%,reference.ilike.%${searchQuery}%`)
+          .limit(3),
+        supabase
+          .from('invoices')
+          .select('id, number, type, client_name')
+          .or(`number.ilike.%${searchQuery}%,client_name.ilike.%${searchQuery}%`)
+          .limit(3)
+      ]);
+
+      setSearchResults({
+        clients: clientsRes.data || [],
+        products: productsRes.data || [],
+        invoices: invoicesRes.data || []
+      });
+      setIsSearching(false);
+      setIsSearchOpen(true);
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   useEffect(() => {
     // Check existing session
@@ -280,28 +337,202 @@ export const AdminLayout = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-modern h-full print:overflow-visible print:h-auto print:w-full print:absolute print:inset-0 print:bg-white">
-        <Routes>
-          <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/dashboard" element={<AdminDashboard />} />
-          <Route path="/pos" element={<AdminPOS />} />
-          <Route path="/invoices" element={<AdminInvoices />} />
-          <Route path="/clients" element={<AdminClients />} />
-          <Route path="/expenses" element={<AdminExpenses />} />
-          <Route path="/hero" element={<AdminHero />} />
-          <Route path="/footer" element={<AdminFooter />} />
-          <Route path="/media" element={<AdminMedia />} />
-          <Route path="/about" element={<AdminAbout />} />
-          <Route path="/products" element={<AdminPanel />} />
-          <Route path="/categories" element={<AdminCategories />} />
-          <Route path="/suppliers" element={<AdminSuppliers />} />
-          <Route path="/sellers" element={<AdminSellers />} />
-          <Route path="/accounts" element={<AdminAccounts />} />
-          <Route path="/services" element={<AdminServices />} />
-          <Route path="/brands" element={<AdminBrands />} />
-          <Route path="/projects" element={<AdminProjects />} />
-          <Route path="/settings" element={<AdminSettings />} />
-        </Routes>
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden print:w-full print:absolute print:inset-0 print:bg-white">
+
+        {/* Global Admin Header */}
+        <div className="h-16 border-b border-white/10 bg-[#0A0A0A] flex items-center justify-between px-6 shrink-0 z-50 print:hidden relative">
+
+          {/* Global Search */}
+          <div className="flex-1 max-w-md relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="Buscar clientes, facturas, productos..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(e.target.value.length > 1);
+                }}
+                className="w-full bg-black border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white text-sm focus:border-raynold-red focus:outline-none transition-colors"
+              />
+            </div>
+
+            {/* Search Results Dropdown */}
+            {isSearchOpen && (
+              <div className="absolute top-full mt-2 w-[500px] max-w-[90vw] -left-1/2 sm:left-0 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] max-h-[70vh] flex flex-col">
+                {isSearching ? (
+                  <div className="p-8 flex flex-col items-center justify-center text-gray-500 gap-3">
+                    <Loader2 className="animate-spin text-raynold-red" size={24} />
+                    <span className="text-sm font-bold animate-pulse">Buscando "{searchQuery}"...</span>
+                  </div>
+                ) : searchResults.clients.length === 0 && searchResults.products.length === 0 && searchResults.invoices.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500 text-sm">
+                    No se encontraron resultados para "{searchQuery}"
+                  </div>
+                ) : (
+                  <div className="overflow-y-auto scrollbar-modern p-2">
+                    {/* Invoices */}
+                    {searchResults.invoices.length > 0 && (
+                      <div className="mb-2">
+                        <div className="px-3 py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider bg-white/5 rounded mx-1 mb-1">
+                          Documentos ({searchResults.invoices.length})
+                        </div>
+                        {searchResults.invoices.map((inv) => (
+                          <button
+                            key={inv.id}
+                            onClick={() => {
+                              navigate('/admin/invoices');
+                              setSearchQuery('');
+                              setIsSearchOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-white/5 rounded-lg transition-colors flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg ${inv.type === 'FACTURA' ? 'bg-blue-500/10 text-blue-500' : 'bg-yellow-500/10 text-yellow-500'}`}>
+                                {inv.type === 'FACTURA' ? <Receipt size={16} /> : <FileText size={16} />}
+                              </div>
+                              <div>
+                                <p className="text-white text-sm font-bold flex items-center gap-2">
+                                  #{inv.number}
+                                  <span className="text-[10px] bg-white/10 px-1.5 rounded uppercase">{inv.type}</span>
+                                </p>
+                                <p className="text-gray-400 text-xs truncate max-w-[200px]">{inv.client_name}</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Clients */}
+                    {searchResults.clients.length > 0 && (
+                      <div className="mb-2">
+                        <div className="px-3 py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider bg-white/5 rounded mx-1 mb-1">
+                          Clientes ({searchResults.clients.length})
+                        </div>
+                        {searchResults.clients.map((client) => (
+                          <button
+                            key={client.id}
+                            onClick={() => {
+                              navigate('/admin/clients');
+                              setSearchQuery('');
+                              setIsSearchOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3"
+                          >
+                            <div className="p-2 bg-green-500/10 text-green-500 rounded-lg">
+                              <Users size={16} />
+                            </div>
+                            <div>
+                              <p className="text-white text-sm font-bold">{client.name}</p>
+                              {client.company && <p className="text-gray-400 text-xs">{client.company}</p>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Products */}
+                    {searchResults.products.length > 0 && (
+                      <div>
+                        <div className="px-3 py-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider bg-white/5 rounded mx-1 mb-1">
+                          Productos y Servicios ({searchResults.products.length})
+                        </div>
+                        {searchResults.products.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => {
+                              navigate('/admin/products');
+                              setSearchQuery('');
+                              setIsSearchOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3"
+                          >
+                            <div className="p-2 bg-purple-500/10 text-purple-500 rounded-lg">
+                              <Package size={16} />
+                            </div>
+                            <div>
+                              <p className="text-white text-sm font-bold">{product.title}</p>
+                              {product.reference && <p className="text-gray-400 text-xs font-mono">{product.reference}</p>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Universal Add Button */}
+          <div className="relative ml-4">
+            <button
+              onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+              className="flex items-center gap-2 px-4 py-2 bg-raynold-red text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Nuevo</span>
+              <ChevronDown size={14} className={`transition-transform ${isAddMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isAddMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsAddMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 w-48 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 py-1">
+                  <Link to="/admin/pos?type=factura" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                    <Receipt size={16} className="text-blue-400" />
+                    Factura
+                  </Link>
+                  <Link to="/admin/pos?type=cotizacion" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                    <FileText size={16} className="text-yellow-400" />
+                    Cotización
+                  </Link>
+                  <div className="h-px bg-white/10 my-1"></div>
+                  <Link to="/admin/clients" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                    <User size={16} className="text-green-400" />
+                    Cliente
+                  </Link>
+                  <div className="h-px bg-white/10 my-1"></div>
+                  <Link to="/admin/products" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                    <Package size={16} className="text-purple-400" />
+                    Producto
+                  </Link>
+                  <Link to="/admin/expenses" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                    <File size={16} className="text-red-400" />
+                    Gasto
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Scrollable Routes Area */}
+        <div className="flex-1 overflow-y-auto scrollbar-modern relative">
+          <Routes>
+            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/dashboard" element={<AdminDashboard />} />
+            <Route path="/pos" element={<AdminPOS />} />
+            <Route path="/invoices" element={<AdminInvoices />} />
+            <Route path="/clients" element={<AdminClients />} />
+            <Route path="/expenses" element={<AdminExpenses />} />
+            <Route path="/hero" element={<AdminHero />} />
+            <Route path="/footer" element={<AdminFooter />} />
+            <Route path="/media" element={<AdminMedia />} />
+            <Route path="/about" element={<AdminAbout />} />
+            <Route path="/products" element={<AdminPanel />} />
+            <Route path="/categories" element={<AdminCategories />} />
+            <Route path="/suppliers" element={<AdminSuppliers />} />
+            <Route path="/sellers" element={<AdminSellers />} />
+            <Route path="/accounts" element={<AdminAccounts />} />
+            <Route path="/services" element={<AdminServices />} />
+            <Route path="/brands" element={<AdminBrands />} />
+            <Route path="/projects" element={<AdminProjects />} />
+            <Route path="/settings" element={<AdminSettings />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );

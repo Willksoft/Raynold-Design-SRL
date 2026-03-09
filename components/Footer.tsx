@@ -72,7 +72,7 @@ const Footer: React.FC = () => {
               {/* Replace the CSS logo with the official logo */}
               <div className="h-10 w-auto relative">
                 <img
-                  src="https://zuxdovlrdjntvztpmlcw.supabase.co/storage/v1/object/public/raynold-media/general/raynold-logo-dark.png"
+                  src="https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-blanco-r.svg"
                   alt="Raynold Design SRL"
                   className="h-full w-auto object-contain drop-shadow-lg"
                   onError={(e) => {

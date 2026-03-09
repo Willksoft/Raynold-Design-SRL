@@ -298,7 +298,7 @@ const ScrollDrone: React.FC = () => {
 
         {/* --- HOLOGRAPHIC DRONE SVG (FRONTAL VIEW) --- */}
         <motion.div
-          className="relative w-80 h-80 -ml-28 -mt-28"
+          className="relative w-64 h-64 -ml-20 -mt-20"
           animate={{ rotate: 0 }}
           transition={{ type: "spring", stiffness: 100, damping: 20 }}
         >
@@ -409,7 +409,7 @@ const ScrollDrone: React.FC = () => {
 
               {/* Text with Typewriter Effect */}
               <p className={`text-[11px] font-futuristic leading-relaxed ${isRepelling ? 'text-red-200' : 'text-white'}`}>
-                {isRepelling ? "MANIOBRA DE EVASIÓN ACTIVADA." : typedText}
+                &nbsp;{isRepelling ? "MANIOBRA DE EVASIÓN ACTIVADA." : typedText}
                 <motion.span
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{ duration: 0.8, repeat: Infinity }}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2 } from 'lucide-react';
+import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
@@ -108,6 +108,9 @@ const AdminInvoices = () => {
   const [view, setView] = useState<'list' | 'editor'>('list');
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterType, setFilterType] = useState<string>('ALL');
 
   // Payment Modal State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -1377,6 +1380,15 @@ const AdminInvoices = () => {
   }
 
   // List View
+  const filteredInvoices = invoices.filter(inv => {
+    const matchesSearch = inv.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inv.clientName && inv.clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (inv.companyName && inv.companyName.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesStatus = filterStatus === 'ALL' || inv.status === filterStatus || inv.paymentStatus === filterStatus;
+    const matchesType = filterType === 'ALL' || inv.type === filterType;
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
   return (
     <div className="p-6 md:p-10 relative">
       <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
@@ -1402,6 +1414,41 @@ const AdminInvoices = () => {
         </div>
       </div>
 
+      <div className="mb-6 flex flex-col md:flex-row gap-4 bg-[#0A0A0A] p-4 rounded-xl border border-white/10 shadow-lg">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar por N°, Cliente o Empresa..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-black/50 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white text-sm outline-none focus:border-raynold-red transition-colors placeholder:text-gray-600"
+          />
+        </div>
+        <div className="flex gap-3">
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-raynold-red transition-colors cursor-pointer"
+          >
+            <option value="ALL">Todo Tipo</option>
+            <option value="FACTURA">Facturas</option>
+            <option value="COTIZACION">Cotizaciones</option>
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-raynold-red transition-colors cursor-pointer"
+          >
+            <option value="ALL">Todo Estado</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="PARCIAL">Parcial</option>
+            <option value="PAGADA">Pagada</option>
+            <option value="BORRADOR">Borrador</option>
+          </select>
+        </div>
+      </div>
+
       <div className="bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -1417,7 +1464,7 @@ const AdminInvoices = () => {
               </tr>
             </thead>
             <tbody>
-              {invoices.map((invoice) => {
+              {filteredInvoices.map((invoice) => {
                 const subtotal = invoice.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
                 const applyTax = invoice.applyTax !== false;
                 const total = subtotal + (applyTax ? subtotal * 0.18 : 0);
@@ -1494,9 +1541,9 @@ const AdminInvoices = () => {
                   </tr>
                 );
               })}
-              {invoices.length === 0 && (
+              {filteredInvoices.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-gray-500">
+                  <td colSpan={7} className="p-8 text-center text-gray-500">
                     No hay documentos creados. Haz clic en "Nueva Factura / Cotización" para empezar.
                   </td>
                 </tr>
