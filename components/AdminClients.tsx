@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Users, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 export interface Client {
   id: string;
@@ -12,11 +13,34 @@ export interface Client {
   address: string;
 }
 
+interface SupabaseClient {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  rnc: string | null;
+  type: string;
+}
+
+const toui = (c: SupabaseClient): Client => ({
+  id: c.id,
+  type: c.type === 'Juridica' ? 'EMPRESA' : 'FISICA',
+  name: c.type === 'Natural' ? c.name : '',
+  company: c.type === 'Juridica' ? c.name : '',
+  rnc: c.rnc || '',
+  phone: c.phone || '',
+  email: c.email || '',
+  address: c.address || '',
+});
+
 const AdminClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  
+  const [saving, setSaving] = useState(false);
+
   const [formData, setFormData] = useState<Client>({
     id: '',
     type: 'FISICA',
@@ -28,47 +52,17 @@ const AdminClients = () => {
     address: ''
   });
 
-  useEffect(() => {
-    const saved = localStorage.getItem('raynold_clients');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.length > 0) {
-          setClients(parsed);
-        } else {
-          // Default client
-          setClients([{
-            id: 'default-cf',
-            type: 'FISICA',
-            name: 'Consumidor Final',
-            company: '',
-            rnc: '00000000000',
-            phone: '',
-            email: '',
-            address: ''
-          }]);
-        }
-      } catch (e) {
-        console.error('Error loading clients', e);
-      }
-    } else {
-      // Default client if no saved data
-      setClients([{
-        id: 'default-cf',
-        type: 'FISICA',
-        name: 'Consumidor Final',
-        company: '',
-        rnc: '00000000000',
-        phone: '',
-        email: '',
-        address: ''
-      }]);
+  const fetchClients = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+    if (!error && data) {
+      setClients(data.map(toui));
     }
-  }, []);
+    setLoading(false);
+  };
 
-  useEffect(() => {
-    localStorage.setItem('raynold_clients', JSON.stringify(clients));
-  }, [clients]);
+  useEffect(() => { fetchClients(); }, []);
+
 
   const handleOpenModal = (client?: Client) => {
     if (client) {
@@ -95,44 +89,56 @@ const AdminClients = () => {
     setEditingClient(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+    const dbRecord = {
+      name: formData.type === 'EMPRESA' ? formData.company : formData.name,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      address: formData.address || null,
+      rnc: formData.rnc || null,
+      type: formData.type === 'EMPRESA' ? 'Juridica' : 'Natural',
+    };
     if (editingClient) {
-      setClients(clients.map(c => c.id === editingClient.id ? formData : c));
+      await supabase.from('clients').update(dbRecord).eq('id', editingClient.id);
     } else {
-      setClients([...clients, formData]);
+      await supabase.from('clients').insert([dbRecord]);
     }
+    setSaving(false);
     handleCloseModal();
+    fetchClients();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('¿Estás seguro de eliminar este cliente?')) {
-      setClients(clients.filter(c => c.id !== id));
+      await supabase.from('clients').delete().eq('id', id);
+      fetchClients();
     }
   };
 
   return (
     <div className="p-6 md:p-10 relative">
       <div className="max-w-7xl mx-auto">
-        
+
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-           <div>
-              <div className="flex items-center gap-3 mb-4">
-                 <Users className="text-raynold-red" size={32} />
-                 <h1 className="text-4xl md:text-5xl font-futuristic font-black text-white">
-                   DIRECTORIO DE <span className="animate-gradient-text">CLIENTES</span>
-                 </h1>
-              </div>
-              <p className="text-gray-400">Gestiona la información de tus clientes para facturación y cotizaciones.</p>
-           </div>
-           
-           <button 
-             onClick={() => handleOpenModal()}
-             className="px-6 py-3 btn-animated font-bold rounded-lg flex items-center gap-2"
-           >
-             <Plus size={18} />
-             Nuevo Cliente
-           </button>
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="text-raynold-red" size={32} />
+              <h1 className="text-4xl md:text-5xl font-futuristic font-black text-white">
+                DIRECTORIO DE <span className="animate-gradient-text">CLIENTES</span>
+              </h1>
+            </div>
+            <p className="text-gray-400">Gestiona la información de tus clientes para facturación y cotizaciones.</p>
+          </div>
+
+          <button
+            onClick={() => handleOpenModal()}
+            className="px-6 py-3 btn-animated font-bold rounded-lg flex items-center gap-2"
+          >
+            <Plus size={18} />
+            Nuevo Cliente
+          </button>
         </div>
 
         <div className="bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
@@ -147,6 +153,9 @@ const AdminClients = () => {
                 </tr>
               </thead>
               <tbody>
+                {loading && (
+                  <tr><td colSpan={4} className="p-8 text-center text-gray-500"><Loader2 className="animate-spin inline" size={20} /> Cargando clientes...</td></tr>
+                )}
                 {clients.map((client) => (
                   <tr key={client.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="p-4">
@@ -160,14 +169,14 @@ const AdminClients = () => {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => handleOpenModal(client)}
                           className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"
                           title="Editar"
                         >
                           <Edit2 size={16} />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(client.id)}
                           className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors"
                           title="Eliminar"
@@ -208,23 +217,23 @@ const AdminClients = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="flex gap-4 mb-4">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="clientType" 
-                    value="FISICA" 
-                    checked={formData.type === 'FISICA'} 
-                    onChange={() => setFormData({...formData, type: 'FISICA'})}
+                  <input
+                    type="radio"
+                    name="clientType"
+                    value="FISICA"
+                    checked={formData.type === 'FISICA'}
+                    onChange={() => setFormData({ ...formData, type: 'FISICA' })}
                     className="accent-raynold-red"
                   />
                   <span className="text-white font-medium">Persona Física</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="radio" 
-                    name="clientType" 
-                    value="EMPRESA" 
-                    checked={formData.type === 'EMPRESA'} 
-                    onChange={() => setFormData({...formData, type: 'EMPRESA'})}
+                  <input
+                    type="radio"
+                    name="clientType"
+                    value="EMPRESA"
+                    checked={formData.type === 'EMPRESA'}
+                    onChange={() => setFormData({ ...formData, type: 'EMPRESA' })}
                     className="accent-raynold-red"
                   />
                   <span className="text-white font-medium">Empresa</span>
@@ -236,30 +245,30 @@ const AdminClients = () => {
                   <>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Razón Social (Empresa)</label>
-                      <input 
+                      <input
                         required
-                        type="text" 
+                        type="text"
                         value={formData.company}
-                        onChange={e => setFormData({...formData, company: e.target.value})}
+                        onChange={e => setFormData({ ...formData, company: e.target.value })}
                         className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">RNC</label>
-                      <input 
+                      <input
                         required
-                        type="text" 
+                        type="text"
                         value={formData.rnc}
-                        onChange={e => setFormData({...formData, rnc: e.target.value})}
+                        onChange={e => setFormData({ ...formData, rnc: e.target.value })}
                         className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre del Contacto (Opcional)</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={formData.name}
-                        onChange={e => setFormData({...formData, name: e.target.value})}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                         className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       />
                     </div>
@@ -268,20 +277,20 @@ const AdminClients = () => {
                   <>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre Completo</label>
-                      <input 
+                      <input
                         required
-                        type="text" 
+                        type="text"
                         value={formData.name}
-                        onChange={e => setFormData({...formData, name: e.target.value})}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                         className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cédula</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={formData.rnc}
-                        onChange={e => setFormData({...formData, rnc: e.target.value})}
+                        onChange={e => setFormData({ ...formData, rnc: e.target.value })}
                         className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       />
                     </div>
@@ -289,28 +298,28 @@ const AdminClients = () => {
                 )}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Teléfono</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.phone}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Correo Electrónico</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Dirección</label>
-                  <textarea 
+                  <textarea
                     rows={2}
                     value={formData.address}
-                    onChange={e => setFormData({...formData, address: e.target.value})}
+                    onChange={e => setFormData({ ...formData, address: e.target.value })}
                     className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors resize-none"
                   />
                 </div>
