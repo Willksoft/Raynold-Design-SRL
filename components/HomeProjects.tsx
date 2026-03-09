@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ZoomIn, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import ProjectModal from './ProjectModal';
 
 const HomeProjects: React.FC = () => {
     const [projects, setProjects] = useState<any[]>([]);
-    const [selectedProject, setSelectedProject] = useState<any | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -54,7 +53,7 @@ const HomeProjects: React.FC = () => {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     key={project.id}
-                                    onClick={() => setSelectedProject(project)}
+                                    onClick={() => navigate(`/projects/${project.id}`)}
                                     className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer bg-gray-900 border border-white/5 hover:border-white/20 transition-all gsap-reveal"
                                     style={{ animationDelay: `${index * 100}ms` }}
                                 >
@@ -78,12 +77,6 @@ const HomeProjects: React.FC = () => {
                     </div>
                 </div>
             </section>
-
-            <ProjectModal
-                project={selectedProject}
-                isOpen={!!selectedProject}
-                onClose={() => setSelectedProject(null)}
-            />
         </>
     );
 };

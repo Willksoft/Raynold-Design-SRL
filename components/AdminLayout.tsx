@@ -37,6 +37,7 @@ export const AdminLayout = () => {
     products: any[];
     invoices: any[];
   }>({ clients: [], products: [], invoices: [] });
+  const [isDesignMenuOpen, setIsDesignMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -227,39 +228,11 @@ export const AdminLayout = () => {
             <span className="font-bold text-sm">Gastos</span>
           </Link>
           <Link
-            to="/admin/hero"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/hero') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <MonitorPlay size={18} />
-            <span className="font-bold text-sm">Inicio (Hero)</span>
-          </Link>
-          <Link
-            to="/admin/footer"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/footer') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <LayoutDashboard size={18} />
-            <span className="font-bold text-sm">Pie de Página (Footer)</span>
-          </Link>
-          <Link
-            to="/admin/media"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/media') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <ImageIcon size={18} />
-            <span className="font-bold text-sm">Multimedia (Storage)</span>
-          </Link>
-          <Link
-            to="/admin/about"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/about') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <Users size={18} />
-            <span className="font-bold text-sm">Nosotros (About)</span>
-          </Link>
-          <Link
             to="/admin/products"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/products') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
           >
             <Package size={18} />
-            <span className="font-bold text-sm">Productos y Servicios</span>
+            <span className="font-bold text-sm">Productos</span>
           </Link>
           <Link
             to="/admin/categories"
@@ -289,34 +262,73 @@ export const AdminLayout = () => {
             <Briefcase size={18} />
             <span className="font-bold text-sm">Cuentas y Flujo</span>
           </Link>
-          <Link
-            to="/admin/services"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/services') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <Briefcase size={18} />
-            <span className="font-bold text-sm">Servicios (Landing)</span>
-          </Link>
-          <Link
-            to="/admin/brands"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/brands') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <Star size={18} />
-            <span className="font-bold text-sm">Marcas (Clientes)</span>
-          </Link>
-          <Link
-            to="/admin/projects"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/projects') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <ImageIcon size={18} />
-            <span className="font-bold text-sm">Proyectos</span>
-          </Link>
-          <Link
-            to="/admin/settings"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/settings') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-          >
-            <Settings size={18} />
-            <span className="font-bold text-sm">Configuración</span>
-          </Link>
+
+          {/* Design & Web Dropdown */}
+          <div className="pt-2 border-t border-white/10 mt-2">
+            <button
+              onClick={() => setIsDesignMenuOpen(!isDesignMenuOpen)}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <MonitorPlay size={18} />
+                <span className="font-bold text-sm">Sitio Web (Diseño)</span>
+              </div>
+              <ChevronDown size={16} className={`transition-transform duration-200 ${isDesignMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isDesignMenuOpen && (
+              <div className="pl-4 mt-1 space-y-1 mb-2 border-l-2 border-white/5 ml-4">
+                <Link
+                  to="/admin/hero"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/hero') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Inicio (Hero)</span>
+                </Link>
+                <Link
+                  to="/admin/services"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/services') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Servicios (Landing)</span>
+                </Link>
+                <Link
+                  to="/admin/projects"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/projects') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Proyectos</span>
+                </Link>
+                <Link
+                  to="/admin/brands"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/brands') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Marcas (Clientes)</span>
+                </Link>
+                <Link
+                  to="/admin/about"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/about') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Nosotros (About)</span>
+                </Link>
+                <Link
+                  to="/admin/footer"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/footer') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Pie de Página (Footer)</span>
+                </Link>
+                <Link
+                  to="/admin/media"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/media') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Multimedia (Storage)</span>
+                </Link>
+                <Link
+                  to="/admin/settings"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/settings') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <span className="font-bold text-xs">Configuración</span>
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
         <div className="p-4 border-t border-white/10 shrink-0 space-y-1">
           <Link

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, ZoomIn } from 'lucide-react';
-import ProjectModal from './ProjectModal';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
 const ProjectsPage: React.FC = () => {
   const [filter, setFilter] = useState('Todos');
   const [projects, setProjects] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(['Todos']);
-  const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -75,7 +75,7 @@ const ProjectsPage: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   key={project.id}
-                  onClick={() => setSelectedProject(project)}
+                  onClick={() => navigate(`/projects/${project.id}`)}
                   className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer bg-gray-900 border border-white/5 hover:border-white/20 transition-colors"
                 >
                   <img
@@ -111,12 +111,6 @@ const ProjectsPage: React.FC = () => {
 
         </div>
       </div>
-
-      <ProjectModal
-        project={selectedProject}
-        isOpen={!!selectedProject}
-        onClose={() => setSelectedProject(null)}
-      />
     </>
   );
 };

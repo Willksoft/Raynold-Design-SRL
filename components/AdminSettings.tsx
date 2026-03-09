@@ -9,18 +9,30 @@ const AdminSettings = () => {
     instagram_url: '',
     location: ''
   });
+  const [headerData, setHeaderData] = useState({
+    show_solutions: true,
+    show_projects: true,
+    show_about: true,
+    show_contact: true,
+  });
   const [loading, setLoading] = useState(true);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [headerSavedId, setHeaderSavedId] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [fullData, setFullData] = useState<any>({});
+
 
   useEffect(() => {
     const fetchSettings = async () => {
       setLoading(true);
-      const { data } = await supabase.from('site_settings').select('*').eq('key', 'footer_data').single();
-      if (data) {
-        setSavedId(data.id);
-        const parsed = JSON.parse(data.value);
+      const [footerRes, headerRes] = await Promise.all([
+        supabase.from('site_settings').select('*').eq('key', 'footer_data').single(),
+        supabase.from('site_settings').select('*').eq('key', 'header_data').single()
+      ]);
+
+      if (footerRes.data) {
+        setSavedId(footerRes.data.id);
+        const parsed = JSON.parse(footerRes.data.value);
         setFullData(parsed);
         setFormData({
           phone: parsed.phone || '',
@@ -29,6 +41,18 @@ const AdminSettings = () => {
           location: parsed.location || ''
         });
       }
+
+      if (headerRes.data) {
+        setHeaderSavedId(headerRes.data.id);
+        const parsedHeader = JSON.parse(headerRes.data.value);
+        setHeaderData({
+          show_solutions: parsedHeader.show_solutions ?? true,
+          show_projects: parsedHeader.show_projects ?? true,
+          show_about: parsedHeader.show_about ?? true,
+          show_contact: parsedHeader.show_contact ?? true,
+        });
+      }
+
       setLoading(false);
     };
     fetchSettings();
@@ -39,6 +63,10 @@ const AdminSettings = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleHeaderChange = (key: string) => {
+    setHeaderData(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,14 +82,25 @@ const AdminSettings = () => {
       email_url: `mailto:${formData.email}`
     };
 
-    const payload = { key: 'footer_data', value: JSON.stringify(updatedData) };
+    const footerPayload = { key: 'footer_data', value: JSON.stringify(updatedData) };
+    const headerPayload = { key: 'header_data', value: JSON.stringify(headerData) };
+
+    const promises = [];
 
     if (savedId) {
-      await supabase.from('site_settings').update(payload).eq('id', savedId);
+      promises.push(supabase.from('site_settings').update(footerPayload).eq('id', savedId));
     } else {
-      const { data } = await supabase.from('site_settings').insert([payload]).select().single();
-      if (data) setSavedId(data.id);
+      promises.push(supabase.from('site_settings').insert([footerPayload]));
     }
+
+    if (headerSavedId) {
+      promises.push(supabase.from('site_settings').update(headerPayload).eq('id', headerSavedId));
+    } else {
+      promises.push(supabase.from('site_settings').insert([headerPayload]));
+    }
+
+    await Promise.all(promises);
+
 
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -79,10 +118,11 @@ const AdminSettings = () => {
     <div className="p-6 md:p-10">
       <div className="mb-8">
         <h1 className="text-3xl font-futuristic font-bold text-white mb-2">Configuración General</h1>
-        <p className="text-gray-400">Actualiza los datos de contacto, redes sociales y preferencias.</p>
+        <p className="text-gray-400">Actualiza los datos de contacto, elementos de navegación y preferencias del sitio.</p>
       </div>
 
-      <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6 max-w-3xl">
+      <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6 max-w-3xl mb-8">
+        <h2 className="text-xl font-bold font-futuristic text-white mb-6">Información de Contacto y Footer</h2>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -129,6 +169,53 @@ const AdminSettings = () => {
                 onChange={handleChange}
                 className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:border-raynold-red focus:outline-none transition-colors"
               />
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-white/10 mt-6">
+            <h2 className="text-xl font-bold font-futuristic text-white mb-6">Elementos de Navegación (Header)</h2>
+            <p className="text-gray-400 mb-6 text-sm">Controla la visibilidad de los enlaces principales en el menú superior del sitio.</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="flex items-center gap-3 p-4 bg-black border border-white/10 rounded-lg cursor-pointer hover:border-white/30 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={headerData.show_solutions}
+                  onChange={() => handleHeaderChange('show_solutions')}
+                  className="w-5 h-5 accent-raynold-red"
+                />
+                <span className="text-white font-bold text-sm">Mega Menú "Soluciones"</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-4 bg-black border border-white/10 rounded-lg cursor-pointer hover:border-white/30 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={headerData.show_projects}
+                  onChange={() => handleHeaderChange('show_projects')}
+                  className="w-5 h-5 accent-raynold-red"
+                />
+                <span className="text-white font-bold text-sm">Enlace "Proyectos"</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-4 bg-black border border-white/10 rounded-lg cursor-pointer hover:border-white/30 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={headerData.show_about}
+                  onChange={() => handleHeaderChange('show_about')}
+                  className="w-5 h-5 accent-raynold-red"
+                />
+                <span className="text-white font-bold text-sm">Enlace "Nosotros"</span>
+              </label>
+
+              <label className="flex items-center gap-3 p-4 bg-black border border-white/10 rounded-lg cursor-pointer hover:border-white/30 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={headerData.show_contact}
+                  onChange={() => handleHeaderChange('show_contact')}
+                  className="w-5 h-5 accent-raynold-red"
+                />
+                <span className="text-white font-bold text-sm">Enlace "Contacto"</span>
+              </label>
             </div>
           </div>
 

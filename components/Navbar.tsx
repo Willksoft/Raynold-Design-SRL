@@ -22,14 +22,26 @@ const Navbar: React.FC = () => {
   const { cart, favorites, toggleCart } = useShop();
   const [waLink, setWaLink] = useState("https://wa.me/18295807411?text=Hola,%20quisiera%20cotizar%20un%20servicio.");
 
+  const [headerData, setHeaderData] = useState({
+    show_solutions: true,
+    show_projects: true,
+    show_about: true,
+    show_contact: true,
+  });
+
   useEffect(() => {
     const fetchSettings = async () => {
-      const { data } = await supabase.from('site_settings').select('value').eq('key', 'footer_data').single();
-      if (data) {
-        const parsed = JSON.parse(data.value);
+      const { data: footerData } = await supabase.from('site_settings').select('value').eq('key', 'footer_data').single();
+      if (footerData) {
+        const parsed = JSON.parse(footerData.value);
         if (parsed.whatsapp_url) {
           setWaLink(`${parsed.whatsapp_url}?text=Hola,%20quisiera%20cotizar%20un%20servicio.`);
         }
+      }
+      const { data: headerRes } = await supabase.from('site_settings').select('value').eq('key', 'header_data').single();
+      if (headerRes) {
+        const parsedHeader = JSON.parse(headerRes.value);
+        setHeaderData(prev => ({ ...prev, ...parsedHeader }));
       }
     };
     fetchSettings();
@@ -68,94 +80,96 @@ const Navbar: React.FC = () => {
               <Link to="/" className="font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors">INICIO</Link>
 
               {/* Mega Menu Trigger (Merged Solutions) */}
-              <div
-                className="relative group h-24 flex items-center"
-                onMouseEnter={() => setMegaMenuOpen(true)}
-                onMouseLeave={() => setMegaMenuOpen(false)}
-              >
-                <button
-                  className="flex items-center gap-1 font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors focus:outline-none cursor-pointer"
+              {headerData.show_solutions && (
+                <div
+                  className="relative group h-24 flex items-center"
+                  onMouseEnter={() => setMegaMenuOpen(true)}
+                  onMouseLeave={() => setMegaMenuOpen(false)}
                 >
-                  SOLUCIONES <ChevronDown size={14} />
-                </button>
+                  <button
+                    className="flex items-center gap-1 font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors focus:outline-none cursor-pointer"
+                  >
+                    SOLUCIONES <ChevronDown size={14} />
+                  </button>
 
-                <AnimatePresence>
-                  {megaMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="fixed top-20 left-1/2 -translate-x-1/2 w-[900px] max-w-[95vw] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[60] backdrop-blur-xl flex"
-                    >
-                      {/* Services Column */}
-                      <div className="flex-1 p-6 border-r border-white/5">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest">Nuestros Servicios</h3>
-                          <Link to="/#services" onClick={() => setMegaMenuOpen(false)} className="text-[10px] text-raynold-red hover:text-white transition-colors uppercase font-bold flex items-center gap-1">Ver todos <ArrowRight size={10} /></Link>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {servicesData.map((s, idx) => (
-                            <Link
-                              key={idx}
-                              to={`/services/${s.slug}`}
-                              onClick={() => setMegaMenuOpen(false)}
-                              className="group/item flex flex-col p-3 rounded-lg hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/5"
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-white font-futuristic font-bold text-sm group-hover/item:text-raynold-red transition-colors">
-                                  {s.title}
-                                </span>
-                              </div>
-                              <p className="text-[10px] text-gray-500 font-sans leading-relaxed line-clamp-2">
-                                {s.description}
-                              </p>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Products Column */}
-                      <div className="w-1/3 p-6 bg-white/5 flex flex-col">
-                        <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4">Productos</h3>
-                        <div className="flex-1 space-y-4">
-                          <Link to="/products" onClick={() => setMegaMenuOpen(false)} className="block p-4 rounded-xl bg-black/40 border border-white/10 hover:border-raynold-green/50 transition-all group/prod">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="p-2 bg-raynold-green/10 rounded-lg text-raynold-green border border-raynold-green/20">
-                                <Package size={20} />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-bold text-white group-hover/prod:text-raynold-green transition-colors text-sm">Catálogo Completo</span>
-                                <span className="text-[10px] text-gray-500">Ver todos los productos</span>
-                              </div>
-                            </div>
-                          </Link>
-
-                          <div>
-                            <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-2">Categorías Populares</span>
-                            <div className="grid grid-cols-2 gap-2">
-                              {['Neon', 'Impresión', 'Textil', 'Promocional'].map(cat => (
-                                <Link key={cat} to="/products" onClick={() => setMegaMenuOpen(false)} className="px-3 py-2 bg-black/20 rounded border border-white/5 text-xs text-gray-300 hover:text-white hover:border-white/20 transition-colors text-center">
-                                  {cat}
-                                </Link>
-                              ))}
-                            </div>
+                  <AnimatePresence>
+                    {megaMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="fixed top-20 left-1/2 -translate-x-1/2 w-[900px] max-w-[95vw] bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[60] backdrop-blur-xl flex"
+                      >
+                        {/* Services Column */}
+                        <div className="flex-1 p-6 border-r border-white/5">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest">Nuestros Servicios</h3>
+                            <Link to="/#services" onClick={() => setMegaMenuOpen(false)} className="text-[10px] text-raynold-red hover:text-white transition-colors uppercase font-bold flex items-center gap-1">Ver todos <ArrowRight size={10} /></Link>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {servicesData.map((s, idx) => (
+                              <Link
+                                key={idx}
+                                to={`/services/${s.slug}`}
+                                onClick={() => setMegaMenuOpen(false)}
+                                className="group/item flex flex-col p-3 rounded-lg hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/5"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-white font-futuristic font-bold text-sm group-hover/item:text-raynold-red transition-colors">
+                                    {s.title}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 font-sans leading-relaxed line-clamp-2">
+                                  {s.description}
+                                </p>
+                              </Link>
+                            ))}
                           </div>
                         </div>
 
-                        <div className="mt-auto pt-6 border-t border-white/10">
-                          <a href={waLink} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full py-3 bg-white text-black font-bold text-xs rounded-lg hover:bg-gray-200 transition-colors shadow-lg">
-                            COTIZAR PROYECTO &rarr;
-                          </a>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                        {/* Products Column */}
+                        <div className="w-1/3 p-6 bg-white/5 flex flex-col">
+                          <h3 className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-4">Productos</h3>
+                          <div className="flex-1 space-y-4">
+                            <Link to="/products" onClick={() => setMegaMenuOpen(false)} className="block p-4 rounded-xl bg-black/40 border border-white/10 hover:border-raynold-green/50 transition-all group/prod">
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-raynold-green/10 rounded-lg text-raynold-green border border-raynold-green/20">
+                                  <Package size={20} />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-white group-hover/prod:text-raynold-green transition-colors text-sm">Catálogo Completo</span>
+                                  <span className="text-[10px] text-gray-500">Ver todos los productos</span>
+                                </div>
+                              </div>
+                            </Link>
 
-              <Link to="/projects" className="font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors">PROYECTOS</Link>
-              <Link to="/about" className="font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors">NOSOTROS</Link>
-              <Link to="/contact" className="font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors">CONTACTO</Link>
+                            <div>
+                              <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-2">Categorías Populares</span>
+                              <div className="grid grid-cols-2 gap-2">
+                                {['Neon', 'Impresión', 'Textil', 'Promocional'].map(cat => (
+                                  <Link key={cat} to="/products" onClick={() => setMegaMenuOpen(false)} className="px-3 py-2 bg-black/20 rounded border border-white/5 text-xs text-gray-300 hover:text-white hover:border-white/20 transition-colors text-center">
+                                    {cat}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-auto pt-6 border-t border-white/10">
+                            <a href={waLink} target="_blank" rel="noreferrer" className="flex items-center justify-center w-full py-3 bg-white text-black font-bold text-xs rounded-lg hover:bg-gray-200 transition-colors shadow-lg">
+                              COTIZAR PROYECTO &rarr;
+                            </a>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {headerData.show_projects && <Link to="/projects" className="font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors">PROYECTOS</Link>}
+              {headerData.show_about && <Link to="/about" className="font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors">NOSOTROS</Link>}
+              {headerData.show_contact && <Link to="/contact" className="font-sans text-sm font-medium text-gray-300 hover:text-white transition-colors">CONTACTO</Link>}
 
               {/* Shop Icons */}
               <div className="flex items-center gap-4 pl-4 border-l border-white/10">
@@ -224,32 +238,34 @@ const Navbar: React.FC = () => {
               <div className="px-4 py-6 space-y-4">
                 <Link to="/" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-white">INICIO</Link>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                    <span className="text-sm font-bold text-white/50 uppercase tracking-widest">Soluciones</span>
-                  </div>
+                {headerData.show_solutions && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                      <span className="text-sm font-bold text-white/50 uppercase tracking-widest">Soluciones</span>
+                    </div>
 
-                  <div className="pl-4 space-y-3 border-l border-white/10 ml-1">
-                    <Link to="/products" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-white font-bold py-1 hover:text-raynold-red transition-colors">
-                      <Package size={16} className="text-raynold-green" /> Catálogo de Productos
-                    </Link>
-
-                    {servicesData.map((s) => (
-                      <Link
-                        key={s.title}
-                        to={`/services/${s.slug}`}
-                        onClick={() => setIsOpen(false)}
-                        className="block text-gray-400 py-1 hover:text-white text-sm transition-colors"
-                      >
-                        {s.title}
+                    <div className="pl-4 space-y-3 border-l border-white/10 ml-1">
+                      <Link to="/products" onClick={() => setIsOpen(false)} className="flex items-center gap-2 text-white font-bold py-1 hover:text-raynold-red transition-colors">
+                        <Package size={16} className="text-raynold-green" /> Catálogo de Productos
                       </Link>
-                    ))}
-                  </div>
-                </div>
 
-                <Link to="/projects" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-white">PROYECTOS</Link>
-                <Link to="/about" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-white">NOSOTROS</Link>
-                <Link to="/contact" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-white">CONTACTO</Link>
+                      {servicesData.map((s) => (
+                        <Link
+                          key={s.title}
+                          to={`/services/${s.slug}`}
+                          onClick={() => setIsOpen(false)}
+                          className="block text-gray-400 py-1 hover:text-white text-sm transition-colors"
+                        >
+                          {s.title}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {headerData.show_projects && <Link to="/projects" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-white">PROYECTOS</Link>}
+                {headerData.show_about && <Link to="/about" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-white">NOSOTROS</Link>}
+                {headerData.show_contact && <Link to="/contact" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-white">CONTACTO</Link>}
                 <a href={waLink} target="_blank" rel="noreferrer" onClick={() => setIsOpen(false)} className="block text-lg font-bold text-raynold-red">COTIZAR</a>
 
                 <div className="flex gap-4 pt-4 mt-4 border-t border-white/10">

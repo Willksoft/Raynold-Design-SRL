@@ -1,8 +1,8 @@
-import { 
-  ComputerDesktopIcon, 
-  PrinterIcon, 
-  GiftIcon, 
-  BuildingOffice2Icon, 
+import {
+  ComputerDesktopIcon,
+  PrinterIcon,
+  GiftIcon,
+  BuildingOffice2Icon,
   TruckIcon,
 } from '@heroicons/react/24/outline';
 import { TvMinimal } from 'lucide-react';
@@ -28,8 +28,8 @@ export const servicesData: ServiceDetail[] = [
     image: 'https://images.unsplash.com/photo-1626785774573-4b799314346d?q=80&w=2070&auto=format&fit=crop',
     features: ['Diseño de Logotipos', 'Manual de Marca', 'Diseño UI/UX', 'Publicidad para Redes Sociales', 'Vectorización'],
     benefits: [
-        { title: 'Identidad Única', desc: 'Diferénciate de la competencia con un estilo visual propio.' },
-        { title: 'Comunicación Clara', desc: 'Transmite tu mensaje de manera efectiva y rápida.' }
+      { title: 'Identidad Única', desc: 'Diferénciate de la competencia con un estilo visual propio.' },
+      { title: 'Comunicación Clara', desc: 'Transmite tu mensaje de manera efectiva y rápida.' }
     ]
   },
   {
@@ -43,8 +43,8 @@ export const servicesData: ServiceDetail[] = [
     image: 'https://images.unsplash.com/photo-1555431189-0fabf2667795?q=80&w=1000&auto=format&fit=crop',
     features: ['Letras Corpóreas 3D', 'Cajas de Luz (Lightboxes)', 'Neon Flex Personalizado', 'Señalética de Seguridad', 'Totems Publicitarios'],
     benefits: [
-        { title: 'Visibilidad 24/7', desc: 'Tu negocio visible a cualquier hora del día.' },
-        { title: 'Durabilidad', desc: 'Materiales resistentes a la intemperie y el sol del Caribe.' }
+      { title: 'Visibilidad 24/7', desc: 'Tu negocio visible a cualquier hora del día.' },
+      { title: 'Durabilidad', desc: 'Materiales resistentes a la intemperie y el sol del Caribe.' }
     ]
   },
   {
@@ -58,8 +58,8 @@ export const servicesData: ServiceDetail[] = [
     image: 'https://images.unsplash.com/photo-1562564055-71e051d33c19?q=80&w=2070&auto=format&fit=crop',
     features: ['Impresión Gran Formato', 'Vinilo Adhesivo', 'Microperforado', 'Papelería Corporativa', 'Flyers y Brochure'],
     benefits: [
-        { title: 'Alta Resolución', desc: 'Impresiones nítidas que reflejan profesionalismo.' },
-        { title: 'Variedad de Sustratos', desc: 'Imprimimos sobre casi cualquier material rígido o flexible.' }
+      { title: 'Alta Resolución', desc: 'Impresiones nítidas que reflejan profesionalismo.' },
+      { title: 'Variedad de Sustratos', desc: 'Imprimimos sobre casi cualquier material rígido o flexible.' }
     ]
   },
   {
@@ -73,23 +73,38 @@ export const servicesData: ServiceDetail[] = [
     image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070&auto=format&fit=crop',
     features: ['Fachadas en ACM', 'Vinilo Esmerilado (Frosted)', 'Decoración de Interiores', 'Señalización Arquitectónica'],
     benefits: [
-        { title: 'Imagen Profesional', desc: 'Estandariza la imagen de tus sucursales.' },
-        { title: 'Ambiente Moderno', desc: 'Espacios de trabajo más agradables y productivos.' }
+      { title: 'Imagen Profesional', desc: 'Estandariza la imagen de tus sucursales.' },
+      { title: 'Ambiente Moderno', desc: 'Espacios de trabajo más agradables y productivos.' }
     ]
   },
   {
     id: '5',
-    slug: 'laminado-vehiculos',
-    title: 'Laminado y Wrapping',
-    description: 'Protección y cambio de color para vehículos (Car Wrapping) y laminado arquitectónico.',
-    fullDescription: 'El Car Wrapping es el futuro de la publicidad móvil y la personalización automotriz. Convertimos tu vehículo en una valla publicitaria en movimiento o simplemente cambiamos su color con vinilos de alta gama (Avery, 3M) que protegen la pintura original. También ofrecemos laminado arquitectónico para renovar muebles, elevadores y puertas sin necesidad de obra civil.',
+    slug: 'car-wrapping',
+    title: 'Car Wrapping',
+    description: 'Protección y cambio de color para vehículos comerciales y personales.',
+    fullDescription: 'El Car Wrapping es el futuro de la publicidad móvil y la personalización automotriz. Convertimos tu vehículo en una valla publicitaria en movimiento o simplemente cambiamos su color con vinilos de alta gama (Avery, 3M) que protegen la pintura original.',
     icon: TruckIcon,
-    color: 'green',
+    color: 'red',
     image: 'https://images.unsplash.com/photo-1625902377366-41e73e979a40?q=80&w=1000&auto=format&fit=crop',
-    features: ['Car Wrapping Comercial', 'Cambio de Color (Color Change)', 'Paint Protection Film (PPF)', 'Laminado de Muebles'],
+    features: ['Car Wrapping Comercial', 'Cambio de Color (Color Change)', 'Paint Protection Film (PPF)', 'Diseño Personalizado'],
     benefits: [
-        { title: 'Publicidad Móvil', desc: 'Miles de impresiones visuales al día en el tráfico.' },
-        { title: 'Protección', desc: 'Resguarda la pintura original contra rayones y rayos UV.' }
+      { title: 'Publicidad Móvil', desc: 'Miles de impresiones visuales al día en el tráfico.' },
+      { title: 'Protección', desc: 'Resguarda la pintura original contra rayones y rayos UV.' }
+    ]
+  },
+  {
+    id: '7',
+    slug: 'laminado-arquitectonico',
+    title: 'Laminado Arquitectónico',
+    description: 'Renovación de espacios y superficies sin necesidad de obra civil.',
+    fullDescription: 'El laminado arquitectónico es la solución perfecta para renovar muebles, elevadores, puertas y paredes sin polvo ni ruido. Utilizamos vinilos texturizados de alta calidad que imitan madera, mármol o metal, transformando cualquier espacio en horas.',
+    icon: BuildingOffice2Icon,
+    color: 'green',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop',
+    features: ['Laminado de Muebles', 'Laminado en Elevadores', 'Acabados Texturizados', 'Renovación de Puertas'],
+    benefits: [
+      { title: 'Instalación Limpia', desc: 'Sin ruidos molestos, polvo ni demoliciones.' },
+      { title: 'Económico', desc: 'Una alternativa mucho más económica que comprar mobiliario nuevo.' }
     ]
   },
   {
@@ -103,8 +118,8 @@ export const servicesData: ServiceDetail[] = [
     image: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?q=80&w=1000&auto=format&fit=crop',
     features: ['Bordado de Gorras y Polos', 'Grabado Láser en Metal/Madera', 'Sublimación de Tazas', 'Merchandising para Eventos'],
     benefits: [
-        { title: 'Recordación de Marca', desc: 'Mantén tu marca en la mente del consumidor.' },
-        { title: 'Calidad Premium', desc: 'Artículos duraderos que hablan bien de tu empresa.' }
+      { title: 'Recordación de Marca', desc: 'Mantén tu marca en la mente del consumidor.' },
+      { title: 'Calidad Premium', desc: 'Artículos duraderos que hablan bien de tu empresa.' }
     ]
   }
 ];
