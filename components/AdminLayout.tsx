@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import AdminDashboard from './AdminDashboard';
 import AdminPanel from './AdminPanel';
@@ -78,8 +78,15 @@ export const AdminLayout = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-raynold-black flex items-center justify-center p-4 relative z-50">
-        <div className="max-w-md w-full bg-[#0A0A0A] border border-white/10 rounded-2xl p-8 shadow-2xl">
-          <div className="flex flex-col items-center mb-8">
+        <div className="max-w-md w-full bg-[#0A0A0A] border border-white/10 rounded-2xl p-8 shadow-2xl relative">
+          <button
+            onClick={() => navigate('/')}
+            className="absolute top-4 left-4 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex items-center gap-2"
+          >
+            <ArrowLeft size={18} />
+            <span className="text-xs font-bold">VOLVER</span>
+          </button>
+          <div className="flex flex-col items-center mb-8 mt-4">
             <ShieldAlert className="text-raynold-red mb-4" size={48} />
             <h2 className="text-2xl font-futuristic font-bold text-white">ACCESO RESTRINGIDO</h2>
             <p className="text-gray-400 text-sm mt-2">Panel de Administración Raynold</p>
@@ -126,7 +133,7 @@ export const AdminLayout = () => {
           <h2 className="text-xl font-futuristic font-bold text-white">ADMIN PANEL</h2>
           <p className="text-xs text-raynold-green mt-1">Conectado como Admin</p>
         </div>
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <Link
             to="/admin/dashboard"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/dashboard') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
@@ -254,7 +261,14 @@ export const AdminLayout = () => {
             <span className="font-bold text-sm">Configuración</span>
           </Link>
         </nav>
-        <div className="p-4 border-t border-white/10 shrink-0">
+        <div className="p-4 border-t border-white/10 shrink-0 space-y-1">
+          <Link
+            to="/"
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+          >
+            <Home size={18} />
+            <span className="font-bold text-sm">Volver al Sitio</span>
+          </Link>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-gray-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
