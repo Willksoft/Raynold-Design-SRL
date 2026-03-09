@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Target, Users, Lightbulb, Rocket, Linkedin, Instagram, Twitter } from 'lucide-react';
+import { Target, Users, Lightbulb, Rocket, Linkedin, Instagram, Twitter, Eye } from 'lucide-react';
 import { AboutContent, TeamMember } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
@@ -131,23 +131,75 @@ const About: React.FC = () => {
           </motion.div>
         </div>
 
+        {/* Misión y Visión */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="p-10 bg-white/5 border border-white/10 rounded-3xl hover:border-raynold-red/50 transition-colors group relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-raynold-red/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+            <Target className="w-12 h-12 text-raynold-red mb-6" />
+            <h3 className="text-3xl font-bold font-futuristic text-white mb-4">Nuestra Misión</h3>
+            <p className="text-gray-400 leading-relaxed text-lg">
+              Transformar ideas en realidades visuales de alto impacto. Nos dedicamos a proporcionar soluciones integrales de diseño, impresión y rotulación que eleven la identidad de las marcas, garantizando calidad excepcional, creatividad y un servicio personalizado en cada proyecto comercial o corporativo.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="p-10 bg-white/5 border border-white/10 rounded-3xl hover:border-raynold-green/50 transition-colors group relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-raynold-green/10 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+            <Eye className="w-12 h-12 text-raynold-green mb-6" />
+            <h3 className="text-3xl font-bold font-futuristic text-white mb-4">Nuestra Visión</h3>
+            <p className="text-gray-400 leading-relaxed text-lg">
+              Ser la empresa líder en innovación publicitaria a nivel nacional, reconocida por nuestra capacidad de ejecutar proyectos complejos con precisión métrica y entregar resultados que no solo cumplen, sino que redefinen los estándares de calidad de la industria del diseño y la señalización.
+            </p>
+          </motion.div>
+        </div>
+
         {/* Values */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
-          {[
-            { title: 'Innovación', icon: Lightbulb, desc: 'Adoptamos nuevas tecnologías antes que nadie.', color: 'text-yellow-400' },
-            { title: 'Precisión', icon: Target, desc: 'Atención obsesiva a cada milímetro y color.', color: 'text-raynold-red' },
-            { title: 'Compromiso', icon: Users, desc: 'Tu marca es nuestra prioridad absoluta.', color: 'text-raynold-green' }
-          ].map((val, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ y: -10 }}
-              className="p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-colors"
-            >
-              <val.icon className={`w-10 h-10 mb-6 ${val.color}`} />
-              <h3 className="text-xl font-bold font-futuristic text-white mb-3">{val.title}</h3>
-              <p className="text-gray-400">{val.desc}</p>
-            </motion.div>
-          ))}
+        <div className="mb-24">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-futuristic font-black text-white">NUESTROS <span className="text-transparent bg-clip-text bg-gradient-to-r from-raynold-red to-raynold-green">VALORES</span></h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                title: 'Innovación',
+                icon: Lightbulb,
+                desc: 'Adoptamos nuevas tecnologías y metodologías antes que nadie para ofrecer siempre lo más vanguardista del mercado, manteniendo a nuestros clientes a la cabeza de las tendencias visuales y tecnológicas.',
+                color: 'text-yellow-400'
+              },
+              {
+                title: 'Precisión',
+                icon: Target,
+                desc: 'Mantenemos una atención obsesiva a cada milímetro, textura y color. Nos aseguramos de que cada proyecto cumpla con los estándares más estrictos de calidad desde la fase de diseño inicial hasta su instalación final.',
+                color: 'text-raynold-red'
+              },
+              {
+                title: 'Compromiso',
+                icon: Users,
+                desc: 'Tu marca es nuestra prioridad absoluta. Trabajamos codo a codo contigo en cada etapa del proceso, garantizando responsabilidad, puntualidad, transparencia y excelencia para superar siempre tus expectativas.',
+                color: 'text-raynold-green'
+              }
+            ].map((val, idx) => (
+              <motion.div
+                key={idx}
+                whileHover={{ y: -10 }}
+                className="p-8 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-colors"
+              >
+                <val.icon className={`w-10 h-10 mb-6 ${val.color}`} />
+                <h3 className="text-xl font-bold font-futuristic text-white mb-3">{val.title}</h3>
+                <p className="text-gray-400 leading-relaxed font-light">{val.desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* Team */}
