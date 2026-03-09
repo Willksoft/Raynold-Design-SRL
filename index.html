@@ -321,6 +321,30 @@
       /* Firefox */
     }
 
+    /* Modern thin scrollbar */
+    .scrollbar-modern::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    .scrollbar-modern::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .scrollbar-modern::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+      background: rgba(230, 0, 0, 0.5);
+    }
+
+    .scrollbar-modern {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
     /* Active Process Card State - Impact Effect */
     .process-card-active {
       border-color: #00ff55 !important;

@@ -133,7 +133,7 @@ export const AdminLayout = () => {
           <h2 className="text-xl font-futuristic font-bold text-white">ADMIN PANEL</h2>
           <p className="text-xs text-raynold-green mt-1">Conectado como Admin</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-modern">
           <Link
             to="/admin/dashboard"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/dashboard') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
@@ -280,7 +280,7 @@ export const AdminLayout = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto h-full print:overflow-visible print:h-auto print:w-full print:absolute print:inset-0 print:bg-white">
+      <div className="flex-1 overflow-y-auto scrollbar-modern h-full print:overflow-visible print:h-auto print:w-full print:absolute print:inset-0 print:bg-white">
         <Routes>
           <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/dashboard" element={<AdminDashboard />} />
