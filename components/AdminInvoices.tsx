@@ -1381,9 +1381,10 @@ const AdminInvoices = () => {
 
   // List View
   const filteredInvoices = invoices.filter(inv => {
-    const matchesSearch = inv.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (inv.clientName && inv.clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (inv.companyName && inv.companyName.toLowerCase().includes(searchQuery.toLowerCase()));
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = String(inv.number || '').toLowerCase().includes(searchLower) ||
+      (inv.clientName && String(inv.clientName).toLowerCase().includes(searchLower)) ||
+      (inv.companyName && String(inv.companyName).toLowerCase().includes(searchLower));
     const matchesStatus = filterStatus === 'ALL' || inv.status === filterStatus || inv.paymentStatus === filterStatus;
     const matchesType = filterType === 'ALL' || inv.type === filterType;
     return matchesSearch && matchesStatus && matchesType;
