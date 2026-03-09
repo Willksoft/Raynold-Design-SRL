@@ -159,11 +159,6 @@ const Navbar: React.FC = () => {
 
               {/* Shop Icons */}
               <div className="flex items-center gap-4 pl-4 border-l border-white/10">
-                {/* Admin Link */}
-                <Link to="/admin" className="text-gray-400 hover:text-raynold-red transition-colors" title="Panel de Admin">
-                  <ShieldAlert size={20} />
-                </Link>
-
                 {/* Search Button */}
                 <button onClick={() => setIsSearchOpen(true)} className="text-gray-400 hover:text-white transition-colors">
                   <Search size={20} />
@@ -197,10 +192,6 @@ const Navbar: React.FC = () => {
               <button onClick={() => setIsSearchOpen(true)} className="text-gray-400 hover:text-white transition-colors">
                 <Search size={24} />
               </button>
-
-              <Link to="/admin" className="text-gray-400 hover:text-raynold-red transition-colors" title="Panel de Admin">
-                <ShieldAlert size={24} />
-              </Link>
 
               <button onClick={toggleCart} className="relative text-gray-400 hover:text-raynold-green transition-colors">
                 <ShoppingCart size={24} />

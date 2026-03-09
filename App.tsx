@@ -75,54 +75,6 @@ const CustomCursor = () => {
   );
 };
 
-// --- BIOS Boot Loader Component ---
-const BiosLoader = ({ onComplete }: { onComplete: () => void }) => {
-  const [lines, setLines] = useState<string[]>([]);
-
-  const bootSequence = [
-    "RAYNOLD SYSTEM v5.0.1 - (c) 2025 Raynold Design SRL",
-    "Initializing Neural Networks...",
-    "Loading Graphic Drivers... [OK]",
-    "Calibrating Color Gamut RGB... [OK]",
-    "Checking Hardware Acceleration... [ENABLED]",
-    "Mounting Virtual Reality Modules...",
-    "Connecting to Drone Satellite Link... [CONNECTED]",
-    "System Ready.",
-    "EXECUTING MAIN_INTERFACE.EXE"
-  ];
-
-  useEffect(() => {
-    let delay = 0;
-    bootSequence.forEach((line, index) => {
-      delay += Math.random() * 300 + 100;
-      setTimeout(() => {
-        setLines(prev => [...prev, line]);
-        if (index === bootSequence.length - 1) {
-          setTimeout(onComplete, 800);
-        }
-      }, delay);
-    });
-  }, []);
-
-  return (
-    <div className="fixed inset-0 bg-black z-[100] p-8 md:p-16 font-mono text-xs md:text-sm text-green-500 overflow-hidden">
-      <div className="max-w-3xl mx-auto h-full flex flex-col justify-end">
-        {lines.map((line, i) => (
-          <div key={i} className="mb-1">
-            <span className="text-gray-500 mr-2">[{new Date().toLocaleTimeString()}]</span>
-            {line}
-          </div>
-        ))}
-        <motion.div
-          animate={{ opacity: [0, 1] }}
-          transition={{ repeat: Infinity, duration: 0.5 }}
-          className="w-3 h-5 bg-green-500 inline-block align-middle ml-1"
-        />
-      </div>
-    </div>
-  );
-};
-
 // Wrapper to handle scrolling to top on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -183,12 +135,12 @@ const Home = () => (
   </>
 );
 
-const AppContent = ({ loading }: { loading: boolean }) => {
+const AppContent = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
-    <div className={`min-h-screen bg-raynold-black text-white selection:bg-raynold-red selection:text-white font-sans flex flex-col relative overflow-x-hidden ${loading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-1000`}>
+    <div className={`min-h-screen bg-raynold-black text-white selection:bg-raynold-red selection:text-white font-sans flex flex-col relative overflow-x-hidden opacity-100 transition-opacity duration-1000`}>
 
       {!isAdminRoute && (
         <>
@@ -213,24 +165,14 @@ const AppContent = ({ loading }: { loading: boolean }) => {
 };
 
 const App: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-
   return (
     <>
       <CustomCursor />
 
-      <AnimatePresence>
-        {loading && (
-          <motion.div exit={{ opacity: 0, scale: 1.1 }} transition={{ duration: 0.8 }} className="fixed inset-0 z-[100]">
-            <BiosLoader onComplete={() => setLoading(false)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <BrowserRouter>
         <ScrollToTop />
         <GsapController /> {/* Global Animation Controller */}
-        <AppContent loading={loading} />
+        <AppContent />
       </BrowserRouter>
     </>
   );
