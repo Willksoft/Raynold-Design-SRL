@@ -5,7 +5,8 @@ import { supabase } from '../lib/supabaseClient';
 interface Brand {
   id: string;
   name: string;
-  logoUrl: string;
+  logo: string;
+  bg_color: string;
 }
 
 const AdminBrands = () => {
@@ -17,8 +18,8 @@ const AdminBrands = () => {
 
   const fetchBrands = async () => {
     setLoading(true);
-    const { data } = await supabase.from('brands').select('*').order('name');
-    if (data) setBrands(data.map(b => ({ id: b.id, name: b.name, logoUrl: b.logo_url || '' })));
+    const { data } = await supabase.from('brands').select('*').order('sort_order');
+    if (data) setBrands(data.map(b => ({ id: b.id, name: b.name, logo: b.logo || b.logo_url || '', bg_color: b.bg_color || '#ffffff' })));
     setLoading(false);
   };
 
@@ -32,7 +33,7 @@ const AdminBrands = () => {
   };
 
   const handleOpenModal = (brand?: Brand) => {
-    setEditingBrand(brand || { id: '', name: '', logoUrl: '' });
+    setEditingBrand(brand || { id: '', name: '', logo: '', bg_color: '#ffffff' });
     setIsModalOpen(true);
   };
 
@@ -44,7 +45,7 @@ const AdminBrands = () => {
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
       if (!error && data) {
         const { data: { publicUrl } } = supabase.storage.from('raynold-media').getPublicUrl(data.path);
-        setEditingBrand({ ...editingBrand, logoUrl: publicUrl });
+        setEditingBrand({ ...editingBrand, logo: publicUrl });
       }
       setUploading(false);
     }
@@ -53,7 +54,7 @@ const AdminBrands = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingBrand) return;
-    const row = { name: editingBrand.name, logo_url: editingBrand.logoUrl || null };
+    const row = { name: editingBrand.name, logo: editingBrand.logo || null, bg_color: editingBrand.bg_color || '#ffffff' };
     if (brands.find(b => b.id === editingBrand.id)) {
       await supabase.from('brands').update(row).eq('id', editingBrand.id);
     } else {
@@ -78,39 +79,38 @@ const AdminBrands = () => {
       {loading ? (
         <div className="flex justify-center items-center h-48 text-gray-500"><Loader2 className="animate-spin mr-2" size={20} /> Cargando marcas...</div>
       ) : (
-        <div className="bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-white/5 border-b border-white/10 text-xs uppercase tracking-wider text-gray-400">
-                  <th className="p-4 font-bold">Logo</th>
-                  <th className="p-4 font-bold">Nombre de la Marca</th>
-                  <th className="p-4 font-bold text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {brands.map((brand) => (
-                  <tr key={brand.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="p-4">
-                      <div className="w-16 h-16 rounded bg-black flex items-center justify-center border border-white/10 text-gray-500 overflow-hidden">
-                        {brand.logoUrl ? (
-                          <img src={brand.logoUrl} alt={brand.name} className="max-w-full max-h-full object-contain p-2" />
-                        ) : <ImageIcon size={24} />}
-                      </div>
-                    </td>
-                    <td className="p-4 font-bold text-white">{brand.name}</td>
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => handleOpenModal(brand)} className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors" title="Editar"><Edit2 size={16} /></button>
-                        <button onClick={() => handleDelete(brand.id)} className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {brands.length === 0 && <tr><td colSpan={3} className="p-8 text-center text-gray-500">No hay marcas registradas.</td></tr>}
-              </tbody>
-            </table>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {brands.map((brand) => (
+            <div key={brand.id} className="relative group rounded-xl border border-white/10 overflow-hidden shadow-lg">
+              {/* Logo with brand background color */}
+              <div
+                className="w-full h-28 flex items-center justify-center p-3"
+                style={{ backgroundColor: brand.bg_color }}
+              >
+                {brand.logo ? (
+                  <img src={brand.logo} alt={brand.name} className="max-w-full max-h-full object-contain" />
+                ) : (
+                  <ImageIcon size={32} className="text-gray-400" />
+                )}
+              </div>
+              {/* Name bar */}
+              <div className="bg-[#0d0d0d] px-3 py-2 text-center">
+                <p className="text-xs font-bold text-white truncate">{brand.name}</p>
+              </div>
+              {/* Actions overlay on hover */}
+              <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button onClick={() => handleOpenModal(brand)} className="p-2 bg-blue-500/80 text-white rounded-lg hover:bg-blue-500 transition-colors" title="Editar">
+                  <Edit2 size={16} />
+                </button>
+                <button onClick={() => handleDelete(brand.id)} className="p-2 bg-red-500/80 text-white rounded-lg hover:bg-red-500 transition-colors" title="Eliminar">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {brands.length === 0 && (
+            <div className="col-span-full p-8 text-center text-gray-500">No hay marcas registradas.</div>
+          )}
         </div>
       )}
 
@@ -130,7 +130,7 @@ const AdminBrands = () => {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Logo URL o Subir archivo</label>
                 <div className="flex gap-2">
-                  <input type="text" value={editingBrand.logoUrl} onChange={e => setEditingBrand({ ...editingBrand, logoUrl: e.target.value })}
+                  <input type="text" value={editingBrand.logo} onChange={e => setEditingBrand({ ...editingBrand, logo: e.target.value })}
                     className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" placeholder="URL del logo..." />
                   <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center justify-center font-bold text-sm">
                     {uploading ? 'Subiendo...' : 'Subir'}
@@ -138,9 +138,18 @@ const AdminBrands = () => {
                   </label>
                 </div>
               </div>
-              {editingBrand.logoUrl && (
-                <div className="p-4 bg-black border border-white/10 rounded-xl flex items-center justify-center">
-                  <img src={editingBrand.logoUrl} alt="Preview" className="max-h-24 object-contain" />
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Color de Fondo</label>
+                <div className="flex gap-3 items-center">
+                  <input type="color" value={editingBrand.bg_color} onChange={e => setEditingBrand({ ...editingBrand, bg_color: e.target.value })}
+                    className="w-12 h-10 rounded cursor-pointer border border-white/20 bg-transparent" />
+                  <input type="text" value={editingBrand.bg_color} onChange={e => setEditingBrand({ ...editingBrand, bg_color: e.target.value })}
+                    className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors font-mono" placeholder="#ffffff" />
+                </div>
+              </div>
+              {editingBrand.logo && (
+                <div className="p-4 rounded-xl flex items-center justify-center" style={{ backgroundColor: editingBrand.bg_color }}>
+                  <img src={editingBrand.logo} alt="Preview" className="max-h-24 object-contain" />
                 </div>
               )}
               <div className="pt-4 flex justify-end gap-3">
