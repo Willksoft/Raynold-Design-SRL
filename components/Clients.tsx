@@ -9,26 +9,31 @@ interface Brand {
 }
 
 const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
-  <div className="mx-6 flex-shrink-0 flex items-center justify-center min-w-[140px] h-20 opacity-70 hover:opacity-100 transition-all duration-300 group">
+  <div className="mx-8 flex-shrink-0 flex items-center justify-center h-16">
     {brand.logo ? (
       <div
-        className="w-full h-full rounded-lg flex items-center justify-center px-3 py-2 group-hover:scale-105 transition-transform duration-300"
-        style={{ backgroundColor: brand.bg_color || '#ffffff' }}
+        className="h-14 rounded-xl flex items-center justify-center px-4 py-2 transition-all duration-300 hover:scale-110 hover:opacity-100 opacity-75"
+        style={{
+          backgroundColor: brand.bg_color && brand.bg_color !== '#ffffff' ? brand.bg_color : 'rgba(255,255,255,0.06)',
+          minWidth: '120px',
+          maxWidth: '180px',
+        }}
       >
         <img
           src={brand.logo}
           alt={brand.name}
-          className="max-w-full max-h-full object-contain"
+          className="max-h-10 w-auto object-contain"
           loading="lazy"
         />
       </div>
     ) : (
-      <span className="text-xl font-black font-futuristic text-transparent bg-clip-text bg-gradient-to-b from-gray-500 to-gray-700 group-hover:from-white group-hover:to-gray-400 uppercase">
+      <span className="text-lg font-black font-futuristic text-gray-500 hover:text-white transition-colors uppercase tracking-wider">
         {brand.name}
       </span>
     )}
   </div>
 );
+
 
 const Clients: React.FC = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -43,7 +48,7 @@ const Clients: React.FC = () => {
           setBrands(data.map(b => ({
             id: b.id,
             name: b.name,
-            logo: b.logo || b.logo_url || '',
+            logo: b.logo || '',
             bg_color: b.bg_color || '#ffffff',
           })));
         }
