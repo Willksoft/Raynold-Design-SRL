@@ -57,7 +57,7 @@ const TiltCard: React.FC<TiltCardProps> = ({ children, className = '', onClick }
       }}
       className={`relative transform-gpu ${className}`}
     >
-      <div style={{ transform: "translateZ(50px)" }}>
+      <div style={{ transform: "translateZ(50px)" }} className="h-full">
         {children}
       </div>
     </motion.div>

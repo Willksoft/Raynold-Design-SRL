@@ -98,13 +98,14 @@ const Services: React.FC = () => {
             const styles = getColorStyles(service.color);
 
             return (
-              <Link to={`/services/${service.slug}`} key={service.id} className="gsap-reveal">
+              <Link to={`/services/${service.slug}`} key={service.id} className="gsap-reveal h-full block">
                 <motion.div
+                  className="h-full"
                   onMouseEnter={(e) => handleMouseEnter(e, service.title)}
                   onMouseLeave={handleMouseLeave}
                 >
                   <TiltCard className="h-full">
-                    <div className="group relative p-8 bg-black/90 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl h-full">
+                    <div className="group relative p-8 bg-black/90 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl h-full flex flex-col">
                       {/* Background Image Overlay */}
                       {service.image && (
                         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
