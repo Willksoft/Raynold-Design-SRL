@@ -32,7 +32,21 @@ const Footer: React.FC = () => {
     const fetchSettings = async () => {
       const { data } = await supabase.from('site_settings').select('value').eq('key', 'footer_data').single();
       if (data) {
-        setFooterData({ ...defaultFooterData, ...JSON.parse(data.value) });
+        const parsed = JSON.parse(data.value);
+        setFooterData({
+          ...defaultFooterData,
+          ctaTitle: parsed.cta_title || parsed.ctaTitle || defaultFooterData.ctaTitle,
+          ctaSubtitle: parsed.cta_subtitle || parsed.ctaSubtitle || defaultFooterData.ctaSubtitle,
+          ctaButtonText: parsed.cta_button_text || parsed.ctaButtonText || defaultFooterData.ctaButtonText,
+          ctaButtonLink: parsed.cta_button_link || parsed.ctaButtonLink || defaultFooterData.ctaButtonLink,
+          brandDescription: parsed.brand_description || parsed.brandDescription || defaultFooterData.brandDescription,
+          instagramUrl: parsed.instagram_url || parsed.instagramUrl || defaultFooterData.instagramUrl,
+          whatsappUrl: parsed.whatsapp_url || parsed.whatsappUrl || defaultFooterData.whatsappUrl,
+          emailUrl: parsed.email_url || parsed.emailUrl || defaultFooterData.emailUrl,
+          location: parsed.location || defaultFooterData.location,
+          phone: parsed.phone || defaultFooterData.phone,
+          email: parsed.email || defaultFooterData.email,
+        });
       }
     };
     fetchSettings();
