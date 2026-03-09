@@ -93,12 +93,16 @@ const Services: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="flex flex-wrap justify-center gap-6 lg:gap-8">
           {services.map((service, index) => {
             const styles = getColorStyles(service.color);
 
             return (
-              <Link to={`/services/${service.slug}`} key={service.id} className="gsap-reveal h-full block">
+              <Link
+                to={`/services/${service.slug}`}
+                key={service.id}
+                className="gsap-reveal h-full w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(25%-1.5rem)] block"
+              >
                 <motion.div
                   className="h-full"
                   onMouseEnter={(e) => handleMouseEnter(e, service.title)}
