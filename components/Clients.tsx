@@ -9,28 +9,31 @@ interface Brand {
 }
 
 const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
-  <div className="mx-8 flex-shrink-0 flex items-center justify-center h-32 md:h-40">
+  <div className="mx-6 flex-shrink-0 flex flex-col items-center justify-center gap-3 w-[180px]">
     {brand.logo ? (
       <div
-        className="h-28 md:h-36 rounded-xl flex items-center justify-center px-8 py-4 transition-all duration-300 hover:scale-110 hover:opacity-100 opacity-75"
+        className="w-full h-24 rounded-xl flex items-center justify-center px-4 py-3 transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-70"
         style={{
           backgroundColor: brand.bg_color && brand.bg_color !== '#ffffff' ? brand.bg_color : 'rgba(255,255,255,0.06)',
-          minWidth: '200px',
-          maxWidth: '300px',
         }}
       >
         <img
           src={brand.logo}
           alt={brand.name}
-          className="max-h-20 md:max-h-24 w-auto object-contain"
+          className="max-h-16 w-auto max-w-full object-contain"
           loading="lazy"
         />
       </div>
     ) : (
-      <span className="text-lg font-black font-futuristic text-gray-500 hover:text-white transition-colors uppercase tracking-wider">
-        {brand.name}
-      </span>
+      <div className="w-full h-24 rounded-xl flex items-center justify-center bg-white/6 px-4">
+        <span className="text-base font-black font-futuristic text-gray-500 hover:text-white transition-colors uppercase tracking-wider text-center">
+          {brand.name}
+        </span>
+      </div>
     )}
+    <span className="text-xs text-gray-500 font-semibold tracking-wide text-center uppercase truncate w-full text-center">
+      {brand.name}
+    </span>
   </div>
 );
 
