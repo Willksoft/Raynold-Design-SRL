@@ -9,20 +9,20 @@ interface Brand {
 }
 
 const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
-  <div className="mx-8 flex-shrink-0 flex items-center justify-center h-16">
+  <div className="mx-8 flex-shrink-0 flex items-center justify-center h-24 md:h-28">
     {brand.logo ? (
       <div
-        className="h-14 rounded-xl flex items-center justify-center px-4 py-2 transition-all duration-300 hover:scale-110 hover:opacity-100 opacity-75"
+        className="h-20 md:h-24 rounded-xl flex items-center justify-center px-6 py-3 transition-all duration-300 hover:scale-110 hover:opacity-100 opacity-75"
         style={{
           backgroundColor: brand.bg_color && brand.bg_color !== '#ffffff' ? brand.bg_color : 'rgba(255,255,255,0.06)',
-          minWidth: '120px',
-          maxWidth: '180px',
+          minWidth: '160px',
+          maxWidth: '240px',
         }}
       >
         <img
           src={brand.logo}
           alt={brand.name}
-          className="max-h-10 w-auto object-contain"
+          className="max-h-14 md:max-h-16 w-auto object-contain"
           loading="lazy"
         />
       </div>

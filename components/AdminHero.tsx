@@ -55,6 +55,10 @@ const AdminHero = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingSlide) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede superar los 5MB.');
+        return;
+      }
       setUploading(true);
       const path = `hero/${Date.now()}-${file.name}`;
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
@@ -147,16 +151,29 @@ const AdminHero = () => {
                   <input type="number" value={editingSlide.sort_order || 1} onChange={e => setEditingSlide({ ...editingSlide, sort_order: parseInt(e.target.value) })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen de Fondo</label>
-                <div className="flex gap-2">
-                  <input type="url" value={editingSlide.image || ''} onChange={e => setEditingSlide({ ...editingSlide, image: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="URL de la imagen..." />
-                  <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center justify-center font-bold text-sm">
-                    {uploading ? 'Subiendo...' : 'Subir'}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen de Fondo (Max 5MB)</label>
+                <div className="flex flex-col gap-3">
+                  {editingSlide.image && (
+                    <div className="w-full h-40 bg-gray-900 rounded-lg overflow-hidden border border-white/10 relative group">
+                      <img src={editingSlide.image} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingSlide({ ...editingSlide, image: '' })}
+                        className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <label className={`bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full py-4 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {uploading ? <Loader2 size={20} className="animate-spin text-gray-500" /> : <Plus size={20} className="text-gray-500" />}
+                    <span className="text-sm font-medium">
+                      {uploading ? 'Subiendo...' : (editingSlide.image ? 'Cambiar Imagen' : 'Subir Imagen')}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                   </label>
                 </div>
-                {editingSlide.image && <div className="mt-2 h-32 rounded-lg overflow-hidden border border-white/10"><img src={editingSlide.image} alt="Preview" className="w-full h-full object-cover" /></div>}
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 rounded-lg font-medium text-gray-300 hover:bg-white/5">Cancelar</button>

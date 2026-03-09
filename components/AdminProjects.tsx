@@ -7,6 +7,11 @@ interface Project {
   title: string;
   category: string;
   image: string;
+  description?: string;
+  client?: string;
+  location?: string;
+  completion_date?: string;
+  gallery?: string[];
 }
 
 const AdminProjects = () => {
@@ -22,7 +27,17 @@ const AdminProjects = () => {
   const fetchProjects = async () => {
     setLoading(true);
     const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-    if (data) setProjects(data.map(p => ({ id: p.id, title: p.title, category: p.category || '', image: p.image_url || '' })));
+    if (data) setProjects(data.map(p => ({
+      id: p.id,
+      title: p.title,
+      category: p.category || '',
+      image: p.image_url || '',
+      description: p.description || '',
+      client: p.client || '',
+      location: p.location || '',
+      completion_date: p.completion_date || '',
+      gallery: p.gallery || []
+    })));
     setLoading(false);
   };
 
@@ -36,18 +51,41 @@ const AdminProjects = () => {
   };
 
   const handleDuplicate = async (project: Project) => {
-    await supabase.from('projects').insert([{ title: `${project.title} (Copia)`, category: project.category, image_url: project.image }]);
+    await supabase.from('projects').insert([{
+      title: `${project.title} (Copia)`,
+      category: project.category,
+      image_url: project.image,
+      description: project.description,
+      client: project.client,
+      location: project.location,
+      completion_date: project.completion_date,
+      gallery: project.gallery
+    }]);
     fetchProjects();
   };
 
   const handleOpenModal = (project?: Project) => {
-    setEditingProject(project || { id: '', title: '', category: PROJECT_CATEGORIES[0], image: '' });
+    setEditingProject(project || {
+      id: '',
+      title: '',
+      category: PROJECT_CATEGORIES[0],
+      image: '',
+      description: '',
+      client: '',
+      location: '',
+      completion_date: '',
+      gallery: []
+    });
     setIsModalOpen(true);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingProject) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede superar los 5MB.');
+        return;
+      }
       setUploading(true);
       const path = `projects/${Date.now()}-${file.name}`;
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
@@ -59,10 +97,51 @@ const AdminProjects = () => {
     }
   };
 
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0 && editingProject) {
+      setUploading(true);
+      const newGallery = [...(editingProject.gallery || [])];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`La imagen ${file.name} no puede superar los 5MB.`);
+          continue;
+        }
+        const path = `projects/gallery-${Date.now()}-${file.name}`;
+        const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
+        if (!error && data) {
+          const { data: { publicUrl } } = supabase.storage.from('raynold-media').getPublicUrl(data.path);
+          newGallery.push(publicUrl);
+        }
+      }
+
+      setEditingProject({ ...editingProject, gallery: newGallery });
+      setUploading(false);
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    if (!editingProject || !editingProject.gallery) return;
+    const newGallery = [...editingProject.gallery];
+    newGallery.splice(index, 1);
+    setEditingProject({ ...editingProject, gallery: newGallery });
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
-    const row = { title: editingProject.title, category: editingProject.category, image_url: editingProject.image };
+    const row = {
+      title: editingProject.title,
+      category: editingProject.category,
+      image_url: editingProject.image,
+      description: editingProject.description,
+      client: editingProject.client,
+      location: editingProject.location,
+      completion_date: editingProject.completion_date,
+      gallery: editingProject.gallery
+    };
     if (projects.find(p => p.id === editingProject.id)) {
       await supabase.from('projects').update(row).eq('id', editingProject.id);
     } else {
@@ -171,20 +250,68 @@ const AdminProjects = () => {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen</label>
-                <div className="flex gap-2">
-                  <input type="text" value={editingProject.image} onChange={e => setEditingProject({ ...editingProject, image: e.target.value })}
-                    className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" placeholder="URL de la imagen..." />
-                  <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center justify-center font-bold text-sm">
-                    {uploading ? 'Subiendo...' : 'Subir'}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen (Max 5MB)</label>
+                <div className="flex flex-col gap-3">
+                  {editingProject.image && (
+                    <div className="w-full h-32 bg-gray-900 rounded-lg overflow-hidden border border-white/10 relative group">
+                      <img src={editingProject.image} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingProject({ ...editingProject, image: '' })}
+                        className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <label className={`bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full py-4 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {uploading ? <Loader2 size={20} className="animate-spin text-gray-500" /> : <Plus size={20} className="text-gray-500" />}
+                    <span className="text-sm font-medium">
+                      {uploading ? 'Subiendo...' : (editingProject.image ? 'Cambiar Imagen' : 'Subir Imagen')}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                   </label>
                 </div>
-                {editingProject.image && (
-                  <div className="mt-2 rounded-lg overflow-hidden border border-white/10 h-32">
-                    <img src={editingProject.image} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descripción</label>
+                <textarea rows={3} value={editingProject.description || ''} onChange={e => setEditingProject({ ...editingProject, description: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" placeholder="Detalles del proyecto..." />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Cliente</label>
+                  <input type="text" value={editingProject.client || ''} onChange={e => setEditingProject({ ...editingProject, client: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" placeholder="Ej. Coca Cola" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ubicación</label>
+                  <input type="text" value={editingProject.location || ''} onChange={e => setEditingProject({ ...editingProject, location: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" placeholder="Ej. Punta Cana" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Fecha de Realización</label>
+                <input type="month" value={editingProject.completion_date || ''} onChange={e => setEditingProject({ ...editingProject, completion_date: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Galería de Imágenes (Opcional)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {editingProject.gallery?.map((img, idx) => (
+                    <div key={idx} className="w-full h-24 bg-gray-900 rounded-lg overflow-hidden border border-white/10 relative group">
+                      <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeGalleryImage(idx)}
+                        className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
+                  <label className={`bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full h-24 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-1 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {uploading ? <Loader2 size={16} className="animate-spin text-gray-500" /> : <Plus size={16} className="text-gray-500" />}
+                    <span className="text-[10px] uppercase font-bold text-gray-500">Añadir Fotos</span>
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryUpload} disabled={uploading} />
+                  </label>
+                </div>
               </div>
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-lg font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancelar</button>

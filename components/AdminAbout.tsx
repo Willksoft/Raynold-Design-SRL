@@ -75,6 +75,10 @@ const AdminAbout: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, isTeam = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen no puede superar los 5MB.');
+      return;
+    }
     setUploading(true);
     const path = `about/${Date.now()}-${file.name}`;
     const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
@@ -162,12 +166,26 @@ const AdminAbout: React.FC = () => {
               <textarea rows={3} value={about.historyText3} onChange={(e) => setAbout({ ...about, historyText3: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Imagen de Historia</label>
-              <div className="flex gap-2">
-                <input type="text" value={about.historyImage} onChange={(e) => setAbout({ ...about, historyImage: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="URL de la imagen..." />
-                <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center font-bold text-sm">
-                  {uploading ? 'Subiendo...' : 'Subir'}
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, false)} />
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Imagen de Historia (Max 5MB)</label>
+              <div className="flex flex-col gap-3">
+                {about.historyImage && (
+                  <div className="w-full h-32 rounded-lg border border-white/10 relative group overflow-hidden bg-gray-900">
+                    <img src={about.historyImage} alt="Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setAbout({ ...about, historyImage: '' })}
+                      className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
+                <label className={`bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full py-4 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {uploading ? <Loader2 size={20} className="animate-spin text-gray-500" /> : <Plus size={20} className="text-gray-500" />}
+                  <span className="text-sm font-medium">
+                    {uploading ? 'Subiendo...' : (about.historyImage ? 'Cambiar Imagen' : 'Subir Imagen')}
+                  </span>
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, false)} disabled={uploading} />
                 </label>
               </div>
             </div>
@@ -217,13 +235,27 @@ const AdminAbout: React.FC = () => {
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Rol / Cargo</label>
                 <input type="text" required value={editingMember.role || ''} onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Imagen</label>
-                <div className="flex gap-2">
-                  <input type="text" value={editingMember.image || ''} onChange={(e) => setEditingMember({ ...editingMember, image: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" placeholder="URL de la imagen..." />
-                  <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center font-bold text-sm">
-                    {uploading ? '...' : 'Subir'}
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, true)} />
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen (Max 5MB)</label>
+                <div className="flex flex-col gap-3">
+                  {editingMember.image && (
+                    <div className="w-24 h-24 rounded-lg overflow-hidden border border-white/10 relative group bg-gray-900">
+                      <img src={editingMember.image} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingMember({ ...editingMember, image: '' })}
+                        className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  )}
+                  <label className={`bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full py-4 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {uploading ? <Loader2 size={20} className="animate-spin text-gray-500" /> : <Plus size={20} className="text-gray-500" />}
+                    <span className="text-sm font-medium">
+                      {uploading ? 'Subiendo...' : (editingMember.image ? 'Cambiar Imagen' : 'Subir Imagen')}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, true)} disabled={uploading} />
                   </label>
                 </div>
               </div>

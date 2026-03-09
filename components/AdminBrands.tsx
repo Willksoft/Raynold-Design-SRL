@@ -40,6 +40,10 @@ const AdminBrands = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && editingBrand) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede superar los 5MB.');
+        return;
+      }
       setUploading(true);
       const path = `brands/${Date.now()}-${file.name}`;
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
@@ -128,17 +132,6 @@ const AdminBrands = () => {
                   className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" placeholder="Ej. Banco Popular" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Logo URL o Subir archivo</label>
-                <div className="flex gap-2">
-                  <input type="text" value={editingBrand.logo} onChange={e => setEditingBrand({ ...editingBrand, logo: e.target.value })}
-                    className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" placeholder="URL del logo..." />
-                  <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center justify-center font-bold text-sm">
-                    {uploading ? 'Subiendo...' : 'Subir'}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                  </label>
-                </div>
-              </div>
-              <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Color de Fondo</label>
                 <div className="flex gap-3 items-center">
                   <input type="color" value={editingBrand.bg_color} onChange={e => setEditingBrand({ ...editingBrand, bg_color: e.target.value })}
@@ -147,11 +140,30 @@ const AdminBrands = () => {
                     className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors font-mono" placeholder="#ffffff" />
                 </div>
               </div>
-              {editingBrand.logo && (
-                <div className="p-4 rounded-xl flex items-center justify-center" style={{ backgroundColor: editingBrand.bg_color }}>
-                  <img src={editingBrand.logo} alt="Preview" className="max-h-24 object-contain" />
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Logo (Max 5MB)</label>
+                <div className="flex flex-col gap-3">
+                  {editingBrand.logo && (
+                    <div className="w-full h-32 rounded-lg border border-white/10 relative group flex items-center justify-center" style={{ backgroundColor: editingBrand.bg_color }}>
+                      <img src={editingBrand.logo} alt="Preview" className="max-h-24 object-contain" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingBrand({ ...editingBrand, logo: '' })}
+                        className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <label className={`bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full py-4 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {uploading ? <Loader2 size={20} className="animate-spin text-gray-500" /> : <Plus size={20} className="text-gray-500" />}
+                    <span className="text-sm font-medium">
+                      {uploading ? 'Subiendo...' : (editingBrand.logo ? 'Cambiar Logo' : 'Subir Logo')}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                  </label>
                 </div>
-              )}
+              </div>
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-lg font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancelar</button>
                 <button type="submit" className="px-6 py-2 btn-animated font-bold rounded-lg flex items-center gap-2"><Save size={18} /> Guardar</button>

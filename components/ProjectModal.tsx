@@ -1,14 +1,17 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowUpRight, Check, Share2, Building2, User } from 'lucide-react';
+import { X, ArrowUpRight, Check, Share2, Building2, User, MapPin, Calendar } from 'lucide-react';
 
 interface Project {
-  id: number;
+  id: number | string;
   title: string;
   category: string;
   image: string;
-  client: string;
+  client?: string;
   description?: string;
+  location?: string;
+  completion_date?: string;
+  gallery?: string[];
 }
 
 interface ProjectModalProps {
@@ -18,7 +21,7 @@ interface ProjectModalProps {
 }
 
 const ProjectModal: React.FC<ProjectModalProps> = ({ project, isOpen, onClose }) => {
-  
+
   // Disable body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -40,9 +43,9 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isOpen, onClose })
   return (
     <AnimatePresence>
       {isOpen && (
-        <div 
+        <div
           onClick={handleBackdropClick}
-          className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -52,7 +55,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isOpen, onClose })
             className="relative w-full max-w-5xl bg-[#0A0A0A] border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-raynold-red/10 flex flex-col md:flex-row max-h-[90vh]"
           >
             {/* Close Button */}
-            <button 
+            <button
               onClick={onClose}
               className="absolute top-4 right-4 z-20 p-2 bg-black/50 backdrop-blur-sm text-white rounded-full hover:bg-raynold-red transition-colors"
             >
@@ -60,68 +63,93 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isOpen, onClose })
             </button>
 
             {/* Image Section */}
-            <div className="w-full md:w-2/3 h-64 md:h-auto relative bg-gray-900">
-               <img 
-                 src={project.image} 
-                 alt={project.title} 
-                 className="w-full h-full object-cover"
-               />
-               <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-60 md:opacity-0"></div>
+            <div className="w-full md:w-2/3 flex flex-col overflow-y-auto bg-[#050505] custom-scrollbar">
+              <div className="relative w-full shrink-0">
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  className="w-full object-cover max-h-[60vh] md:max-h-none"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent opacity-60 md:opacity-0"></div>
+              </div>
+
+              {project.gallery && project.gallery.length > 0 && (
+                <div className="p-6 grid grid-cols-2 gap-4">
+                  {project.gallery.map((img, idx) => (
+                    <div key={idx} className="rounded-xl overflow-hidden shadow-lg border border-white/10 aspect-video">
+                      <img src={img} alt={`${project.title} gallery ${idx}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Details Section */}
             <div className="w-full md:w-1/3 p-8 flex flex-col overflow-y-auto bg-[#0F0F0F]">
-               <div className="mb-2">
-                 <span className="px-3 py-1 bg-raynold-red/20 text-raynold-red border border-raynold-red/30 text-xs font-bold uppercase tracking-wider rounded-full">
-                    {project.category}
-                 </span>
-               </div>
-               
-               <h2 className="text-3xl font-futuristic font-black text-white mb-6 leading-tight">
-                 {project.title}
-               </h2>
+              <div className="mb-2">
+                <span className="px-3 py-1 bg-raynold-red/20 text-raynold-red border border-raynold-red/30 text-xs font-bold uppercase tracking-wider rounded-full">
+                  {project.category}
+                </span>
+              </div>
 
-               <div className="space-y-6 mb-8 flex-grow">
-                 
-                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
-                    <div className="p-2 bg-black rounded-lg text-raynold-green">
-                        <Building2 size={20} />
+              <h2 className="text-3xl font-futuristic font-black text-white mb-6 leading-tight">
+                {project.title}
+              </h2>
+
+              <div className="space-y-6 mb-8 flex-grow">
+
+                <div className="grid grid-cols-2 gap-4 bg-black/30 p-4 rounded-xl border border-white/5 mb-6">
+                  {project.client && (
+                    <div className="flex flex-col gap-1">
+                      <h4 className="text-[10px] text-gray-500 uppercase tracking-widest font-bold flex items-center gap-1"><Building2 size={12} /> Cliente</h4>
+                      <p className="text-white text-sm font-medium">{project.client}</p>
                     </div>
-                    <div>
-                        <h4 className="text-xs text-gray-400 uppercase tracking-widest font-bold">Cliente</h4>
-                        <p className="text-white font-medium">{project.client}</p>
+                  )}
+                  {project.location && (
+                    <div className="flex flex-col gap-1">
+                      <h4 className="text-[10px] text-gray-500 uppercase tracking-widest font-bold flex items-center gap-1"><MapPin size={12} /> Ubicación</h4>
+                      <p className="text-white text-sm font-medium">{project.location}</p>
                     </div>
-                 </div>
-
-                 <div>
-                   <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Sobre el Proyecto</h3>
-                   <p className="text-gray-300 leading-relaxed font-light text-sm">
-                     {project.description || `Este proyecto para ${project.client} fue desarrollado utilizando nuestras técnicas más avanzadas en ${project.category.toLowerCase()}. Nos enfocamos en la durabilidad, el impacto visual y la fidelidad a la identidad de marca.`}
-                   </p>
-                 </div>
-                 
-                 <div className="border-t border-white/10 pt-4">
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Servicios Aplicados</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {['Diseño', 'Producción', 'Instalación'].map(tag => (
-                            <span key={tag} className="text-xs text-gray-500 bg-black px-2 py-1 rounded border border-white/10">{tag}</span>
-                        ))}
+                  )}
+                  {project.completion_date && (
+                    <div className="flex flex-col gap-1">
+                      <h4 className="text-[10px] text-gray-500 uppercase tracking-widest font-bold flex items-center gap-1"><Calendar size={12} /> Mes</h4>
+                      <p className="text-white text-sm font-medium capitalize">
+                        {new Date(project.completion_date).toLocaleDateString('es-DO', { month: 'long', year: 'numeric' })}
+                      </p>
                     </div>
-                 </div>
+                  )}
+                </div>
 
-               </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Sobre el Proyecto</h3>
+                  <p className="text-gray-300 leading-relaxed font-light text-sm">
+                    {project.description || `Este proyecto${project.client ? ' para ' + project.client : ''} fue desarrollado utilizando nuestras técnicas más avanzadas en ${project.category.toLowerCase()}. Nos enfocamos en la durabilidad, el impacto visual y la fidelidad a la identidad de marca.`}
+                  </p>
+                </div>
 
-               {/* Actions */}
-               <div className="mt-auto space-y-3">
-                 <a 
-                   href={`https://wa.me/18295807411?text=Hola,%20me%20gustó%20el%20proyecto%20"${project.title}"%20y%20quisiera%20algo%20similar.`}
-                   target="_blank"
-                   rel="noreferrer"
-                   className="w-full py-4 btn-animated font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg text-center"
-                 >
-                    Cotizar Algo Similar <ArrowUpRight size={18} />
-                 </a>
-               </div>
+                <div className="border-t border-white/10 pt-4">
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Servicios Aplicados</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {['Diseño', 'Producción', 'Instalación'].map(tag => (
+                      <span key={tag} className="text-xs text-gray-500 bg-black px-2 py-1 rounded border border-white/10">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Actions */}
+              <div className="mt-auto space-y-3">
+                <a
+                  href={`https://wa.me/18295807411?text=Hola,%20me%20gustó%20el%20proyecto%20"${project.title}"%20y%20quisiera%20algo%20similar.`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-4 btn-animated font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg text-center"
+                >
+                  Cotizar Algo Similar <ArrowUpRight size={18} />
+                </a>
+              </div>
             </div>
           </motion.div>
         </div>

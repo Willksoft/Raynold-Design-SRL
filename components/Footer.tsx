@@ -69,13 +69,25 @@ const Footer: React.FC = () => {
           {/* Brand Column */}
           <div className="space-y-6">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center border border-raynold-red relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-300"></div>
-                <span className="font-futuristic font-black text-black text-lg italic pr-0.5 relative z-10">R</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-futuristic font-bold text-white leading-none tracking-wider">RAYNOLD</span>
-                <span className="text-[10px] text-gray-500 font-bold tracking-[0.2em] uppercase">Design SRL</span>
+              {/* Replace the CSS logo with the official logo */}
+              <div className="h-10 w-auto relative">
+                <img
+                  src="https://zuxdovlrdjntvztpmlcw.supabase.co/storage/v1/object/public/raynold-media/general/raynold-logo-dark.png"
+                  alt="Raynold Design SRL"
+                  className="h-full w-auto object-contain drop-shadow-lg"
+                  onError={(e) => {
+                    // Fallback to text if the logo fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    if (target.nextElementSibling) {
+                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                    }
+                  }}
+                />
+                <div className="hidden flex-col">
+                  <span className="font-futuristic font-bold text-white leading-none tracking-wider">RAYNOLD</span>
+                  <span className="text-[10px] text-gray-500 font-bold tracking-[0.2em] uppercase">Design SRL</span>
+                </div>
               </div>
             </Link>
             <p className="text-gray-500 text-sm leading-relaxed">

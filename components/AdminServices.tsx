@@ -69,6 +69,10 @@ const AdminServices = () => {
 
   const handleImageUpload = async (file: File) => {
     if (!editingService) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen no puede superar los 5MB.');
+      return;
+    }
     const ext = file.name.split('.').pop();
     const path = `services/${Date.now()}.${ext}`;
     const { data, error } = await supabase.storage.from('raynold-media').upload(path, file, { upsert: true });
@@ -200,14 +204,26 @@ const AdminServices = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Imagen</label>
-                <div className="flex gap-2 items-center">
-                  <input type="text" value={editingService.image} onChange={e => setEditingService({ ...editingService, image: e.target.value })} placeholder="URL o sube un archivo..." className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
-                  <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors text-sm font-bold whitespace-nowrap">
-                    Subir <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Imagen (Max 5MB)</label>
+                <div className="flex flex-col gap-3">
+                  {editingService.image && (
+                    <div className="w-full h-32 bg-gray-900 rounded-lg overflow-hidden border border-white/10 relative group">
+                      <img src={editingService.image} alt="Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setEditingService({ ...editingService, image: '' })}
+                        className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <label className="bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full py-4 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-2">
+                    <Plus size={20} className="text-gray-500" />
+                    <span className="text-sm font-medium">{editingService.image ? 'Cambiar Imagen' : 'Subir Imagen'}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
                   </label>
                 </div>
-                {editingService.image && <img src={editingService.image} alt="preview" className="mt-2 h-20 rounded-lg object-cover" />}
               </div>
               <div>
                 <div className="flex justify-between items-center mb-2">

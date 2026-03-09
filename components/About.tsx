@@ -94,11 +94,11 @@ const About: React.FC = () => {
             viewport={{ once: true }}
             className="relative"
           >
-            <div className="aspect-square rounded-2xl overflow-hidden border border-white/10 relative group">
+            <div className="rounded-2xl overflow-hidden border border-white/10 relative group bg-gray-900">
               <img
                 src={about.historyImage || INITIAL_ABOUT.historyImage}
-                alt="Equipo trabajando"
-                className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
+                alt="Historia de Raynold Design"
+                className="w-full h-auto max-h-[600px] object-contain transition-all duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
               <div className="absolute bottom-6 left-6">

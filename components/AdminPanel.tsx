@@ -13,6 +13,7 @@ const AdminPanel: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const fetchCats = async () => {
@@ -84,12 +85,20 @@ const AdminPanel: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede superar los 5MB.');
+        return;
+      }
+      setUploading(true);
       const path = `products/${Date.now()}-${file.name}`;
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
-      if (!error && data) {
+      if (error) {
+        alert(`Error al subir imagen: ${error.message}`);
+      } else if (data) {
         const { data: { publicUrl } } = supabase.storage.from('raynold-media').getPublicUrl(data.path);
         setFormData({ ...formData, image: publicUrl });
       }
+      setUploading(false);
     }
   };
 
@@ -443,18 +452,26 @@ const AdminPanel: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        value={formData.image}
-                        onChange={e => setFormData({ ...formData, image: e.target.value })}
-                        className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
-                        placeholder="URL o subir archivo..."
-                      />
-                      <label className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center justify-center font-bold text-sm">
-                        Subir
-                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen (Max 5MB)</label>
+                    <div className="flex flex-col gap-3">
+                      {formData.image && (
+                        <div className="w-full h-32 bg-gray-900 rounded-lg overflow-hidden border border-white/10 relative group">
+                          <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, image: '' })}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                      <label className={`bg-white/5 hover:bg-white/10 border border-white/10 border-dashed text-gray-300 w-full py-4 rounded-lg cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <Plus size={20} className="text-gray-500" />
+                        <span className="text-sm font-medium">
+                          {uploading ? 'Subiendo...' : (formData.image ? 'Cambiar Imagen' : 'Subir Imagen')}
+                        </span>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                       </label>
                     </div>
                   </div>
