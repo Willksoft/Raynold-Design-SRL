@@ -93,7 +93,7 @@ const Services: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6 lg:gap-8">
+        <div className="flex flex-wrap justify-center gap-6 lg:gap-8 items-stretch">
           {services.map((service, index) => {
             const styles = getColorStyles(service.color);
 
@@ -101,15 +101,15 @@ const Services: React.FC = () => {
               <Link
                 to={`/services/${service.slug}`}
                 key={service.id}
-                className="gsap-reveal h-full w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(25%-1.5rem)] block"
+                className="gsap-reveal w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(25%-1.5rem)] flex flex-col"
               >
                 <motion.div
-                  className="h-full"
+                  className="flex-1 flex flex-col"
                   onMouseEnter={(e) => handleMouseEnter(e, service.title)}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <TiltCard className="h-full">
-                    <div className="group relative p-8 bg-black/90 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl h-full flex flex-col">
+                  <TiltCard className="flex-1 flex flex-col">
+                    <div className="flex-1 group relative p-8 bg-black/90 border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 shadow-xl flex flex-col">
                       {/* Background Image Overlay */}
                       {service.image && (
                         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
@@ -135,12 +135,12 @@ const Services: React.FC = () => {
                           {service.title}
                         </h3>
 
-                        <p className="text-gray-400 leading-relaxed text-base font-light">
+                        <p className="text-gray-400 leading-relaxed text-base font-light line-clamp-3">
                           {service.description}
                         </p>
 
                         <div className="mt-auto pt-6 flex items-center text-sm font-bold text-gray-500 group-hover:text-white transition-colors">
-                          Ver Detalles &rarr;
+                          Ver más &rarr;
                         </div>
                       </div>
 
