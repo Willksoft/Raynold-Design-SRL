@@ -8,6 +8,7 @@ import Products from './components/Products';
 import ProductsPage from './components/ProductsPage';
 import FavoritesPage from './components/FavoritesPage';
 import ProjectsPage from './components/ProjectsPage';
+import HomeProjects from './components/HomeProjects';
 import AdminLayout from './components/AdminLayout';
 import About from './components/About';
 import AiConsultant from './components/AiConsultant';
@@ -32,7 +33,7 @@ const CustomCursor = () => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
-      
+
       const target = e.target as HTMLElement;
       // Check if hovering over clickable elements
       const isClickable = target.closest('a, button, input, select, textarea, [role="button"]');
@@ -44,7 +45,7 @@ const CustomCursor = () => {
   }, []);
 
   return (
-    <div 
+    <div
       className="fixed top-0 left-0 w-full h-full pointer-events-none z-[1000] hidden md:block mix-blend-difference"
       style={{ overflow: 'hidden' }}
     >
@@ -61,13 +62,13 @@ const CustomCursor = () => {
         transition={{ type: "tween", ease: "backOut", duration: 0.15 }}
       >
         <div className={`w-1 h-1 bg-white rounded-full ${isHovering ? 'bg-red-500' : ''}`} />
-        
+
         {/* Crosshair Lines */}
         {isHovering && (
-           <>
-             <motion.div initial={{ width: 0 }} animate={{ width: '150%' }} className="absolute h-[1px] bg-red-500/50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-             <motion.div initial={{ height: 0 }} animate={{ height: '150%' }} className="absolute w-[1px] bg-red-500/50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-           </>
+          <>
+            <motion.div initial={{ width: 0 }} animate={{ width: '150%' }} className="absolute h-[1px] bg-red-500/50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            <motion.div initial={{ height: 0 }} animate={{ height: '150%' }} className="absolute w-[1px] bg-red-500/50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </>
         )}
       </motion.div>
     </div>
@@ -77,7 +78,7 @@ const CustomCursor = () => {
 // --- BIOS Boot Loader Component ---
 const BiosLoader = ({ onComplete }: { onComplete: () => void }) => {
   const [lines, setLines] = useState<string[]>([]);
-  
+
   const bootSequence = [
     "RAYNOLD SYSTEM v5.0.1 - (c) 2025 Raynold Design SRL",
     "Initializing Neural Networks...",
@@ -112,8 +113,8 @@ const BiosLoader = ({ onComplete }: { onComplete: () => void }) => {
             {line}
           </div>
         ))}
-        <motion.div 
-          animate={{ opacity: [0, 1] }} 
+        <motion.div
+          animate={{ opacity: [0, 1] }}
           transition={{ repeat: Infinity, duration: 0.5 }}
           className="w-3 h-5 bg-green-500 inline-block align-middle ml-1"
         />
@@ -134,33 +135,33 @@ const ScrollToTop = () => {
 // Animated Routes Wrapper
 const AnimatedRoutes = () => {
   const location = useLocation();
-  
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location}>
         <Route path="/" element={
-           <CrtTransition><Home /></CrtTransition>
+          <CrtTransition><Home /></CrtTransition>
         } />
         <Route path="/products" element={
-           <CrtTransition><ProductsPage /></CrtTransition>
+          <CrtTransition><ProductsPage /></CrtTransition>
         } />
         <Route path="/favorites" element={
-           <CrtTransition><FavoritesPage /></CrtTransition>
+          <CrtTransition><FavoritesPage /></CrtTransition>
         } />
         <Route path="/admin/*" element={
-           <CrtTransition><AdminLayout /></CrtTransition>
+          <CrtTransition><AdminLayout /></CrtTransition>
         } />
         <Route path="/projects" element={
-           <CrtTransition><ProjectsPage /></CrtTransition>
+          <CrtTransition><ProjectsPage /></CrtTransition>
         } />
         <Route path="/about" element={
-           <CrtTransition><About /></CrtTransition>
+          <CrtTransition><About /></CrtTransition>
         } />
         <Route path="/services/:slug" element={
-           <CrtTransition><ServiceDetail /></CrtTransition>
+          <CrtTransition><ServiceDetail /></CrtTransition>
         } />
         <Route path="/contact" element={
-           <CrtTransition><ContactPage /></CrtTransition>
+          <CrtTransition><ContactPage /></CrtTransition>
         } />
       </Routes>
     </AnimatePresence>
@@ -174,6 +175,7 @@ const Home = () => (
     <div id="features"><Features /></div>
     <div id="clients"><Clients /></div>
     <Services />
+    <HomeProjects />
     <div id="process"><Process /></div>
     <Products />
     <AiConsultant />
@@ -187,7 +189,7 @@ const AppContent = ({ loading }: { loading: boolean }) => {
 
   return (
     <div className={`min-h-screen bg-raynold-black text-white selection:bg-raynold-red selection:text-white font-sans flex flex-col relative overflow-x-hidden ${loading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-1000`}>
-      
+
       {!isAdminRoute && (
         <>
           <Navbar />
@@ -196,11 +198,11 @@ const AppContent = ({ loading }: { loading: boolean }) => {
           <ParallaxParticles />
         </>
       )}
-      
+
       <main className="flex-grow relative z-10">
         <AnimatedRoutes />
       </main>
-      
+
       {!isAdminRoute && (
         <div className="relative z-20">
           <Footer />
@@ -216,11 +218,11 @@ const App: React.FC = () => {
   return (
     <>
       <CustomCursor />
-      
+
       <AnimatePresence>
         {loading && (
           <motion.div exit={{ opacity: 0, scale: 1.1 }} transition={{ duration: 0.8 }} className="fixed inset-0 z-[100]">
-             <BiosLoader onComplete={() => setLoading(false)} />
+            <BiosLoader onComplete={() => setLoading(false)} />
           </motion.div>
         )}
       </AnimatePresence>
