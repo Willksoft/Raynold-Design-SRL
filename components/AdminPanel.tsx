@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit2, Trash2, X, Save, ShieldAlert, Copy, LayoutGrid, List as ListIcon } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { ProductItem, Category } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 const AdminPanel: React.FC = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useShop();
@@ -12,22 +13,15 @@ const AdminPanel: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  
+
   useEffect(() => {
-    const saved = localStorage.getItem('raynold_categories');
-    if (saved) {
-      setCategories(JSON.parse(saved).filter((c: Category) => c.type === 'product'));
-    } else {
-      setCategories([
-        { id: 'cat-1', name: 'Señalización', type: 'product' },
-        { id: 'cat-2', name: 'Impresión', type: 'product' },
-        { id: 'cat-3', name: 'Promocional', type: 'product' },
-        { id: 'cat-4', name: 'Textil', type: 'product' },
-        { id: 'cat-5', name: 'Wrapping', type: 'product' },
-        { id: 'cat-6', name: 'Exhibición', type: 'product' },
-        { id: 'cat-7', name: 'Papelería', type: 'product' }
-      ]);
-    }
+    const fetchCats = async () => {
+      const { data } = await supabase.from('categories').select('*').order('name');
+      if (data) {
+        setCategories(data.filter((c: any) => c.type === 'product').map((c: any) => ({ id: c.id, name: c.name, type: c.type })));
+      }
+    };
+    fetchCats();
   }, []);
 
   const [formData, setFormData] = useState({
@@ -41,25 +35,14 @@ const AdminPanel: React.FC = () => {
     unit: 'Unidad'
   });
 
-  const handleCreateCategory = () => {
+  const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
-    
-    const newCategory: Category = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newCategoryName.trim(),
-      type: 'product'
-    };
-    
-    const updatedCategories = [...categories, newCategory];
-    setCategories(updatedCategories);
-    
-    // Update local storage to persist the new category
-    const saved = localStorage.getItem('raynold_categories');
-    let allCategories = saved ? JSON.parse(saved) : [];
-    allCategories.push(newCategory);
-    localStorage.setItem('raynold_categories', JSON.stringify(allCategories));
-    
-    setFormData({ ...formData, category: newCategory.name });
+    const { data } = await supabase.from('categories').insert([{ name: newCategoryName.trim(), type: 'product' }]).select();
+    if (data && data[0]) {
+      const newCategory: Category = { id: data[0].id, name: data[0].name, type: 'product' };
+      setCategories([...categories, newCategory]);
+      setFormData({ ...formData, category: newCategory.name });
+    }
     setNewCategoryName('');
     setIsCreatingCategory(false);
   };
@@ -98,14 +81,15 @@ const AdminPanel: React.FC = () => {
     setEditingProduct(null);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result as string });
-      };
-      reader.readAsDataURL(file);
+      const path = `products/${Date.now()}-${file.name}`;
+      const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
+      if (!error && data) {
+        const { data: { publicUrl } } = supabase.storage.from('raynold-media').getPublicUrl(data.path);
+        setFormData({ ...formData, image: publicUrl });
+      }
     }
   };
 
@@ -136,44 +120,44 @@ const AdminPanel: React.FC = () => {
   return (
     <div className="p-6 md:p-10 relative">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-           <div>
-              <div className="flex items-center gap-3 mb-4">
-                 <ShieldAlert className="text-raynold-red" size={32} />
-                 <h1 className="text-4xl md:text-5xl font-futuristic font-black text-white">
-                   PANEL DE <span className="animate-gradient-text">ADMIN</span>
-                 </h1>
-              </div>
-              <p className="text-gray-400">Gestiona el catálogo de productos (Datos simulados en memoria).</p>
-           </div>
-           
-           <div className="flex items-center gap-4">
-             <div className="flex bg-[#0A0A0A] border border-white/10 rounded-lg p-1">
-               <button 
-                 onClick={() => setViewMode('list')}
-                 className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                 title="Vista de Lista"
-               >
-                 <ListIcon size={18} />
-               </button>
-               <button 
-                 onClick={() => setViewMode('grid')}
-                 className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                 title="Vista de Cuadrícula"
-               >
-                 <LayoutGrid size={18} />
-               </button>
-             </div>
-             <button 
-               onClick={() => handleOpenModal()}
-               className="px-6 py-3 btn-animated font-bold rounded-lg flex items-center gap-2"
-             >
-               <Plus size={18} />
-               Añadir Producto
-             </button>
-           </div>
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <ShieldAlert className="text-raynold-red" size={32} />
+              <h1 className="text-4xl md:text-5xl font-futuristic font-black text-white">
+                PANEL DE <span className="animate-gradient-text">ADMIN</span>
+              </h1>
+            </div>
+            <p className="text-gray-400">Gestiona el catálogo de productos (Datos simulados en memoria).</p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex bg-[#0A0A0A] border border-white/10 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                title="Vista de Lista"
+              >
+                <ListIcon size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-md transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                title="Vista de Cuadrícula"
+              >
+                <LayoutGrid size={18} />
+              </button>
+            </div>
+            <button
+              onClick={() => handleOpenModal()}
+              className="px-6 py-3 btn-animated font-bold rounded-lg flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Añadir Producto
+            </button>
+          </div>
         </div>
 
         {/* Products Content */}
@@ -200,7 +184,7 @@ const AdminPanel: React.FC = () => {
                           <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
                         </div>
                       </td>
-                      <td className="p-4 font-mono text-gray-400 text-sm">{product.reference || product.id.substring(0,6)}</td>
+                      <td className="p-4 font-mono text-gray-400 text-sm">{product.reference || product.id.substring(0, 6)}</td>
                       <td className="p-4 font-bold text-white">{product.title}</td>
                       <td className="p-4">
                         <span className={`px-2 py-1 text-xs rounded-full ${product.type === 'service' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
@@ -215,21 +199,21 @@ const AdminPanel: React.FC = () => {
                       <td className="p-4 text-raynold-green font-mono text-sm">{product.price}</td>
                       <td className="p-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button 
+                          <button
                             onClick={() => handleDuplicate(product)}
                             className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors"
                             title="Duplicar"
                           >
                             <Copy size={16} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleOpenModal(product)}
                             className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"
                             title="Editar"
                           >
                             <Edit2 size={16} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDelete(product.id)}
                             className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors"
                             title="Eliminar"
@@ -258,21 +242,21 @@ const AdminPanel: React.FC = () => {
                 <div className="h-48 bg-gray-900 relative">
                   <img src={product.image} alt={product.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                   <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
+                    <button
                       onClick={() => handleDuplicate(product)}
                       className="p-2 bg-black/80 text-green-400 rounded hover:bg-green-500 hover:text-black transition-colors backdrop-blur-sm"
                       title="Duplicar"
                     >
                       <Copy size={16} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleOpenModal(product)}
                       className="p-2 bg-black/80 text-blue-400 rounded hover:bg-blue-500 hover:text-black transition-colors backdrop-blur-sm"
                       title="Editar"
                     >
                       <Edit2 size={16} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDelete(product.id)}
                       className="p-2 bg-black/80 text-red-400 rounded hover:bg-red-500 hover:text-black transition-colors backdrop-blur-sm"
                       title="Eliminar"
@@ -296,7 +280,7 @@ const AdminPanel: React.FC = () => {
                       </span>
                     </div>
                     <span className="font-mono text-[10px] text-gray-500">
-                      {product.reference || `ID: ${product.id.substring(0,6)}`}
+                      {product.reference || `ID: ${product.id.substring(0, 6)}`}
                     </span>
                   </div>
                 </div>
@@ -326,7 +310,7 @@ const AdminPanel: React.FC = () => {
                 <h2 className="text-xl font-bold text-white font-futuristic">
                   {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
                 </h2>
-                <button 
+                <button
                   onClick={handleCloseModal}
                   className="p-2 text-gray-400 hover:text-white transition-colors"
                 >
@@ -338,9 +322,9 @@ const AdminPanel: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo</label>
-                    <select 
+                    <select
                       value={formData.type}
-                      onChange={e => setFormData({...formData, type: e.target.value as 'product' | 'service'})}
+                      onChange={e => setFormData({ ...formData, type: e.target.value as 'product' | 'service' })}
                       className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                     >
                       <option value="product">Producto</option>
@@ -350,22 +334,22 @@ const AdminPanel: React.FC = () => {
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Título</label>
-                    <input 
+                    <input
                       required
-                      type="text" 
+                      type="text"
                       value={formData.title}
-                      onChange={e => setFormData({...formData, title: e.target.value})}
+                      onChange={e => setFormData({ ...formData, title: e.target.value })}
                       className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       placeholder="Ej. Letrero Neon"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Referencia (SKU/ID)</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formData.reference}
-                      onChange={e => setFormData({...formData, reference: e.target.value})}
+                      onChange={e => setFormData({ ...formData, reference: e.target.value })}
                       className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       placeholder="Ej. REF-001"
                     />
@@ -375,22 +359,22 @@ const AdminPanel: React.FC = () => {
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Categoría</label>
                     {isCreatingCategory ? (
                       <div className="flex gap-2">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={newCategoryName}
                           onChange={e => setNewCategoryName(e.target.value)}
                           className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                           placeholder="Nueva categoría..."
                           autoFocus
                         />
-                        <button 
+                        <button
                           type="button"
                           onClick={handleCreateCategory}
                           className="px-3 bg-raynold-red text-white rounded-lg hover:bg-red-700 transition-colors font-bold"
                         >
                           Guardar
                         </button>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => {
                             setIsCreatingCategory(false);
@@ -403,16 +387,16 @@ const AdminPanel: React.FC = () => {
                       </div>
                     ) : (
                       <div className="flex gap-2">
-                        <select 
+                        <select
                           value={formData.category}
-                          onChange={e => setFormData({...formData, category: e.target.value})}
+                          onChange={e => setFormData({ ...formData, category: e.target.value })}
                           className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                         >
                           {categories.map(cat => (
                             <option key={cat.id} value={cat.name}>{cat.name}</option>
                           ))}
                         </select>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => setIsCreatingCategory(true)}
                           className="px-3 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
@@ -426,11 +410,11 @@ const AdminPanel: React.FC = () => {
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Precio</label>
-                    <input 
+                    <input
                       required
-                      type="text" 
+                      type="text"
                       value={formData.price}
-                      onChange={e => setFormData({...formData, price: e.target.value})}
+                      onChange={e => setFormData({ ...formData, price: e.target.value })}
                       className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       placeholder="Ej. RD$4,500+ o Cotizar"
                     />
@@ -438,9 +422,9 @@ const AdminPanel: React.FC = () => {
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Unidad de Medida</label>
-                    <select 
+                    <select
                       value={formData.unit}
-                      onChange={e => setFormData({...formData, unit: e.target.value})}
+                      onChange={e => setFormData({ ...formData, unit: e.target.value })}
                       className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                     >
                       <option value="Unidad">Unidad</option>
@@ -461,10 +445,10 @@ const AdminPanel: React.FC = () => {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen</label>
                     <div className="flex gap-2">
-                      <input 
-                        type="url" 
+                      <input
+                        type="url"
                         value={formData.image}
-                        onChange={e => setFormData({...formData, image: e.target.value})}
+                        onChange={e => setFormData({ ...formData, image: e.target.value })}
                         className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                         placeholder="URL o subir archivo..."
                       />
@@ -478,25 +462,25 @@ const AdminPanel: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descripción</label>
-                  <textarea 
+                  <textarea
                     required
                     rows={4}
                     value={formData.description}
-                    onChange={e => setFormData({...formData, description: e.target.value})}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
                     className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors resize-none"
                     placeholder="Descripción detallada del producto..."
                   />
                 </div>
 
                 <div className="pt-4 flex justify-end gap-3">
-                  <button 
+                  <button
                     type="button"
                     onClick={handleCloseModal}
                     className="px-6 py-2 rounded-lg font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
                   >
                     Cancelar
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     className="px-6 py-2 btn-animated font-bold rounded-lg flex items-center gap-2"
                   >
