@@ -17,7 +17,7 @@ const HomeProjects: React.FC = () => {
                 .order('created_at', { ascending: false })
                 .limit(6);
 
-            if (data) setProjects(data);
+            if (data) setProjects(data.map(p => ({ ...p, image: p.image_url || p.image })));
         };
         fetchProjects();
     }, []);

@@ -19,7 +19,7 @@ const ProjectsPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (data) {
-        setProjects(data);
+        setProjects(data.map(p => ({ ...p, image: p.image_url || p.image })));
         const uniqueCategories = Array.from(new Set(data.map(p => p.category).filter(Boolean)));
         setCategories(['Todos', ...uniqueCategories]);
       }
@@ -56,8 +56,8 @@ const ProjectsPage: React.FC = () => {
                 key={cat}
                 onClick={() => setFilter(cat)}
                 className={`px-6 py-2 rounded-full text-sm font-bold transition-all border ${filter === cat
-                    ? 'bg-raynold-red border-raynold-red text-white shadow-lg shadow-red-900/50'
-                    : 'bg-transparent border-white/20 text-gray-400 hover:border-white hover:text-white'
+                  ? 'bg-raynold-red border-raynold-red text-white shadow-lg shadow-red-900/50'
+                  : 'bg-transparent border-white/20 text-gray-400 hover:border-white hover:text-white'
                   }`}
               >
                 {cat}
