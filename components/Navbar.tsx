@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Instagram, ChevronDown, ArrowRight, ShoppingCart, Star, Search, Package, ShieldAlert } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useShop } from '../context/ShopContext';
 import SearchOverlay from './SearchOverlay';
 import { servicesData } from '../data/services';
+import { supabase } from '../lib/supabaseClient';
 
 // Official WhatsApp Logo Component
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -19,6 +20,20 @@ const Navbar: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   const { cart, favorites, toggleCart } = useShop();
+  const [waLink, setWaLink] = useState("https://wa.me/18295807411?text=Hola,%20quisiera%20cotizar%20un%20servicio.");
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase.from('site_settings').select('value').eq('key', 'footer_data').single();
+      if (data) {
+        const parsed = JSON.parse(data.value);
+        if (parsed.whatsapp_url) {
+          setWaLink(`${parsed.whatsapp_url}?text=Hola,%20quisiera%20cotizar%20un%20servicio.`);
+        }
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleScrollTo = (id: string) => {
     if (location.pathname !== '/') {
@@ -31,8 +46,6 @@ const Navbar: React.FC = () => {
     }
     setIsOpen(false);
   };
-
-  const waLink = "https://wa.me/18295807411?text=Hola,%20quisiera%20cotizar%20un%20servicio.";
 
   return (
     <>
