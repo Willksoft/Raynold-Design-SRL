@@ -20,7 +20,7 @@ import CartSidebar from './components/CartSidebar';
 import Process from './components/Process';
 import Features from './components/Features';
 import ServiceDetail from './components/ServiceDetail';
-import ScrollDrone from './components/ScrollDrone';
+import FloatingButtons from './components/FloatingButtons';
 import CrtTransition from './components/CrtTransition';
 import ParallaxParticles from './components/ParallaxParticles';
 import GsapController from './components/GsapController';
@@ -150,7 +150,7 @@ const AppContent = () => {
         <>
           <Navbar />
           <CartSidebar />
-          <ScrollDrone />
+          <FloatingButtons />
           <ParallaxParticles />
         </>
       )}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File, BarChart2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import AdminDashboard from './AdminDashboard';
 import AdminPanel from './AdminPanel';
@@ -22,6 +22,7 @@ import AdminAbout from './AdminAbout';
 import AdminMedia from './AdminMedia';
 import AdminProcess from './AdminProcess';
 import AdminFeatures from './AdminFeatures';
+import AdminReports from './AdminReports';
 
 export const AdminLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -263,6 +264,14 @@ export const AdminLayout = () => {
           >
             <Briefcase size={18} />
             <span className="font-bold text-sm">Cuentas y Flujo</span>
+          </Link>
+
+          <Link
+            to="/admin/reports"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/reports') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <BarChart2 size={18} />
+            <span className="font-bold text-sm">📊 Reportes</span>
           </Link>
 
           {/* Design & Web Dropdown */}
@@ -559,6 +568,7 @@ export const AdminLayout = () => {
             <Route path="/settings" element={<AdminSettings />} />
             <Route path="/process" element={<AdminProcess />} />
             <Route path="/features" element={<AdminFeatures />} />
+            <Route path="/reports" element={<AdminReports />} />
           </Routes>
         </div>
       </div>
