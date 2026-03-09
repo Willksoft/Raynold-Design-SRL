@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raynold Design SRL - Soluciones Gráficas del Futuro</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              raynold: {
+                black: '#050505',
+                red: '#E60000',
+                green: '#009933',
+                white: '#FFFFFF',
+                gray: '#1A1A1A'
+              }
+            },
+            fontFamily: {
+              sans: ['Archivo', 'sans-serif'],
+              futuristic: ['Archivo', 'sans-serif'],
+            },
+            animation: {
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'spin-slow': 'spin 8s linear infinite',
+              'scroll': 'scroll 25s linear infinite',
+              'gradient-text': 'textShine 3s linear infinite',
+            },
+            keyframes: {
+              scroll: {
+                '0%': { transform: 'translateX(0)' },
+                '100%': { transform: 'translateX(-100%)' },
+              },
+              textShine: {
+                '0%': { backgroundPosition: '0% 50%' },
+                '100%': { backgroundPosition: '200% 50%' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #050505;
+        color: #ffffff;
+        cursor: none; /* Hide default cursor */
+      }
+      
+      /* Ensure cursor is visible on touch devices where custom cursor might fail */
+      @media (pointer: coarse) {
+        body {
+          cursor: auto;
+        }
+      }
+
+      .gradient-text {
+        background: linear-gradient(to right, #E60000, #ffffff, #009933);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .animate-gradient-text {
+        background: linear-gradient(to right, #E60000, #ffffff, #009933, #E60000);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textShine 4s linear infinite;
+      }
+      
+      /* Glitch Effect */
+      .glitch-wrapper {
+        position: relative;
+        display: inline-block;
+      }
+      .glitch-text::before,
+      .glitch-text::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #050505;
+      }
+      .glitch-text::before {
+        left: 2px;
+        text-shadow: -1px 0 #E60000;
+        clip: rect(24px, 550px, 90px, 0);
+        animation: glitch-anim-2 3s infinite linear alternate-reverse;
+      }
+      .glitch-text::after {
+        left: -2px;
+        text-shadow: -1px 0 #009933;
+        clip: rect(85px, 550px, 140px, 0);
+        animation: glitch-anim 2.5s infinite linear alternate-reverse;
+      }
+      @keyframes glitch-anim {
+        0% { clip: rect(10px, 9999px, 31px, 0); }
+        20% { clip: rect(65px, 9999px, 89px, 0); }
+        40% { clip: rect(32px, 9999px, 15px, 0); }
+        60% { clip: rect(88px, 9999px, 12px, 0); }
+        80% { clip: rect(12px, 9999px, 68px, 0); }
+        100% { clip: rect(45px, 9999px, 92px, 0); }
+      }
+      @keyframes glitch-anim-2 {
+        0% { clip: rect(65px, 9999px, 100px, 0); }
+        20% { clip: rect(12px, 9999px, 5px, 0); }
+        40% { clip: rect(89px, 9999px, 24px, 0); }
+        60% { clip: rect(2px, 9999px, 60px, 0); }
+        80% { clip: rect(45px, 9999px, 30px, 0); }
+        100% { clip: rect(10px, 9999px, 80px, 0); }
+      }
+
+      /* Animación para el botón sólido */
+      @keyframes gradientMove {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 100% 50%; }
+      }
+
+      .btn-animated {
+        background-image: linear-gradient(to right, #E60000 0%, #009933 51%, #E60000 100%);
+        background-size: 200% auto;
+        transition: all 0.5s ease;
+        color: white;
+        box-shadow: 0 0 20px rgba(230, 0, 0, 0.5);
+        border-radius: 10px;
+        display: block;
+        position: relative;
+        z-index: 1;
+      }
+      
+      .btn-animated:hover {
+        animation: gradientMove 1.5s linear infinite;
+        color: #fff;
+        text-decoration: none;
+        box-shadow: 0 0 35px rgba(0, 153, 51, 0.7);
+        transform: translateY(-2px);
+      }
+
+      /* Animación para el botón con borde degradado */
+      @keyframes borderMove {
+        0% { background-position: 0 0, 0% 50%; }
+        100% { background-position: 0 0, 100% 50%; }
+      }
+
+      .btn-border-glow {
+        position: relative;
+        color: white;
+        background: #050505;
+        background-clip: padding-box;
+        border: 2px solid transparent;
+        border-radius: 10px;
+        
+        /* Layer 1: Background Color (Black), Layer 2: Gradient Border */
+        background-image: linear-gradient(#050505, #050505), 
+                          linear-gradient(to right, #E60000 0%, #009933 51%, #E60000 100%);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+        background-size: 100% 100%, 200% auto;
+        background-position: 0 0, 0 0;
+        
+        transition: all 0.3s ease;
+        box-shadow: 0 0 15px rgba(230, 0, 0, 0.3);
+      }
+
+      .btn-border-glow:hover {
+        animation: borderMove 1.5s linear infinite;
+        box-shadow: 0 0 30px rgba(0, 153, 51, 0.6);
+        transform: translateY(-2px);
+        text-decoration: none;
+      }
+
+      .grid-bg {
+        background-size: 40px 40px;
+        background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                          linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      }
+      .glass-panel {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+      }
+
+      /* Active Process Card State - Impact Effect */
+      .process-card-active {
+        border-color: #00ff55 !important;
+        box-shadow: 0 0 50px rgba(0, 255, 85, 0.2), inset 0 0 20px rgba(0, 255, 85, 0.1) !important;
+        background-color: rgba(0, 20, 5, 0.9) !important;
+        z-index: 20 !important;
+      }
+      
+      .process-card-active .process-icon-box {
+        background-color: #009933 !important;
+        color: white !important;
+        box-shadow: 0 0 30px #00ff55 !important;
+        border-color: #00ff55 !important;
+      }
+
+      .process-card-active .process-number {
+        color: #00ff55 !important;
+        opacity: 0.5 !important;
+        text-shadow: 0 0 10px #00ff55;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?deps=react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0?deps=react@18.2.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?deps=react@18.2.0,react-dom@18.2.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.562.0?deps=react@18.2.0",
+    "@heroicons/react/24/outline": "https://esm.sh/@heroicons/react@2.1.1/24/outline?deps=react@18.2.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
+    "framer-motion": "https://esm.sh/framer-motion@11.0.8?deps=react@18.2.0,react-dom@18.2.0",
+    "gsap": "https://esm.sh/gsap@3.12.5",
+    "gsap/ScrollTrigger": "https://esm.sh/gsap@3.12.5/ScrollTrigger",
+    "@heroicons/react/": "https://esm.sh/@heroicons/react@^2.2.0/",
+    "react-dom/": "https://esm.sh/react-dom@^18.2.0/",
+    "react/": "https://esm.sh/react@^18.2.0/",
+    "gsap/": "https://esm.sh/gsap@^3.14.2/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
