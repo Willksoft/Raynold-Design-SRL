@@ -90,7 +90,8 @@ const AdminPanel: React.FC = () => {
         return;
       }
       setUploading(true);
-      const path = `products/${Date.now()}-${file.name}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const path = `products/${Date.now()}-${safeName}`;
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
       if (error) {
         alert(`Error al subir imagen: ${error.message}`);

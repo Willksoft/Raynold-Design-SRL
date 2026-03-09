@@ -45,7 +45,8 @@ const AdminBrands = () => {
         return;
       }
       setUploading(true);
-      const path = `brands/${Date.now()}-${file.name}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const path = `brands/${Date.now()}-${safeName}`;
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
       if (!error && data) {
         const { data: { publicUrl } } = supabase.storage.from('raynold-media').getPublicUrl(data.path);

@@ -60,7 +60,8 @@ const AdminHero = () => {
         return;
       }
       setUploading(true);
-      const path = `hero/${Date.now()}-${file.name}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const path = `hero/${Date.now()}-${safeName}`;
       const { data, error } = await supabase.storage.from('raynold-media').upload(path, file);
       if (!error && data) {
         const { data: { publicUrl } } = supabase.storage.from('raynold-media').getPublicUrl(data.path);
