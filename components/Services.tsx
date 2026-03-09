@@ -120,7 +120,7 @@ const Services: React.FC = () => {
                       {/* Corner Gradient */}
                       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${styles.corner} to-transparent rounded-bl-[100px] -mr-8 -mt-8 transition-transform duration-500 group-hover:scale-110 opacity-60 z-10`}></div>
 
-                      <div className="relative z-10">
+                      <div className="relative z-10 flex flex-col h-full">
                         {/* Icon Container */}
                         <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-8 border transition-all duration-300 ${styles.wrapper} ${styles.hoverBorder} group-hover:scale-105 backdrop-blur-md`}>
                           {service.icon && <service.icon className={`w-10 h-10 ${styles.icon}`} strokeWidth={1.5} />}
@@ -134,7 +134,7 @@ const Services: React.FC = () => {
                           {service.description}
                         </p>
 
-                        <div className="mt-6 flex items-center text-sm font-bold text-gray-500 group-hover:text-white transition-colors">
+                        <div className="mt-auto pt-6 flex items-center text-sm font-bold text-gray-500 group-hover:text-white transition-colors">
                           Ver Detalles &rarr;
                         </div>
                       </div>
