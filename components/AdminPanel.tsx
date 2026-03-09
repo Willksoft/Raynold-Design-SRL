@@ -63,9 +63,10 @@ const AdminPanel: React.FC = () => {
       });
     } else {
       setEditingProduct(null);
+      const generatedRef = `PRD-${Math.floor(1000 + Math.random() * 9000)}`;
       setFormData({
         title: '',
-        reference: '',
+        reference: generatedRef,
         category: categories.length > 0 ? categories[0].name : 'Señalización',
         image: '',
         price: '',
