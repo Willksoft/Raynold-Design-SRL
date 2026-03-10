@@ -165,7 +165,7 @@ const FloatingButtons: React.FC = () => {
       ════════════════════════════════════ */}
             <div className="fixed bottom-8 right-6 z-[150] flex flex-col-reverse items-end gap-4">
 
-                {/* ── WhatsApp Button ──────────────────────── */}
+                {/* ── WhatsApp Button (circular) ──────────── */}
                 <motion.a
                     href={WHATSAPP_URL}
                     target="_blank"
@@ -173,72 +173,46 @@ const FloatingButtons: React.FC = () => {
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.6, type: 'spring', stiffness: 220 }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.92 }}
-                    className="relative flex items-center gap-3 pl-3 pr-4 py-2.5 bg-[#25D366] rounded-full text-white shadow-[0_4px_28px_rgba(37,211,102,0.55)] cursor-pointer"
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="relative w-14 h-14 bg-[#25D366] rounded-full text-white shadow-[0_4px_28px_rgba(37,211,102,0.55)] cursor-pointer flex items-center justify-center"
                     title="WhatsApp +1 (829) 580-7411"
                 >
-                    {/* Pulse ring */}
                     <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-25 pointer-events-none" />
-                    <span className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                        <WhatsAppIcon />
-                    </span>
-                    <div className="leading-tight">
-                        <p className="text-[11px] font-bold tracking-wide">WhatsApp</p>
-                        <p className="text-[10px] text-green-100 font-mono">+1 (829) 580-7411</p>
-                    </div>
+                    <WhatsAppIcon />
                 </motion.a>
 
-                {/* ── Chatbot Button (Agente Raynold) ──────── */}
+                {/* ── Chatbot Button (circular) ──────────── */}
                 <motion.button
                     onClick={() => setChatOpen(o => !o)}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.9, type: 'spring', stiffness: 220 }}
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.92 }}
-                    className="relative flex items-center gap-3 pl-2 pr-4 py-2 rounded-full text-white shadow-[0_4px_28px_rgba(230,0,0,0.45)] cursor-pointer border border-white/10"
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="relative w-14 h-14 rounded-full text-white shadow-[0_4px_28px_rgba(230,0,0,0.45)] cursor-pointer border border-white/10 overflow-hidden"
                     style={{ background: 'linear-gradient(135deg,#1a0000,#3a0000)' }}
                     title="Chat con Agente Raynold"
                 >
                     {!chatOpen && (
                         <span className="absolute inset-0 rounded-full bg-red-700 animate-ping opacity-15 pointer-events-none" />
                     )}
-                    {/* Agent photo */}
-                    <div className="relative flex-shrink-0">
-                        <img
-                            src="/agente-raynold.png"
-                            alt="Agente Raynold"
-                            className="w-10 h-10 rounded-full object-cover border-2 border-raynold-red bg-gray-800"
-                            onError={e => {
-                                const img = e.target as HTMLImageElement;
-                                img.style.display = 'none';
-                                // show fallback icon
-                                (img.nextElementSibling as HTMLElement)?.classList.remove('hidden');
-                            }}
-                        />
-                        {/* Fallback icon */}
-                        <div className="hidden w-10 h-10 rounded-full bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center border-2 border-raynold-red">
-                            <Bot size={18} className="text-white" />
-                        </div>
-                        {/* Online dot */}
-                        <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#1a0000] ${open ? 'bg-green-400' : 'bg-gray-500'}`} />
-                    </div>
-                    <AnimatePresence mode="wait">
-                        {chatOpen ? (
-                            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} className="flex items-center gap-1.5">
-                                <span className="text-[12px] font-bold text-white/80">Cerrar</span>
-                                <X size={14} className="text-white/60" />
-                            </motion.div>
-                        ) : (
-                            <motion.div key="name" initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -6 }} className="leading-tight text-left">
-                                <p className="text-[12px] font-bold tracking-wide">Agente Raynold</p>
-                                <p className={`text-[10px] font-medium ${open ? 'text-green-400' : 'text-gray-400'}`}>
-                                    {open ? '● En línea' : '● Fuera de horario'}
-                                </p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    {chatOpen ? (
+                        <X size={22} className="text-white mx-auto" />
+                    ) : (
+                        <>
+                            <img
+                                src="/agente-raynold.png"
+                                alt="Agente Raynold"
+                                className="w-full h-full object-cover absolute inset-0"
+                                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                            {/* Fallback icon (shows if image fails) */}
+                            <Bot size={24} className="text-white relative z-[1]" />
+                        </>
+                    )}
+                    {/* Online dot */}
+                    <span className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-[#1a0000] z-10 ${open ? 'bg-green-400' : 'bg-gray-500'}`} />
                 </motion.button>
             </div>
 
@@ -336,8 +310,8 @@ const FloatingButtons: React.FC = () => {
                                         />
                                     )}
                                     <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${m.from === 'user'
-                                            ? 'bg-raynold-red text-white rounded-br-sm'
-                                            : 'bg-white/10 text-gray-100 rounded-bl-sm'
+                                        ? 'bg-raynold-red text-white rounded-br-sm'
+                                        : 'bg-white/10 text-gray-100 rounded-bl-sm'
                                         }`}>
                                         <Md text={m.text} />
                                         <p className="text-[9px] mt-1 opacity-40 text-right">{m.time}</p>
