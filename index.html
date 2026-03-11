@@ -390,6 +390,16 @@
 </head>
 
 <body>
+  <!-- Anti-clickjacking: client-side framebusting (defense-in-depth) -->
+  <style id="antiClickjack">
+    body {
+      display: none !important;
+    }
+  </style>
+  <script>
+    if (self === top) { document.getElementById('antiClickjack').remove(); }
+    else { top.location = self.location; }
+  </script>
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
