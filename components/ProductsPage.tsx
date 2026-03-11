@@ -46,8 +46,8 @@ const ProductsPage: React.FC = () => {
                 key={cat}
                 onClick={() => setFilter(cat)}
                 className={`px-5 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap border ${filter === cat
-                    ? 'bg-white text-black border-white scale-105'
-                    : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:border-white/30'
+                  ? 'bg-white text-black border-white scale-105'
+                  : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:border-white/30'
                   }`}
               >
                 {cat}
@@ -93,15 +93,15 @@ const ProductsPage: React.FC = () => {
 
                   <div className="p-5 flex-1 flex flex-col">
                     <h3 className="text-lg font-bold text-white font-futuristic mb-2">{product.title}</h3>
-                    <p className="text-gray-400 text-sm font-mono mb-4">{product.price}</p>
+                    {product.price && <p className="text-gray-400 text-sm font-mono mb-4">{product.price}</p>}
 
                     <div className="mt-auto flex gap-2">
                       <button
                         onClick={(e) => { e.stopPropagation(); addToCart(product); }}
                         disabled={isInCart}
                         className={`flex-1 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${isInCart
-                            ? 'bg-green-900/50 text-green-400 border border-green-500/30 cursor-default'
-                            : 'bg-white text-black hover:bg-gray-200'
+                          ? 'bg-green-900/50 text-green-400 border border-green-500/30 cursor-default'
+                          : 'bg-white text-black hover:bg-gray-200'
                           }`}
                       >
                         {isInCart ? <><Check size={16} /> Agregado</> : <><Plus size={16} /> Añadir</>}

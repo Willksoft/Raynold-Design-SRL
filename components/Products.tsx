@@ -24,7 +24,7 @@ const Products: React.FC = () => {
             id: p.id,
             title: p.title,
             description: p.description || '',
-            price: p.price ? `RD$ ${Number(p.price).toLocaleString()}` : 'Consultar',
+            price: p.price && !isNaN(Number(p.price)) && Number(p.price) > 0 ? `RD$ ${Number(p.price).toLocaleString()}` : '',
             image: p.image || `https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600`,
             category: p.category || 'Producto',
             reference: p.reference,
@@ -91,7 +91,7 @@ const Products: React.FC = () => {
                       {product.category}
                     </span>
                     <h3 className="text-2xl font-bold text-white font-futuristic mb-2">{product.title}</h3>
-                    <span className="text-white font-medium block mb-4">{product.price}</span>
+                    {product.price && <span className="text-white font-medium block mb-4">{product.price}</span>}
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
                       <button

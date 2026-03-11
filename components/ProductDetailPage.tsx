@@ -49,7 +49,7 @@ const ProductDetailPage: React.FC = () => {
                     id: data.id,
                     title: data.title,
                     description: data.description || '',
-                    price: data.price ? `RD$ ${Number(data.price).toLocaleString()}` : 'Consultar',
+                    price: data.price && !isNaN(Number(data.price)) && Number(data.price) > 0 ? `RD$ ${Number(data.price).toLocaleString()}` : '',
                     image: data.image || 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=800',
                     category: data.category || 'Producto',
                     reference: data.reference,
@@ -70,7 +70,7 @@ const ProductDetailPage: React.FC = () => {
                     setRelatedProducts(related.map((p: any) => ({
                         id: p.slug || p.id,
                         title: p.title,
-                        price: p.price ? `RD$ ${Number(p.price).toLocaleString()}` : 'Consultar',
+                        price: p.price && !isNaN(Number(p.price)) && Number(p.price) > 0 ? `RD$ ${Number(p.price).toLocaleString()}` : '',
                         image: p.image || 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600',
                         category: p.category || 'Producto',
                         reference: p.reference,
@@ -191,9 +191,11 @@ const ProductDetailPage: React.FC = () => {
                             {product.title}
                         </h1>
 
-                        <p className="text-3xl text-raynold-green font-mono font-bold mb-8">
-                            {product.price}
-                        </p>
+                        {product.price && (
+                            <p className="text-3xl text-raynold-green font-mono font-bold mb-8">
+                                {product.price}
+                            </p>
+                        )}
 
                         {/* Description */}
                         <div className="mb-8">
@@ -305,7 +307,7 @@ const ProductDetailPage: React.FC = () => {
                                     </div>
                                     <div className="p-4">
                                         <h3 className="text-sm font-bold text-white mb-1 line-clamp-2">{rp.title}</h3>
-                                        <span className="text-raynold-green text-xs font-mono">{rp.price}</span>
+                                        {rp.price && <span className="text-raynold-green text-xs font-mono">{rp.price}</span>}
                                     </div>
                                 </div>
                             ))}

@@ -25,7 +25,7 @@ const mapRow = (row: any): ProductItem & { slug?: string } => ({
   title: row.title,
   category: row.category,
   image: row.image || '',
-  price: row.price || '',
+  price: row.price && !isNaN(Number(row.price)) && Number(row.price) > 0 ? `RD$ ${Number(row.price).toLocaleString()}` : '',
   description: row.description || '',
   reference: row.reference || '',
   type: (row.type as 'product' | 'service') || 'product',
