@@ -1,17 +1,14 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Raynold Design SRL
 
-# Run and deploy your AI Studio app
+![GHBanner](https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6)
 
-This contains everything you need to run your app locally.
+Web application for Raynold Design SRL — a signage, printing, and branding company based in the Dominican Republic.
 
-View your app in AI Studio: https://ai.studio/apps/969d9eab-42b0-447c-b68e-135e0169d7d5
+View the app in AI Studio: [Open in AI Studio](https://ai.studio/apps/969d9eab-42b0-447c-b68e-135e0169d7d5)
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js
 
 1. Install dependencies:
    `npm install`
