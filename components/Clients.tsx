@@ -14,7 +14,7 @@ const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
       <div
         className="w-full h-32 rounded-xl flex items-center justify-center px-4 py-3 transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-70"
         style={{
-          backgroundColor: brand.bg_color && brand.bg_color !== '#ffffff' ? brand.bg_color : 'rgba(255,255,255,0.06)',
+          backgroundColor: brand.bg_color || 'rgba(255,255,255,0.06)',
         }}
       >
         <img
