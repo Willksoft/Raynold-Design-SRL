@@ -20,7 +20,7 @@ interface ShopContextType {
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
-const mapRow = (row: any): ProductItem => ({
+const mapRow = (row: any): ProductItem & { slug?: string } => ({
   id: row.id,
   title: row.title,
   category: row.category,
@@ -30,6 +30,7 @@ const mapRow = (row: any): ProductItem => ({
   reference: row.reference || '',
   type: (row.type as 'product' | 'service') || 'product',
   unit: row.unit || 'Unidad',
+  slug: row.slug || '',
 });
 
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -68,23 +69,33 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const toggleCart = () => setIsCartOpen(!isCartOpen);
   const clearCart = () => setCart([]);
 
+  const generateSlug = (title: string) =>
+    title.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
   const addProduct = async (product: Omit<ProductItem, 'id'>) => {
+    const slug = generateSlug(product.title);
     await supabase.from('products').insert([{
       title: product.title, category: product.category,
       image: product.image, price: product.price,
       description: product.description, reference: product.reference,
-      type: product.type || 'product', unit: product.unit || 'Unidad'
+      type: product.type || 'product', unit: product.unit || 'Unidad',
+      slug
     }]);
     await refreshProducts();
   };
 
   const updateProduct = async (id: string, updatedFields: Partial<ProductItem>) => {
-    await supabase.from('products').update({
+    const updates: any = {
       title: updatedFields.title, category: updatedFields.category,
       image: updatedFields.image, price: updatedFields.price,
       description: updatedFields.description, reference: updatedFields.reference,
       type: updatedFields.type, unit: updatedFields.unit
-    }).eq('id', id);
+    };
+    if (updatedFields.title) updates.slug = generateSlug(updatedFields.title);
+    await supabase.from('products').update(updates).eq('id', id);
     await refreshProducts();
   };
 

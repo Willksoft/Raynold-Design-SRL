@@ -10,6 +10,7 @@ import FavoritesPage from './components/FavoritesPage';
 import ProjectsPage from './components/ProjectsPage';
 import HomeProjects from './components/HomeProjects';
 import ProjectDetailPage from './components/ProjectDetailPage';
+import ProductDetailPage from './components/ProductDetailPage';
 import AdminLayout from './components/AdminLayout';
 import About from './components/About';
 import AiConsultant from './components/AiConsultant';
@@ -97,6 +98,9 @@ const AnimatedRoutes = () => {
         } />
         <Route path="/products" element={
           <CrtTransition><ProductsPage /></CrtTransition>
+        } />
+        <Route path="/products/:id" element={
+          <CrtTransition><ProductDetailPage /></CrtTransition>
         } />
         <Route path="/favorites" element={
           <CrtTransition><FavoritesPage /></CrtTransition>
