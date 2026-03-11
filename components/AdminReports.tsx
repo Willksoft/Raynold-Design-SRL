@@ -301,7 +301,7 @@ const AdminReports: React.FC = () => {
         { id: 'facturas', label: `Facturas (${data.invoices.length})` },
         { id: 'gastos', label: `Gastos (${data.expenses.length})` },
         { id: 'cobros', label: `Cobros (${data.payments.length})` },
-        { id: 'dgii', label: '🏛 DGII' },
+        { id: 'dgii', label: 'DGII' },
     ] as const;
 
     return (
@@ -637,7 +637,7 @@ const AdminReports: React.FC = () => {
 
                     {/* Info notice */}
                     <div className="bg-blue-900/20 border border-blue-700/30 rounded-xl p-4 text-xs text-blue-300 leading-relaxed">
-                        <p className="font-bold text-blue-200 mb-1">📋 Instrucciones para subir a la DGII</p>
+                        <p className="font-bold text-blue-200 mb-1">Instrucciones para subir a la DGII</p>
                         <ol className="list-decimal pl-4 space-y-1 text-blue-300/80">
                             <li>Exporta el archivo <strong>TXT (DGII)</strong> con el formato pipe-delimited requerido.</li>
                             <li>Ingresa a <strong>dgii.gov.do → Servicios → Declaraciones</strong> con tu usuario y clave.</li>

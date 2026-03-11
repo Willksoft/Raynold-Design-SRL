@@ -271,7 +271,7 @@ export const AdminLayout = () => {
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/reports') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
           >
             <BarChart2 size={18} />
-            <span className="font-bold text-sm">📊 Reportes</span>
+            <span className="font-bold text-sm">Reportes</span>
           </Link>
 
           {/* Design & Web Dropdown */}

@@ -27,52 +27,52 @@ type QA = { q: string; a: string; tags: string[] };
 const KNOWLEDGE: QA[] = [
     {
         q: '¿Qué servicios ofrecen?',
-        a: '🎨 En Raynold Design ofrecemos: **Rotulación vehicular**, **Letras 3D y neón**, **Impresión de gran formato**, **Car Wrapping**, **Stickers personalizados**, **Camisetas y ropa corporativa**, **Gorras bordadas**, **Roll-up banners**, y mucho más. ¿En cuál colocamos?',
+        a: 'En Raynold Design ofrecemos: **Rotulación vehicular**, **Letras 3D y neón**, **Impresión de gran formato**, **Car Wrapping**, **Stickers personalizados**, **Camisetas y ropa corporativa**, **Gorras bordadas**, **Roll-up banners**, y mucho más. ¿En cuál colocamos?',
         tags: ['servicio', 'que hacen', 'ofrecen', 'hacen'],
     },
     {
         q: '¿Cuánto cuesta un letrero?',
-        a: '💡 El precio depende del tamaño, material y complejidad. Los letreros parten desde **RD$3,500**. Para un presupuesto exacto escríbenos al WhatsApp **+1 (829) 580-7411** o llena el formulario de contacto.',
+        a: 'El precio depende del tamaño, material y complejidad. Los letreros parten desde **RD$3,500**. Para un presupuesto exacto escríbenos al WhatsApp **+1 (829) 580-7411** o llena el formulario de contacto.',
         tags: ['precio', 'costo', 'cuanto', 'letrero', 'presupuesto', 'vale'],
     },
     {
         q: '¿Hacen rotulación vehicular?',
-        a: '🚗 ¡Sí! Somos especialistas en **rotulación vehicular y car wrapping**. Usamos vinil de alta calidad (3M, Oracal). Incluye diseño, impresión e instalación. Tiempo estimado: **2-5 días hábiles**.',
+        a: '¡Sí! Somos especialistas en **rotulación vehicular y car wrapping**. Usamos vinil de alta calidad (3M, Oracal). Incluye diseño, impresión e instalación. Tiempo estimado: **2-5 días hábiles**.',
         tags: ['vehiculo', 'carro', 'rotulacion', 'car wrap', 'vinilo', 'auto'],
     },
     {
         q: '¿Cuánto tiempo tarda un pedido?',
-        a: '⏱️ Los tiempos de entrega según producto:\n- Stickers y tarjetas: **1-2 días**\n- Letreros y carteles: **3-5 días**\n- Rotulación vehicular: **2-5 días**\n- Car wrapping completo: **5-10 días**\n\nPuedes solicitar *rush delivery* si tienes urgencia.',
+        a: 'Los tiempos de entrega según producto:\n- Stickers y tarjetas: **1-2 días**\n- Letreros y carteles: **3-5 días**\n- Rotulación vehicular: **2-5 días**\n- Car wrapping completo: **5-10 días**\n\nPuedes solicitar *rush delivery* si tienes urgencia.',
         tags: ['tiempo', 'dias', 'entrega', 'cuando', 'demora', 'rapidez', 'tarde'],
     },
     {
         q: '¿Cuál es el horario de atención?',
-        a: '🕐 Nuestro horario:\n- **Lun – Vie:** 8:30 AM – 7:00 PM\n- **Sábado:** 8:30 AM – 1:00 PM\n- **Domingo:** Cerrado\n\nEstamos disponibles por WhatsApp en **+1 (829) 580-7411**.',
+        a: 'Nuestro horario:\n- **Lun – Vie:** 8:30 AM – 7:00 PM\n- **Sábado:** 8:30 AM – 1:00 PM\n- **Domingo:** Cerrado\n\nEstamos disponibles por WhatsApp en **+1 (829) 580-7411**.',
         tags: ['horario', 'hora', 'atienden', 'abren', 'cierran', 'cuando atienden'],
     },
     {
         q: '¿Dónde están ubicados?',
-        a: '📍 Estamos en **República Dominicana**. Atendemos en nuestra sede y hacemos entregas a domicilio. Para la dirección exacta contáctanos por WhatsApp **+1 (829) 580-7411**.',
+        a: 'Estamos en **República Dominicana**. Atendemos en nuestra sede y hacemos entregas a domicilio. Para la dirección exacta contáctanos por WhatsApp **+1 (829) 580-7411**.',
         tags: ['ubicacion', 'direccion', 'donde', 'local', 'sucursal'],
     },
     {
         q: '¿Hacen diseño gráfico?',
-        a: '✏️ ¡Sí! Contamos con nuestro equipo creativo para diseñar tu logo, identidad visual, artes para impresión y más. El diseño puede incluirse en el pedido o contratarse por separado.',
+        a: '¡Sí! Contamos con nuestro equipo creativo para diseñar tu logo, identidad visual, artes para impresión y más. El diseño puede incluirse en el pedido o contratarse por separado.',
         tags: ['diseño', 'logo', 'arte', 'grafico', 'creativo'],
     },
     {
         q: '¿Cuáles son sus métodos de pago?',
-        a: '💳 Aceptamos:\n- **Transferencia bancaria** (BHD, Popular, Banreservas)\n- **Tarjeta de crédito/débito**\n- **Efectivo**\n- **PayPal** para clientes internacionales\n\nSolicitamos un adelanto del **50%** para iniciar.',
+        a: 'Aceptamos:\n- **Transferencia bancaria** (BHD, Popular, Banreservas)\n- **Tarjeta de crédito/débito**\n- **Efectivo**\n- **PayPal** para clientes internacionales\n\nSolicitamos un adelanto del **50%** para iniciar.',
         tags: ['pago', 'transferencia', 'efectivo', 'tarjeta', 'metodo'],
     },
     {
         q: '¿Trabajan con empresas?',
-        a: '🏢 ¡Absolutamente! Trabajamos con **Toyota, Claro, Brugal** y muchas más. Ofrecemos **precios especiales por volumen** y contratos corporativos. Escríbenos para una propuesta personalizada.',
+        a: '¡Absolutamente! Trabajamos con **Toyota, Claro, Brugal** y muchas más. Ofrecemos **precios especiales por volumen** y contratos corporativos. Escríbenos para una propuesta personalizada.',
         tags: ['empresa', 'corporativo', 'negocio', 'cliente', 'volumen'],
     },
     {
         q: '¿Tienen garantía?',
-        a: '🛡️ Sí. Garantizamos la **calidad de materiales e instalación**. En caso de defecto de fabricación, hacemos el reemplazo sin costo. Los vinilos de exterior tienen duración garantizada de **3-7 años**.',
+        a: 'Sí. Garantizamos la **calidad de materiales e instalación**. En caso de defecto de fabricación, hacemos el reemplazo sin costo. Los vinilos de exterior tienen duración garantizada de **3-7 años**.',
         tags: ['garantia', 'duracion', 'calidad', 'defecto'],
     },
 ];
@@ -108,7 +108,7 @@ const findAnswer = (query: string): string => {
     const q = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const match = KNOWLEDGE.find(k => k.tags.some(t => q.includes(t)));
     if (match) return match.a;
-    return '🤔 No tengo esa información exacta. Comunícate directamente con nuestro equipo por WhatsApp al **+1 (829) 580-7411** o llena el formulario de contacto y te respondemos pronto.';
+    return 'No tengo esa información exacta. Comunícate directamente con nuestro equipo por WhatsApp al **+1 (829) 580-7411** o llena el formulario de contacto y te respondemos pronto.';
 };
 
 // ─── WhatsApp SVG ─────────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ const FloatingButtons: React.FC = () => {
     const [msgs, setMsgs] = useState<Msg[]>([
         {
             from: 'bot',
-            text: '¡Hola! 👋 Soy **Agente Raynold**, tu asistente virtual de **Raynold Design**. ¿En qué puedo ayudarte hoy?',
+            text: '¡Hola! Soy **Agente Raynold**, tu asistente virtual de **Raynold Design**. ¿En qué puedo ayudarte hoy?',
             time: nowStr(),
         },
     ]);
@@ -379,7 +379,7 @@ const FloatingButtons: React.FC = () => {
 
                         {/* Footer */}
                         <p className="text-center text-[10px] text-gray-700 pb-2 flex-shrink-0">
-                            Raynold Design SRL · {open ? '🟢 Abierto ahora' : '🔴 Cerrado ahora'}
+                            Raynold Design SRL · {open ? 'Abierto ahora' : 'Cerrado ahora'}
                         </p>
                     </motion.div>
                 )}
