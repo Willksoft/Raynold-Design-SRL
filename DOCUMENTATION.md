@@ -1,127 +1,413 @@
-# Documentación y PRD (Product Requirements Document)
-**Proyecto:** Raynold Design SRL - Plataforma Web y Portafolio
-**Versión:** 1.0.0
-**Fecha:** Marzo 2026
+# 📋 Documentación del Proyecto — Raynold Design SRL
+
+## Información General
+
+| Campo | Valor |
+|---|---|
+| **Nombre** | Raynold Design SRL |
+| **RNC** | 131-76560-2 |
+| **Tipo** | Web App (Landing + Admin + POS) |
+| **URL de Producción** | [raynolddesign.com](https://raynolddesign.com) |
+| **Repositorio** | [Willksoft/Raynold-Design-SRL](https://github.com/Willksoft/Raynold-Design-SRL) |
+| **Hosting** | Vercel (SPA) |
+| **Backend** | Supabase (DB, Auth, Storage) |
+| **Ubicación** | Punta Cana, La Altagracia, RD |
 
 ---
 
-## 1. Introducción
-Este documento contiene la especificación de requisitos del producto (PRD) y la documentación técnica para la plataforma web de **Raynold Design SRL**. La aplicación es una experiencia web futurista, altamente animada y orientada a la conversión, diseñada para mostrar servicios de diseño, productos físicos (impresión, señalización, textil) y facilitar la cotización directa a través de WhatsApp, complementada con un asistente de Inteligencia Artificial.
+## 🏗️ Stack Tecnológico
+
+### Frontend
+
+| Tecnología | Versión | Uso |
+|---|---|---|
+| React | 18.2.0 | UI Framework |
+| TypeScript | 5.8.2 | Type Safety |
+| Vite | 6.2.0 | Build Tool + Dev Server |
+| React Router DOM | 6.22.3 | SPA Routing |
+| Framer Motion | 11.0.8 | Animaciones y transiciones |
+| GSAP | 3.14.2 | Scroll animations (parallax) |
+| Tailwind CSS | CDN | Estilos utilitarios |
+| Lucide React | 0.562.0 | Iconografía |
+| Recharts | 3.8.0 | Gráficos en dashboard |
+
+### Backend & Servicios
+
+| Servicio | Uso |
+|---|---|
+| **Supabase** | PostgreSQL + Auth + Storage + API |
+| **Google Gemini API** | Consultor IA integrado |
+| **DGII API** | Autocompletado de RNC y contribuyentes |
+| **Vercel** | Deploy y hosting |
+| **Express + TSX** | Dev server local |
 
 ---
 
-## 2. Product Requirements Document (PRD)
+## 📁 Estructura del Proyecto
 
-### 2.1. Visión del Producto
-Crear una experiencia digital inmersiva que posicione a Raynold Design SRL como una agencia de vanguardia. La plataforma no solo debe funcionar como un portafolio, sino como una herramienta de ventas interactiva que permita a los usuarios explorar productos, guardar favoritos, armar cotizaciones y recibir asesoría instantánea mediante IA.
-
-### 2.2. Público Objetivo
-*   **Empresas (B2B):** Buscan soluciones de señalización, material promocional, branding corporativo y diseño de interiores/exteriores.
-*   **Emprendedores y Particulares (B2C):** Buscan impresiones personalizadas, rotulación de vehículos (wrapping) y diseño gráfico general.
-
-### 2.3. Objetivos Clave
-1.  **Aumentar la conversión:** Facilitar el contacto directo y la solicitud de cotizaciones vía WhatsApp.
-2.  **Mejorar la experiencia de usuario (UX):** Proveer una interfaz rápida, con animaciones fluidas (estilo cyberpunk/futurista) que retenga la atención.
-3.  **Automatizar la atención inicial:** Utilizar un asistente de IA para responder preguntas frecuentes y guiar a los usuarios hacia los servicios adecuados.
-
-### 2.4. Requisitos Funcionales (Funcionalidades Core)
-*   **Catálogo de Productos:** Visualización de productos filtrables por categoría (Señalización, Impresión, Promocional, Textil, etc.).
-*   **Sistema de Cotización (Carrito):** Capacidad de añadir productos a un "carrito" que consolida una lista de interés para ser enviada como solicitud de cotización vía WhatsApp.
-*   **Sistema de Favoritos:** Permite a los usuarios marcar productos con una "estrella" para guardarlos en una lista personalizada (`/favorites`) para futura referencia.
-*   **Asistente de IA (Consultor):** Un chat integrado impulsado por Google Gemini que asesora sobre diseño, materiales y servicios de la empresa.
-*   **Portafolio de Proyectos:** Galería de trabajos previos para validar la experiencia de la agencia.
-*   **Detalle de Servicios:** Páginas dinámicas que explican a fondo cada servicio ofrecido.
-
-### 2.5. Requisitos No Funcionales
-*   **Rendimiento:** Carga rápida a pesar de las animaciones complejas.
-*   **Diseño Responsivo:** Experiencia perfecta tanto en dispositivos móviles como en pantallas ultra anchas.
-*   **Estética:** Tema oscuro (Dark Mode por defecto), tipografías futuristas, efectos CRT, glitch, y partículas parallax.
-*   **Accesibilidad:** Contraste adecuado y navegación clara a pesar de los efectos visuales.
-
----
-
-## 3. Arquitectura Técnica
-
-### 3.1. Stack Tecnológico
-*   **Framework Core:** React 18 con TypeScript.
-*   **Build Tool:** Vite.
-*   **Enrutamiento:** React Router DOM v6.
-*   **Estilos:** Tailwind CSS (configurado con variables personalizadas para colores de la marca: `raynold-red`, `raynold-green`, `raynold-black`).
-*   **Animaciones:** 
-    *   Framer Motion (Transiciones de página, layout animations, interacciones UI).
-    *   GSAP (ScrollTrigger, animaciones complejas basadas en scroll).
-*   **Iconografía:** Lucide React.
-*   **IA:** `@google/genai` (Integración con modelos Gemini).
-
-### 3.2. Estructura del Proyecto
-```text
-/
-├── src/
-│   ├── components/       # Componentes reutilizables (Navbar, Hero, ProductModal, etc.)
-│   ├── context/          # Gestión de estado global (ShopContext)
-│   ├── data/             # Datos estáticos (products.ts, services.ts)
-│   ├── services/         # Lógica de integración externa (geminiService.ts)
-│   ├── types.ts          # Definiciones de interfaces TypeScript
-│   ├── App.tsx           # Componente raíz y configuración de rutas
-│   └── index.css         # Estilos globales y directivas de Tailwind
-├── index.html            # Punto de entrada HTML
-├── vite.config.ts        # Configuración de Vite
-└── package.json          # Dependencias y scripts
+```
+raynold-design-srl/
+├── index.html              # Punto de entrada HTML (SEO, Tailwind, meta tags)
+├── index.tsx                # Entry point React
+├── App.tsx                  # Router principal + Layout
+├── types.ts                 # Interfaces TypeScript globales
+├── vite.config.ts           # Configuración de Vite
+├── vite-env.d.ts            # Declaraciones env vars
+├── vercel.json              # Config Vercel (rewrites + security headers)
+├── server.ts                # Dev server Express
+├── package.json             # Dependencias
+├── .env.local               # Variables de entorno (NO en git)
+├── .gitignore
+│
+├── lib/
+│   ├── supabaseClient.ts    # Cliente Supabase inicializado
+│   └── dgiiService.ts       # Servicio API DGII (RNC lookup)
+│
+├── context/
+│   ├── ShopContext.tsx       # Estado global del carrito/productos
+│   └── UIContext.tsx         # Estado UI global
+│
+├── components/
+│   ├── ─── LANDING PAGE ───
+│   ├── Hero.tsx              # Hero slider con imágenes dinámicas
+│   ├── Features.tsx          # Características principales
+│   ├── Services.tsx          # Catálogo de servicios
+│   ├── ServiceDetail.tsx     # Detalle individual de servicio
+│   ├── Products.tsx          # Productos destacados (home)
+│   ├── ProductsPage.tsx      # Página completa de productos
+│   ├── ProductModal.tsx      # Modal de detalle de producto
+│   ├── Clients.tsx           # Carrusel de logos de clientes
+│   ├── Process.tsx           # Proceso de trabajo
+│   ├── HomeProjects.tsx      # Proyectos destacados (home)
+│   ├── ProjectsPage.tsx      # Página completa de proyectos
+│   ├── ProjectDetailPage.tsx # Detalle de proyecto con galería
+│   ├── About.tsx             # Página "Nosotros"
+│   ├── Contact.tsx           # Sección de contacto (home)
+│   ├── ContactPage.tsx       # Página de contacto completa
+│   ├── AiConsultant.tsx      # Consultor inteligente con Gemini
+│   │
+│   ├── ─── NAVEGACIÓN & UI ───
+│   ├── Navbar.tsx            # Barra de navegación principal
+│   ├── Footer.tsx            # Footer dinámico
+│   ├── FloatingButtons.tsx   # Botones WhatsApp + Chatbot Agente Raynold
+│   ├── CartSidebar.tsx       # Sidebar del carrito de compras
+│   ├── SearchOverlay.tsx     # Overlay de búsqueda
+│   ├── FavoritesPage.tsx     # Página de favoritos
+│   ├── CrtTransition.tsx     # Transición CRT entre páginas
+│   ├── ParallaxParticles.tsx # Partículas decorativas
+│   ├── GsapController.tsx    # Control de animaciones GSAP
+│   ├── ScrollDrone.tsx       # Efecto de scroll 3D
+│   ├── TiltCard.tsx          # Tarjeta con efecto tilt
+│   │
+│   ├── ─── PANEL DE ADMINISTRACIÓN ───
+│   ├── AdminLayout.tsx       # Layout admin (auth + sidebar + routing)
+│   ├── AdminDashboard.tsx    # Dashboard con KPIs y gráficos
+│   ├── AdminPanel.tsx        # Gestión de productos
+│   ├── AdminServices.tsx     # Gestión de servicios
+│   ├── AdminCategories.tsx   # Gestión de categorías
+│   ├── AdminClients.tsx      # Gestión de clientes (+ DGII autocomplete)
+│   ├── AdminSuppliers.tsx    # Gestión de proveedores (+ DGII autocomplete)
+│   ├── AdminSellers.tsx      # Gestión de vendedores
+│   ├── AdminInvoices.tsx     # Facturación y cotizaciones
+│   ├── AdminPOS.tsx          # Punto de Venta
+│   ├── AdminExpenses.tsx     # Control de gastos
+│   ├── AdminAccounts.tsx     # Cuentas bancarias + transferencias
+│   ├── AdminProjects.tsx     # Portafolio de proyectos
+│   ├── AdminBrands.tsx       # Logos de clientes
+│   ├── AdminHero.tsx         # Gestión de slides hero
+│   ├── AdminMedia.tsx        # Galería multimedia
+│   ├── AdminSettings.tsx     # Configuración del sitio
+│   ├── AdminFooter.tsx       # Configuración del footer
+│   ├── AdminAbout.tsx        # Editar página "Nosotros"
+│   ├── AdminProcess.tsx      # Editar proceso de trabajo
+│   ├── AdminFeatures.tsx     # Editar características
+│   └── AdminReports.tsx      # Reportes contables + DGII
+│
+└── public/
+    └── agente-raynold.png    # Avatar del chatbot
 ```
 
-### 3.3. Gestión del Estado
-El estado principal de la aplicación se maneja a través de React Context API:
-*   **`ShopContext`**: Gestiona el estado del carrito de cotizaciones (`cart`), la lista de favoritos (`favorites`), y la visibilidad del sidebar del carrito (`isCartOpen`). Provee funciones como `addToCart`, `removeFromCart`, `toggleFavorite`, y `clearCart`.
-
 ---
 
-## 4. Flujos de Usuario Principales
+## 🗂️ Modelos de Datos (Interfaces TypeScript)
 
-### 4.1. Flujo de Cotización de Productos
-1. El usuario navega a `/products`.
-2. Filtra por categoría o explora el catálogo.
-3. Hace clic en un producto para ver el `ProductModal`.
-4. Hace clic en "Añadir a Cotización". El producto se guarda en el `ShopContext`.
-5. Abre el `CartSidebar` (icono de carrito en el Navbar).
-6. Revisa su lista y hace clic en "Enviar Cotización por WhatsApp".
-7. Se genera un enlace dinámico de WhatsApp con el texto preformateado incluyendo los ítems seleccionados.
+### `Client`
 
-### 4.2. Flujo de Favoritos
-1. El usuario navega por el catálogo (`/products`).
-2. Hace clic en el icono de "Estrella" en la tarjeta del producto o dentro del modal.
-3. El ID del producto se guarda en el array `favorites` del `ShopContext`.
-4. El usuario navega a `/favorites` (haciendo clic en la estrella del Navbar).
-5. Visualiza su lista guardada, desde donde puede añadir los ítems directamente a la cotización o eliminarlos de favoritos.
-
-### 4.3. Interacción con el Consultor IA
-1. El usuario hace clic en el widget flotante del "Consultor IA" o navega a la sección correspondiente.
-2. Ingresa una consulta (ej. "¿Qué material recomiendan para un letrero exterior?").
-3. La solicitud se envía a `geminiService.ts`, que se comunica con la API de Google Gemini utilizando un prompt de sistema predefinido que instruye a la IA a actuar como un experto de Raynold Design.
-4. La respuesta se renderiza en la interfaz de chat con efecto de escritura (typing effect).
-
----
-
-## 5. Integraciones Externas
-
-*   **WhatsApp API:** Utilizada mediante enlaces `wa.me` para redirigir a los usuarios directamente al chat de la empresa con mensajes prellenados.
-*   **Google Gemini API:** Requiere la variable de entorno `GEMINI_API_KEY`. Se utiliza el modelo `gemini-3-flash-preview` (o equivalente configurado) para respuestas rápidas y precisas en el consultor virtual.
-
----
-
-## 6. Guía de Desarrollo y Despliegue
-
-### 6.1. Variables de Entorno
-Crear un archivo `.env.local` en la raíz del proyecto con las siguientes variables:
-```env
-GEMINI_API_KEY=tu_api_key_aqui
+```typescript
+interface Client {
+  id: string;
+  type: 'FISICA' | 'EMPRESA';
+  name: string;
+  company: string;
+  rnc: string;       // RNC o Cédula
+  phone: string;
+  email: string;
+  address: string;
+}
 ```
 
-### 6.2. Scripts Disponibles
-*   `npm run dev`: Inicia el servidor de desarrollo en `localhost:3000`.
-*   `npm run build`: Compila la aplicación para producción en la carpeta `/dist`.
-*   `npm run preview`: Previsualiza la build de producción localmente.
+### `Supplier`
 
-### 6.3. Notas de Mantenimiento
-*   **Catálogo:** Para agregar nuevos productos, editar el archivo `/data/products.ts`.
-*   **Servicios:** Para modificar la oferta de servicios, editar `/data/services.ts`.
-*   **Animaciones:** Las animaciones de entrada están controladas por `Framer Motion` (ver `CrtTransition.tsx`), mientras que las animaciones basadas en scroll están controladas por `GSAP` (ver `GsapController.tsx`).
+```typescript
+interface Supplier {
+  id: string;
+  name: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  taxId?: string;     // RNC/NIT
+}
+```
+
+### `ProductItem`
+
+```typescript
+interface ProductItem {
+  id: string;
+  reference?: string;
+  title: string;
+  category: string;
+  image: string;
+  price?: string;
+  description?: string;
+  type?: 'product' | 'service';
+  unit?: string;
+}
+```
+
+### `Expense`
+
+```typescript
+interface Expense {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+  reference?: string;
+  attachmentUrl?: string;
+}
+```
+
+### `ServiceItem`
+
+```typescript
+interface ServiceItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  color: 'red' | 'green' | 'white';
+}
+```
+
+---
+
+## 🔐 Autenticación y Seguridad
+
+### Autenticación
+
+- **Proveedor:** Supabase Auth
+- **Método:** Email + Password
+- **Ubicación:** `AdminLayout.tsx` maneja login/logout
+- **Protección:** Solo rutas `/admin/*` requieren autenticación
+
+### Headers de Seguridad (Vercel)
+
+| Header | Valor |
+|---|---|
+| `X-Frame-Options` | `DENY` |
+| `Content-Security-Policy` | `frame-ancestors 'none'` |
+| `X-Content-Type-Options` | `nosniff` |
+| `X-XSS-Protection` | `1; mode=block` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(self)` |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` |
+
+### Protección Anti-Clickjacking
+
+- Script framebusting en `index.html` que oculta contenido dentro de iframes
+
+---
+
+## 🌐 Rutas de la Aplicación
+
+### Públicas (Landing)
+
+| Ruta | Componente | Descripción |
+|---|---|---|
+| `/` | `Home` | Hero + Features + Clients + Services + Products + Contact |
+| `/products` | `ProductsPage` | Catálogo completo |
+| `/projects` | `ProjectsPage` | Portafolio |
+| `/projects/:id` | `ProjectDetailPage` | Detalle de proyecto |
+| `/services/:slug` | `ServiceDetail` | Detalle de servicio |
+| `/about` | `About` | Página Nosotros |
+| `/contact` | `ContactPage` | Contacto completo |
+| `/favorites` | `FavoritesPage` | Productos favoritos |
+
+### Admin (Protegidas)
+
+| Ruta | Componente | Descripción |
+|---|---|---|
+| `/admin` | `AdminDashboard` | Dashboard con KPIs |
+| `/admin/products` | `AdminPanel` | CRUD Productos |
+| `/admin/services` | `AdminServices` | CRUD Servicios |
+| `/admin/categories` | `AdminCategories` | CRUD Categorías |
+| `/admin/invoices` | `AdminInvoices` | Facturación |
+| `/admin/pos` | `AdminPOS` | Punto de Venta |
+| `/admin/clients` | `AdminClients` | CRUD Clientes |
+| `/admin/suppliers` | `AdminSuppliers` | CRUD Proveedores |
+| `/admin/sellers` | `AdminSellers` | CRUD Vendedores |
+| `/admin/expenses` | `AdminExpenses` | Control de Gastos |
+| `/admin/accounts` | `AdminAccounts` | Cuentas Bancarias |
+| `/admin/projects` | `AdminProjects` | Portafolio |
+| `/admin/brands` | `AdminBrands` | Logos de Clientes |
+| `/admin/hero` | `AdminHero` | Slides Hero |
+| `/admin/media` | `AdminMedia` | Galería Multimedia |
+| `/admin/reports` | `AdminReports` | Reportes + DGII |
+| `/admin/settings` | `AdminSettings` | Configuración |
+| `/admin/footer` | `AdminFooter` | Footer |
+| `/admin/about` | `AdminAbout` | Página Nosotros |
+| `/admin/process` | `AdminProcess` | Proceso de Trabajo |
+| `/admin/features` | `AdminFeatures` | Características |
+
+---
+
+## 🗃️ Tablas Supabase
+
+| Tabla | Uso |
+|---|---|
+| `products` | Catálogo de productos |
+| `categories` | Categorías de productos/proyectos |
+| `services` | Servicios ofrecidos |
+| `clients` | Directorio de clientes |
+| `suppliers` | Directorio de proveedores |
+| `sellers` | Vendedores |
+| `invoices` | Facturas y cotizaciones |
+| `expenses` | Gastos |
+| `accounts` | Cuentas bancarias |
+| `account_transactions` | Movimientos bancarios |
+| `brands` | Logos de marcas/clientes |
+| `projects` | Portafolio de proyectos |
+| `hero_slides` | Slides del hero banner |
+| `site_settings` | Configuraciones del sitio (footer, about, etc.) |
+
+### Storage Buckets
+
+| Bucket | Uso |
+|---|---|
+| `raynold-media` | Todas las imágenes del sitio |
+| `raynold-media/hero` | Imágenes del hero slider |
+| `raynold-media/brand` | Logos e identidad |
+| `raynold-media/products` | Fotos de productos |
+| `raynold-media/projects` | Fotos de proyectos |
+
+---
+
+## 📊 Sistema de Reportes DGII
+
+### Formatos Implementados
+
+| Formato | Nombre | Descripción |
+|---|---|---|
+| **606** | Compras | Detalle de costos y gastos |
+| **607** | Ventas | Ingresos por ventas |
+| **608** | Anulaciones | NCFs anulados |
+| **609** | Pagos al Exterior | Pagos a proveedores extranjeros |
+| **IT-1** | ITBIS | Declaración jurada de ITBIS |
+
+### Exportación
+
+- **CSV** para uso general
+- **TXT pipe-delimited** (formato oficial DGII)
+- Incluye RNC de la empresa en los archivos generados
+
+---
+
+## 🤖 Integraciones
+
+### DGII API (Autocompletado RNC)
+
+- **Servicio:** `lib/dgiiService.ts`
+- **Endpoints:**
+  - `GET /rnc/{rnc}` — Consulta directa por RNC/Cédula
+  - `GET /search?nombre=...` — Búsqueda por nombre
+- **Integrado en:** AdminClients, AdminSuppliers
+- **Funcionamiento:** Debounce de 400ms, dropdown de resultados, auto-fill de datos
+
+### Chatbot Agente Raynold
+
+- **Componente:** `FloatingButtons.tsx`
+- **Tipo:** Rule-based con respuestas predefinidas
+- **Features:** Avatar del agente, horario de atención, preguntas sugeridas
+
+### WhatsApp Business
+
+- **Número:** +1 (829) 580-7411
+- **Integración:** Botón flotante circular con deep link `wa.me`
+
+### Google Gemini AI
+
+- **Componente:** `AiConsultant.tsx`
+- **Uso:** Consultor inteligente para cotizaciones y preguntas
+
+---
+
+## ⚙️ Variables de Entorno
+
+| Variable | Descripción | Obligatoria |
+|---|---|---|
+| `VITE_SUPABASE_URL` | URL del proyecto Supabase | ✅ |
+| `VITE_SUPABASE_ANON_KEY` | Anon key de Supabase | ✅ |
+| `VITE_DGII_API_KEY` | API key para DGII lookup | ✅ |
+| `VITE_DGII_API_URL` | URL base de la API DGII | ❌ (tiene default) |
+| `GEMINI_API_KEY` | API key de Google Gemini | ❌ |
+
+> ⚠️ Estas variables deben configurarse tanto en `.env.local` (desarrollo) como en **Vercel Dashboard → Settings → Environment Variables** (producción).
+
+---
+
+## 🚀 Comandos de Desarrollo
+
+```bash
+# Instalar dependencias
+npm install
+
+# Desarrollo local (puerto 3000)
+npm run dev
+
+# Build de producción
+npm run build
+
+# Preview del build
+npm run preview
+
+# Lint TypeScript
+npm run lint
+```
+
+---
+
+## 📱 Diseño y UX
+
+### Identidad Visual
+
+| Elemento | Valor |
+|---|---|
+| **Color Primario** | `#E60000` (Rojo Raynold) |
+| **Color Secundario** | `#009933` (Verde) |
+| **Background** | `#050505` (Negro profundo) |
+| **Gris Panel** | `#1A1A1A` |
+| **Fuente Principal** | Archivo (Google Fonts) |
+| **Cursor** | Custom crosshair animado |
+
+### Efectos Visuales
+
+- Cursor personalizado con efecto crosshair
+- Transiciones CRT entre páginas
+- Partículas parallax decorativas
+- Efecto glitch en textos
+- Gradients animados en textos y botones
+- Cards con efecto tilt 3D
+- Animaciones de scroll con GSAP
