@@ -43,8 +43,8 @@ const AdminMedia: React.FC = () => {
     const files = e.target.files;
     if (!files) return;
     setIsUploading(true);
-    for (const file of Array.from(files)) {
-      const path = `uploads/${Date.now()}-${file.name}`;
+    for (const file of Array.from(files) as File[]) {
+      const path = `uploads/${Date.now()}-${(file as File).name}`;
       await supabase.storage.from('raynold-media').upload(path, file);
     }
     await fetchMedia();

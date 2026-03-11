@@ -10,9 +10,7 @@ export const clientSchema = z.object({
         .min(2, 'El nombre debe tener al menos 2 caracteres')
         .max(200, 'El nombre es demasiado largo'),
 
-    type: z.enum(['Persona Física', 'Empresa'], {
-        errorMap: () => ({ message: 'Selecciona un tipo de cliente' }),
-    }),
+    type: z.enum(['Persona Física', 'Empresa']),
 
     rnc: z
         .string()
@@ -91,7 +89,7 @@ export const expenseSchema = z.object({
         .max(500),
     category: z.string().min(1, 'Selecciona una categoría'),
     amount: z
-        .number({ invalid_type_error: 'El monto debe ser un número' })
+        .number()
         .positive('El monto debe ser mayor a 0'),
     reference: z.string().max(100).optional(),
     accountId: z.string().optional(),

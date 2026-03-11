@@ -3,9 +3,12 @@ import { Plus, Edit2, Trash2, X, Save, Users, Loader2, Search, CheckCircle, Aler
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../lib/supabaseClient';
-import { clientSchema, ClientFormData } from '../lib/schemas';
+import { clientSchema } from '../lib/schemas';
 import { useDGIILookup, useDGIISearch } from '../hooks/useDGII';
 import { DGIIResult } from '../lib/dgiiService';
+import { z } from 'zod';
+
+type ClientFormData = z.infer<typeof clientSchema>;
 
 export interface Client {
   id: string;
@@ -198,8 +201,8 @@ const AdminClients = () => {
       setValue('name', r.nombre || '', { shouldValidate: true });
     }
 
-    if (r.direccion) setValue('address', r.direccion, { shouldValidate: true });
-    if (r.telefono) setValue('phone', r.telefono, { shouldValidate: true });
+    if (r.direccion) setValue('address', r.direccion);
+    if (r.telefono) setValue('phone', r.telefono);
 
     setDgiiApplied(r);
     setShowDgiiDropdown(false);
