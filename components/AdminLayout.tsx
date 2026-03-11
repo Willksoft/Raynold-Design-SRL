@@ -375,27 +375,71 @@ export const AdminLayout = () => {
       <div className="flex-1 flex flex-col h-full relative overflow-hidden print:w-full print:absolute print:inset-0 print:bg-white">
 
         {/* Global Admin Header */}
-        <div className="h-16 border-b border-white/10 bg-[#0A0A0A] flex items-center justify-between px-6 shrink-0 z-50 print:hidden relative">
+        <div className="h-16 border-b border-white/10 bg-[#0A0A0A] flex items-center px-6 shrink-0 z-50 print:hidden relative gap-3">
 
-          {/* Global Search */}
-          <div className="flex-1 max-w-md relative">
-            <div className="relative">
+          {/* Left spacer */}
+          <div className="w-12 shrink-0" />
+
+          {/* Centered Global Search */}
+          <div className="flex-1 max-w-2xl mx-auto relative flex items-center gap-2">
+            <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Buscar clientes, facturas, productos..."
+                placeholder="Buscar clientes, facturas, productos, gastos..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setIsSearchOpen(e.target.value.length > 1);
                 }}
-                className="w-full bg-black border border-white/20 rounded-lg pl-10 pr-4 py-2 text-white text-sm focus:border-raynold-red focus:outline-none transition-colors"
+                className="w-full bg-black border border-white/20 rounded-xl pl-10 pr-4 py-2.5 text-white text-sm focus:border-raynold-red focus:outline-none transition-colors"
               />
+            </div>
+
+            {/* Circular Add Button */}
+            <div className="relative">
+              <button
+                onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg ${isAddMenuOpen ? 'bg-white text-black rotate-45' : 'bg-raynold-red text-white hover:bg-red-700'}`}
+                title="Crear nuevo"
+              >
+                <Plus size={20} strokeWidth={2.5} />
+              </button>
+
+              {isAddMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsAddMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 py-1">
+                    <Link to="/admin/pos?type=factura" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                      <Receipt size={16} className="text-blue-400" />
+                      Factura
+                    </Link>
+                    <Link to="/admin/pos?type=cotizacion" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                      <FileText size={16} className="text-yellow-400" />
+                      Cotización
+                    </Link>
+                    <div className="h-px bg-white/10 my-1"></div>
+                    <Link to="/admin/clients" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                      <User size={16} className="text-green-400" />
+                      Cliente
+                    </Link>
+                    <div className="h-px bg-white/10 my-1"></div>
+                    <Link to="/admin/products" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                      <Package size={16} className="text-purple-400" />
+                      Producto
+                    </Link>
+                    <Link to="/admin/expenses" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                      <File size={16} className="text-red-400" />
+                      Gasto
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Search Results Dropdown */}
             {isSearchOpen && (
-              <div className="absolute top-full mt-2 w-[500px] max-w-[90vw] -left-1/2 sm:left-0 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] max-h-[70vh] flex flex-col">
+              <div className="absolute top-full mt-2 w-full bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] max-h-[70vh] flex flex-col">
                 {isSearching ? (
                   <div className="p-8 flex flex-col items-center justify-center text-gray-500 gap-3">
                     <Loader2 className="animate-spin text-raynold-red" size={24} />
@@ -501,47 +545,8 @@ export const AdminLayout = () => {
             )}
           </div>
 
-          {/* Universal Add Button */}
-          <div className="relative ml-4">
-            <button
-              onClick={() => setIsAddMenuOpen(!isAddMenuOpen)}
-              className="flex items-center gap-2 px-4 py-2 bg-raynold-red text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors shadow-lg"
-            >
-              <Plus size={16} />
-              <span className="hidden sm:inline">Nuevo</span>
-              <ChevronDown size={14} className={`transition-transform ${isAddMenuOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isAddMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsAddMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[#111] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 py-1">
-                  <Link to="/admin/pos?type=factura" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
-                    <Receipt size={16} className="text-blue-400" />
-                    Factura
-                  </Link>
-                  <Link to="/admin/pos?type=cotizacion" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
-                    <FileText size={16} className="text-yellow-400" />
-                    Cotización
-                  </Link>
-                  <div className="h-px bg-white/10 my-1"></div>
-                  <Link to="/admin/clients" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
-                    <User size={16} className="text-green-400" />
-                    Cliente
-                  </Link>
-                  <div className="h-px bg-white/10 my-1"></div>
-                  <Link to="/admin/products" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
-                    <Package size={16} className="text-purple-400" />
-                    Producto
-                  </Link>
-                  <Link to="/admin/expenses" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
-                    <File size={16} className="text-red-400" />
-                    Gasto
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
+          {/* Right spacer */}
+          <div className="w-12 shrink-0" />
         </div>
 
         {/* Scrollable Routes Area */}
