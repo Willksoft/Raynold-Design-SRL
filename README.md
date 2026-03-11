@@ -229,7 +229,7 @@ Su página web tiene estas funciones para sus visitantes:
 ## Datos Importantes
 
 | Dato | Valor |
-|---|---|
+| --- | --- |
 | **Sitio Web** | [raynolddesign.com](https://raynolddesign.com) |
 | **Panel Admin** | [raynolddesign.com/admin](https://raynolddesign.com/admin) |
 | **WhatsApp** | +1 (829) 580-7411 |
