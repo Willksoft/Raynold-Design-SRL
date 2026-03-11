@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, X, Save, Users, Loader2, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../lib/supabaseClient';
-import { consultarRNC, buscarContribuyentes, DGIIResult } from '../lib/dgiiService';
+import { clientSchema, ClientFormData } from '../lib/schemas';
+import { useDGIILookup, useDGIISearch } from '../hooks/useDGII';
+import { DGIIResult } from '../lib/dgiiService';
 
 export interface Client {
   id: string;
@@ -42,20 +46,55 @@ const AdminClients = () => {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState<Client>({
-    id: '', type: 'FISICA', name: '', company: '', rnc: '', phone: '', email: '', address: ''
+  // DGII state
+  const [rncInput, setRncInput] = useState('');
+  const [dgiiSearchQuery, setDgiiSearchQuery] = useState('');
+  const [showDgiiDropdown, setShowDgiiDropdown] = useState(false);
+  const [dgiiApplied, setDgiiApplied] = useState<DGIIResult | null>(null);
+  const dgiiDropdownRef = useRef<HTMLDivElement>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // React Query hooks for DGII
+  const { data: dgiiLookupResult, isLoading: dgiiLookupLoading, status: dgiiLookupStatus } = useDGIILookup(rncInput);
+  const { data: dgiiSearchData, isLoading: dgiiSearchLoading } = useDGIISearch(dgiiSearchQuery);
+
+  const dgiiSearchResults = dgiiSearchData?.data || [];
+
+  // Determine DGII status from React Query
+  const dgiiStatus = (() => {
+    if (dgiiApplied) return 'found' as const;
+    const clean = rncInput.replace(/[-\s]/g, '');
+    if (clean.length < 9) return 'idle' as const;
+    if (dgiiLookupLoading) return 'loading' as const;
+    if (dgiiLookupStatus === 'success' && dgiiLookupResult?.rnc) return 'found' as const;
+    if (dgiiLookupStatus === 'success' && !dgiiLookupResult) return 'not_found' as const;
+    return 'idle' as const;
+  })();
+
+  const dgiiResult = dgiiApplied || dgiiLookupResult;
+
+  // React Hook Form with Zod
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<ClientFormData>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      name: '',
+      type: 'Persona Física',
+      rnc: '',
+      company: '',
+      email: '',
+      phone: '',
+      address: '',
+    },
   });
 
-  // ── DGII lookup state ──────────────────────────────────────────────────
-  const [dgiiLoading, setDgiiLoading] = useState(false);
-  const [dgiiResult, setDgiiResult] = useState<DGIIResult | null>(null);
-  const [dgiiStatus, setDgiiStatus] = useState<'idle' | 'found' | 'not_found' | 'error'>('idle');
-  const [dgiiSearchQuery, setDgiiSearchQuery] = useState('');
-  const [dgiiSearchResults, setDgiiSearchResults] = useState<DGIIResult[]>([]);
-  const [dgiiSearchLoading, setDgiiSearchLoading] = useState(false);
-  const [showDgiiDropdown, setShowDgiiDropdown] = useState(false);
-  const dgiiDropdownRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const clientType = watch('type');
 
   const fetchClients = async () => {
     setLoading(true);
@@ -78,17 +117,34 @@ const AdminClients = () => {
   }, []);
 
   const handleOpenModal = (client?: Client) => {
-    setDgiiResult(null);
-    setDgiiStatus('idle');
+    setDgiiApplied(null);
+    setRncInput('');
     setDgiiSearchQuery('');
-    setDgiiSearchResults([]);
     setShowDgiiDropdown(false);
+
     if (client) {
       setEditingClient(client);
-      setFormData(client);
+      reset({
+        name: client.name || client.company,
+        type: client.type === 'EMPRESA' ? 'Empresa' : 'Persona Física',
+        rnc: client.rnc,
+        company: client.company,
+        email: client.email,
+        phone: client.phone,
+        address: client.address,
+      });
+      setRncInput(client.rnc);
     } else {
       setEditingClient(null);
-      setFormData({ id: Math.random().toString(36).substr(2, 9), type: 'FISICA', name: '', company: '', rnc: '', phone: '', email: '', address: '' });
+      reset({
+        name: '',
+        type: 'Persona Física',
+        rnc: '',
+        company: '',
+        email: '',
+        phone: '',
+        address: '',
+      });
     }
     setIsModalOpen(true);
   };
@@ -96,20 +152,20 @@ const AdminClients = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingClient(null);
-    setDgiiResult(null);
-    setDgiiStatus('idle');
+    setDgiiApplied(null);
+    setRncInput('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: ClientFormData) => {
     setSaving(true);
+    const isEmpresa = data.type === 'Empresa';
     const dbRecord = {
-      name: formData.type === 'EMPRESA' ? formData.company : formData.name,
-      email: formData.email || null,
-      phone: formData.phone || null,
-      address: formData.address || null,
-      rnc: formData.rnc || null,
-      type: formData.type === 'EMPRESA' ? 'Juridica' : 'Natural',
+      name: isEmpresa ? (data.company || data.name) : data.name,
+      email: data.email || null,
+      phone: data.phone || null,
+      address: data.address || null,
+      rnc: data.rnc?.replace(/[-\s]/g, '') || null,
+      type: isEmpresa ? 'Juridica' : 'Natural',
     };
     if (editingClient) {
       await supabase.from('clients').update(dbRecord).eq('id', editingClient.id);
@@ -128,61 +184,59 @@ const AdminClients = () => {
     }
   };
 
-  // ── DGII: Lookup by RNC/Cédula ──────────────────────────────────────────
-  const lookupRNC = async (rnc: string) => {
-    const clean = rnc.replace(/[-\s]/g, '');
-    if (clean.length < 9) { setDgiiStatus('idle'); setDgiiResult(null); return; }
-    setDgiiLoading(true);
-    setDgiiStatus('idle');
-    const result = await consultarRNC(clean);
-    setDgiiLoading(false);
-    if (result && result.rnc) {
-      setDgiiResult(result);
-      setDgiiStatus('found');
-    } else {
-      setDgiiResult(null);
-      setDgiiStatus('not_found');
-    }
-  };
-
   const applyDGIIResult = (r: DGIIResult) => {
     const isJuridica = r.tipo?.toLowerCase().includes('juridica') || (r.rnc?.replace(/[-\s]/g, '').length === 9);
-    setFormData(prev => ({
-      ...prev,
-      type: isJuridica ? 'EMPRESA' : 'FISICA',
-      rnc: r.rnc || prev.rnc,
-      company: isJuridica ? (r.nombre_comercial || r.nombre || '') : prev.company,
-      name: !isJuridica ? (r.nombre || '') : prev.name,
-      address: r.direccion || prev.address,
-      phone: r.telefono || prev.phone,
-    }));
-    setDgiiResult(r);
-    setDgiiStatus('found');
+    const newType = isJuridica ? 'Empresa' : 'Persona Física';
+
+    setValue('type', newType as any, { shouldValidate: true });
+    setValue('rnc', r.rnc || '', { shouldValidate: true });
+    setRncInput(r.rnc || '');
+
+    if (isJuridica) {
+      setValue('company', r.nombre_comercial || r.nombre || '', { shouldValidate: true });
+    } else {
+      setValue('name', r.nombre || '', { shouldValidate: true });
+    }
+
+    if (r.direccion) setValue('address', r.direccion, { shouldValidate: true });
+    if (r.telefono) setValue('phone', r.telefono, { shouldValidate: true });
+
+    setDgiiApplied(r);
     setShowDgiiDropdown(false);
     setDgiiSearchQuery('');
   };
 
-  // ── DGII: Search by name ────────────────────────────────────────────────
-  const searchDGII = useCallback((query: string) => {
-    setDgiiSearchQuery(query);
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    if (query.length < 3) { setDgiiSearchResults([]); setShowDgiiDropdown(false); return; }
-    searchTimeoutRef.current = setTimeout(async () => {
-      setDgiiSearchLoading(true);
-      setShowDgiiDropdown(true);
-      const res = await buscarContribuyentes({ nombre: query, limit: 8 });
-      setDgiiSearchResults(res.data || []);
-      setDgiiSearchLoading(false);
-    }, 400);
-  }, []);
-
-  // ── RNC field onChange ──────────────────────────────────────────────────
+  // Handle RNC input change — triggers React Query lookup
   const handleRncChange = (val: string) => {
-    setFormData(prev => ({ ...prev, rnc: val }));
-    const clean = val.replace(/[-\s]/g, '');
-    if (clean.length >= 9) lookupRNC(val);
-    else { setDgiiStatus('idle'); setDgiiResult(null); }
+    setValue('rnc', val, { shouldValidate: true });
+    setRncInput(val);
+    setDgiiApplied(null);
   };
+
+  // Debounced DGII name search
+  const handleSearchChange = (query: string) => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (query.length < 3) {
+      setDgiiSearchQuery('');
+      setShowDgiiDropdown(false);
+      return;
+    }
+    searchDebounceRef.current = setTimeout(() => {
+      setDgiiSearchQuery(query);
+      setShowDgiiDropdown(true);
+    }, 400);
+  };
+
+  // Field error helper
+  const fieldError = (field: keyof ClientFormData) =>
+    errors[field] ? (
+      <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+        <AlertCircle size={12} /> {errors[field]?.message}
+      </p>
+    ) : null;
+
+  const inputClass = (field: keyof ClientFormData, extra = '') =>
+    `w-full bg-black border rounded-lg px-4 py-2 text-white focus:outline-none transition-colors ${errors[field] ? 'border-red-500/60 focus:border-red-400' : 'border-white/20 focus:border-raynold-red'} ${extra}`;
 
   return (
     <div className="p-6 md:p-10 relative">
@@ -260,7 +314,7 @@ const AdminClients = () => {
               <button onClick={handleCloseModal} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
 
               {/* ── DGII Smart Search ── */}
               <div className="bg-blue-900/20 border border-blue-600/30 rounded-xl p-4 space-y-3" ref={dgiiDropdownRef}>
@@ -272,8 +326,7 @@ const AdminClients = () => {
                 <div className="relative">
                   <input
                     type="text"
-                    value={dgiiSearchQuery}
-                    onChange={e => searchDGII(e.target.value)}
+                    onChange={e => handleSearchChange(e.target.value)}
                     placeholder="Buscar por nombre de empresa o persona..."
                     className="w-full bg-black/60 border border-blue-700/40 rounded-lg px-4 py-2.5 text-white text-sm outline-none focus:border-blue-400 transition-colors pl-10"
                   />
@@ -330,13 +383,15 @@ const AdminClients = () => {
                     <p className="text-green-400/70 text-xs font-mono">{dgiiResult.rnc} · {dgiiResult.estado || ''}</p>
                     {dgiiResult.actividad_economica && <p className="text-green-400/50 text-[10px] mt-0.5">{dgiiResult.actividad_economica}</p>}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => applyDGIIResult(dgiiResult)}
-                    className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors flex-shrink-0"
-                  >
-                    Usar datos
-                  </button>
+                  {!dgiiApplied && (
+                    <button
+                      type="button"
+                      onClick={() => applyDGIIResult(dgiiResult)}
+                      className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors flex-shrink-0"
+                    >
+                      Usar datos
+                    </button>
+                  )}
                 </div>
               )}
               {dgiiStatus === 'not_found' && (
@@ -349,88 +404,81 @@ const AdminClients = () => {
               {/* ─── Type selector ─── */}
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="clientType" value="FISICA" checked={formData.type === 'FISICA'}
-                    onChange={() => setFormData({ ...formData, type: 'FISICA' })} className="accent-raynold-red" />
+                  <input type="radio" value="Persona Física" {...register('type')} className="accent-raynold-red" />
                   <span className="text-white font-medium">Persona Física</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="clientType" value="EMPRESA" checked={formData.type === 'EMPRESA'}
-                    onChange={() => setFormData({ ...formData, type: 'EMPRESA' })} className="accent-raynold-red" />
+                  <input type="radio" value="Empresa" {...register('type')} className="accent-raynold-red" />
                   <span className="text-white font-medium">Empresa</span>
                 </label>
               </div>
+              {fieldError('type')}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {formData.type === 'EMPRESA' ? (
+                {clientType === 'Empresa' ? (
                   <>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Razón Social (Empresa)</label>
-                      <input required type="text" value={formData.company}
-                        onChange={e => setFormData({ ...formData, company: e.target.value })}
-                        className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" />
+                      <input {...register('company')} className={inputClass('company')} />
+                      {fieldError('company')}
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
                         RNC
-                        {dgiiLoading && <Loader2 size={12} className="animate-spin text-blue-400" />}
+                        {dgiiLookupLoading && <Loader2 size={12} className="animate-spin text-blue-400" />}
                         {dgiiStatus === 'found' && <CheckCircle size={12} className="text-green-400" />}
                       </label>
-                      <input required type="text" value={formData.rnc}
+                      <input
+                        {...register('rnc')}
                         onChange={e => handleRncChange(e.target.value)}
                         placeholder="Ej: 131123456"
-                        className={`w-full bg-black border rounded-lg px-4 py-2 text-white focus:outline-none transition-colors font-mono ${dgiiStatus === 'found' ? 'border-green-600/50 focus:border-green-400' :
-                            dgiiStatus === 'not_found' ? 'border-amber-600/50 focus:border-amber-400' :
-                              'border-white/20 focus:border-raynold-red'
-                          }`} />
+                        className={inputClass('rnc', `font-mono ${dgiiStatus === 'found' ? '!border-green-600/50 focus:!border-green-400' : dgiiStatus === 'not_found' ? '!border-amber-600/50 focus:!border-amber-400' : ''}`)}
+                      />
+                      {fieldError('rnc')}
                     </div>
                     <div className="space-y-2 md:col-span-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre del Contacto (Opcional)</label>
-                      <input type="text" value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" />
+                      <input {...register('name')} className={inputClass('name')} />
+                      {fieldError('name')}
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Nombre Completo</label>
-                      <input required type="text" value={formData.name}
-                        onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" />
+                      <input {...register('name')} className={inputClass('name')} />
+                      {fieldError('name')}
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
                         Cédula
-                        {dgiiLoading && <Loader2 size={12} className="animate-spin text-blue-400" />}
+                        {dgiiLookupLoading && <Loader2 size={12} className="animate-spin text-blue-400" />}
                         {dgiiStatus === 'found' && <CheckCircle size={12} className="text-green-400" />}
                       </label>
-                      <input type="text" value={formData.rnc}
+                      <input
+                        {...register('rnc')}
                         onChange={e => handleRncChange(e.target.value)}
                         placeholder="Ej: 00112345678"
-                        className={`w-full bg-black border rounded-lg px-4 py-2 text-white focus:outline-none transition-colors font-mono ${dgiiStatus === 'found' ? 'border-green-600/50 focus:border-green-400' :
-                            dgiiStatus === 'not_found' ? 'border-amber-600/50 focus:border-amber-400' :
-                              'border-white/20 focus:border-raynold-red'
-                          }`} />
+                        className={inputClass('rnc', `font-mono ${dgiiStatus === 'found' ? '!border-green-600/50 focus:!border-green-400' : dgiiStatus === 'not_found' ? '!border-amber-600/50 focus:!border-amber-400' : ''}`)}
+                      />
+                      {fieldError('rnc')}
                     </div>
                   </>
                 )}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Teléfono</label>
-                  <input type="text" value={formData.phone}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" />
+                  <input {...register('phone')} className={inputClass('phone')} />
+                  {fieldError('phone')}
                 </div>
-                <div className="space-y-2 md:col-span-2">
+                <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Correo Electrónico</label>
-                  <input type="email" value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors" />
+                  <input type="email" {...register('email')} className={inputClass('email')} />
+                  {fieldError('email')}
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Dirección</label>
-                  <textarea rows={2} value={formData.address}
-                    onChange={e => setFormData({ ...formData, address: e.target.value })}
-                    className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors resize-none" />
+                  <textarea rows={2} {...register('address')} className={`${inputClass('address')} resize-none`} />
+                  {fieldError('address')}
                 </div>
               </div>
 
@@ -438,8 +486,9 @@ const AdminClients = () => {
                 <button type="button" onClick={handleCloseModal} className="px-6 py-2 rounded-lg font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
                   Cancelar
                 </button>
-                <button type="submit" className="px-6 py-2 btn-animated font-bold rounded-lg flex items-center gap-2">
-                  <Save size={18} /> Guardar Cliente
+                <button type="submit" disabled={saving} className="px-6 py-2 btn-animated font-bold rounded-lg flex items-center gap-2 disabled:opacity-50">
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                  {saving ? 'Guardando...' : 'Guardar Cliente'}
                 </button>
               </div>
             </form>
