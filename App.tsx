@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Clients from './components/Clients';
@@ -174,7 +176,7 @@ const AppContent = () => {
 
 const App: React.FC = () => {
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <CustomCursor />
 
       <BrowserRouter>
@@ -182,7 +184,7 @@ const App: React.FC = () => {
         <GsapController /> {/* Global Animation Controller */}
         <AppContent />
       </BrowserRouter>
-    </>
+    </QueryClientProvider>
   );
 };
 
