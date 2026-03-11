@@ -2,8 +2,8 @@
 // API de consulta de RNC y búsqueda de contribuyentes de la DGII
 // Docs: https://pptonanntevatndjyzmk.supabase.co/functions/v1/dgii-api
 
-const DGII_API_KEY = 'dgii_e0934f93258844a580cd61bca850dbe4';
-const DGII_API_URL = 'https://pptonanntevatndjyzmk.supabase.co/functions/v1/dgii-api';
+const DGII_API_KEY = import.meta.env.VITE_DGII_API_KEY || '';
+const DGII_API_URL = import.meta.env.VITE_DGII_API_URL || 'https://pptonanntevatndjyzmk.supabase.co/functions/v1/dgii-api';
 
 export interface DGIIResult {
     rnc: string;
