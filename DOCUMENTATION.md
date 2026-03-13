@@ -3,7 +3,7 @@
 ## Información General
 
 | Campo | Valor |
-|---|---|
+| --- | --- |
 | **Nombre** | Raynold Design SRL |
 | **RNC** | 131-76560-2 |
 | **Tipo** | Web App (Landing + Admin + POS) |
@@ -20,7 +20,7 @@
 ### Frontend
 
 | Tecnología | Versión | Uso |
-|---|---|---|
+| --- | --- | --- |
 | React | 18.2.0 | UI Framework |
 | TypeScript | 5.8.2 | Type Safety |
 | Vite | 6.2.0 | Build Tool + Dev Server |
@@ -34,9 +34,8 @@
 ### Backend & Servicios
 
 | Servicio | Uso |
-|---|---|
+| --- | --- |
 | **Supabase** | PostgreSQL + Auth + Storage + API |
-
 | **DGII API** | Autocompletado de RNC y contribuyentes |
 | **Vercel** | Deploy y hosting |
 | **Express + TSX** | Dev server local |
@@ -45,7 +44,7 @@
 
 ## 📁 Estructura del Proyecto
 
-```
+```text
 raynold-design-srl/
 ├── index.html              # Punto de entrada HTML (SEO, Tailwind, meta tags)
 ├── index.tsx                # Entry point React
@@ -216,7 +215,7 @@ interface ServiceItem {
 ### Headers de Seguridad (Vercel)
 
 | Header | Valor |
-|---|---|
+| --- | --- |
 | `X-Frame-Options` | `DENY` |
 | `Content-Security-Policy` | `frame-ancestors 'none'` |
 | `X-Content-Type-Options` | `nosniff` |
@@ -236,7 +235,7 @@ interface ServiceItem {
 ### Públicas (Landing)
 
 | Ruta | Componente | Descripción |
-|---|---|---|
+| --- | --- | --- |
 | `/` | `Home` | Hero + Features + Clients + Services + Products + Contact |
 | `/products` | `ProductsPage` | Catálogo completo |
 | `/projects` | `ProjectsPage` | Portafolio |
@@ -249,7 +248,7 @@ interface ServiceItem {
 ### Admin (Protegidas)
 
 | Ruta | Componente | Descripción |
-|---|---|---|
+| --- | --- | --- |
 | `/admin` | `AdminDashboard` | Dashboard con KPIs |
 | `/admin/products` | `AdminPanel` | CRUD Productos |
 | `/admin/services` | `AdminServices` | CRUD Servicios |
@@ -277,7 +276,7 @@ interface ServiceItem {
 ## 🗃️ Tablas Supabase
 
 | Tabla | Uso |
-|---|---|
+| --- | --- |
 | `products` | Catálogo de productos |
 | `categories` | Categorías de productos/proyectos |
 | `services` | Servicios ofrecidos |
@@ -296,7 +295,7 @@ interface ServiceItem {
 ### Storage Buckets
 
 | Bucket | Uso |
-|---|---|
+| --- | --- |
 | `raynold-media` | Todas las imágenes del sitio |
 | `raynold-media/hero` | Imágenes del hero slider |
 | `raynold-media/brand` | Logos e identidad |
@@ -310,7 +309,7 @@ interface ServiceItem {
 ### Formatos Implementados
 
 | Formato | Nombre | Descripción |
-|---|---|---|
+| --- | --- | --- |
 | **606** | Compras | Detalle de costos y gastos |
 | **607** | Ventas | Ingresos por ventas |
 | **608** | Anulaciones | NCFs anulados |
@@ -347,18 +346,16 @@ interface ServiceItem {
 - **Número:** +1 (829) 580-7411
 - **Integración:** Botón flotante circular con deep link `wa.me`
 
-
 ---
 
 ## ⚙️ Variables de Entorno
 
 | Variable | Descripción | Obligatoria |
-|---|---|---|
+| --- | --- | --- |
 | `VITE_SUPABASE_URL` | URL del proyecto Supabase | ✅ |
 | `VITE_SUPABASE_ANON_KEY` | Anon key de Supabase | ✅ |
 | `VITE_DGII_API_KEY` | API key para DGII lookup | ✅ |
 | `VITE_DGII_API_URL` | URL base de la API DGII | ❌ (tiene default) |
-
 
 > ⚠️ Estas variables deben configurarse tanto en `.env.local` (desarrollo) como en **Vercel Dashboard → Settings → Environment Variables** (producción).
 
@@ -390,7 +387,7 @@ npm run lint
 ### Identidad Visual
 
 | Elemento | Valor |
-|---|---|
+| --- | --- |
 | **Color Primario** | `#E60000` (Rojo Raynold) |
 | **Color Secundario** | `#009933` (Verde) |
 | **Background** | `#050505` (Negro profundo) |
