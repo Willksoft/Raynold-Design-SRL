@@ -9,10 +9,10 @@ interface Brand {
 }
 
 const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
-  <div className="mx-8 flex-shrink-0 flex flex-col items-center justify-center gap-3 w-[220px]">
+  <div className="mx-6 flex-shrink-0 flex flex-col items-center justify-center gap-3" style={{ width: '200px' }}>
     {brand.logo ? (
       <div
-        className="w-full h-32 rounded-xl flex items-center justify-center px-4 py-3 transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-70"
+        className="w-full h-28 rounded-xl flex items-center justify-center px-4 py-3 transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-70"
         style={{
           backgroundColor: brand.bg_color || 'rgba(255,255,255,0.06)',
         }}
@@ -25,13 +25,13 @@ const BrandLogo: React.FC<{ brand: Brand }> = ({ brand }) => (
         />
       </div>
     ) : (
-      <div className="w-full h-24 rounded-xl flex items-center justify-center bg-white/6 px-4">
+      <div className="w-full h-28 rounded-xl flex items-center justify-center bg-white/6 px-4">
         <span className="text-base font-black font-futuristic text-gray-500 hover:text-white transition-colors uppercase tracking-wider text-center">
           {brand.name}
         </span>
       </div>
     )}
-    <span className="text-xs text-gray-500 font-semibold tracking-wide text-center uppercase truncate w-full text-center">
+    <span className="text-xs text-gray-500 font-semibold tracking-wide uppercase truncate w-full text-center">
       {brand.name}
     </span>
   </div>
@@ -60,6 +60,11 @@ const Clients: React.FC = () => {
 
   if (brands.length === 0) return null;
 
+  // Each brand card = 200px width + 48px margin (mx-6 = 24px each side)
+  // Total per brand = 248px
+  const brandWidth = 248;
+  const totalWidth = brands.length * brandWidth;
+
   return (
     <section className="py-12 bg-black border-y border-white/5 overflow-hidden relative">
       <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black to-transparent z-10" />
@@ -71,13 +76,22 @@ const Clients: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex w-[200%] animate-scroll hover:[animation-play-state:paused]">
-        <div className="flex items-center">
+      {/* 
+        Infinite scroll: two identical sets side by side.
+        The animation translates -50% (= one full set), 
+        then jumps back to 0%, creating a seamless infinite loop.
+        The inline width ensures both sets together = 2x the total brand width.
+      */}
+      <div
+        className="animate-scroll flex"
+        style={{ width: `${totalWidth * 2}px` }}
+      >
+        <div className="flex items-center" style={{ width: `${totalWidth}px` }}>
           {brands.map((brand) => (
             <BrandLogo key={brand.id} brand={brand} />
           ))}
         </div>
-        <div className="flex items-center" aria-hidden="true">
+        <div className="flex items-center" style={{ width: `${totalWidth}px` }} aria-hidden="true">
           {brands.map((brand) => (
             <BrandLogo key={`dup-${brand.id}`} brand={brand} />
           ))}

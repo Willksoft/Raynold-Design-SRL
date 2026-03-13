@@ -146,6 +146,25 @@
       animation: textShine 4s linear infinite;
     }
 
+    /* ── Infinite Brand Carousel ── */
+    @keyframes scroll-infinite {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+
+    .animate-scroll {
+      animation: scroll-infinite 30s linear infinite;
+    }
+
+    .animate-scroll:hover {
+      animation-play-state: paused;
+    }
+
     /* Glitch Effect */
     .glitch-wrapper {
       position: relative;
