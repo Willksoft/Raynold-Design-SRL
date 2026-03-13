@@ -135,11 +135,11 @@ const AdminInvoices = () => {
     // Load invoices from Supabase first, fall back to localStorage
     supabase.from('invoices').select('*').order('created_at', { ascending: false }).then(({ data }) => {
       if (data && data.length > 0) {
-        setInvoices(data.map((inv: any) => ({
+        setInvoices(data.map((inv) => ({
           ...inv,
-          items: Array.isArray(inv.items) ? inv.items : [],
-          payments: Array.isArray(inv.payments) ? inv.payments : [],
-        })));
+          items: Array.isArray(inv.items) ? inv.items as InvoiceItem[] : [],
+          payments: Array.isArray(inv.payments) ? inv.payments as Payment[] : [],
+        } as Invoice)));
       } else {
         const savedInvoices = localStorage.getItem('raynold_invoices');
         if (savedInvoices) setInvoices(JSON.parse(savedInvoices));
@@ -158,7 +158,7 @@ const AdminInvoices = () => {
 
     // Load services from Supabase
     supabase.from('services').select('id, title, description').eq('is_active', true).then(({ data }) => {
-      if (data && data.length > 0) setServices(data as any);
+      if (data && data.length > 0) setServices(data as Service[]);
       else {
         const savedServices = localStorage.getItem('raynold_services');
         if (savedServices) setServices(JSON.parse(savedServices));
@@ -175,8 +175,8 @@ const AdminInvoices = () => {
     // Load accounts from Supabase
     supabase.from('accounts').select('*').order('name').then(({ data }) => {
       if (data && data.length > 0) {
-        setAccounts(data as any);
-        const defaultAcc = data.find((a: any) => a.is_default_receiving) || data[0];
+        setAccounts(data.map(a => ({ id: a.id, name: a.name, type: a.type as Account['type'], bankName: a.bank_name || '', accountNumber: a.account_number || '', accountSubType: a.account_sub_type || '', balance: Number(a.balance), isDefaultReceiving: a.is_default_receiving, isDefaultPaying: a.is_default_paying } as Account)));
+        const defaultAcc = data.find(a => a.is_default_receiving) || data[0];
         if (defaultAcc) setNewPayment(prev => ({ ...prev, accountId: defaultAcc.id, method: defaultAcc.name }));
       } else {
         const savedAccounts = localStorage.getItem('admin_accounts');
@@ -306,12 +306,14 @@ const AdminInvoices = () => {
   const handlePrintFromList = (invoice: Invoice) => {
     setCurrentInvoice(invoice);
     setView('editor');
-    setTimeout(() => {
-      window.print();
-    }, 500);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+      });
+    });
   };
 
-  const updateCurrentInvoice = (field: keyof Invoice, value: any) => {
+  const updateCurrentInvoice = (field: keyof Invoice, value: Invoice[keyof Invoice]) => {
     if (!currentInvoice) return;
 
     let updates: Partial<Invoice> = { [field]: value };
@@ -323,7 +325,7 @@ const AdminInvoices = () => {
 
     // Auto-generate NCF if ncfType changes
     if (field === 'ncfType' && currentInvoice.type === 'FACTURA') {
-      updates.ncf = generateNCF(value);
+      updates.ncf = generateNCF(String(value));
     }
 
     setCurrentInvoice({ ...currentInvoice, ...updates });

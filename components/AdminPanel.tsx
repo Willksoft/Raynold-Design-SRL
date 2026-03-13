@@ -19,7 +19,7 @@ const AdminPanel: React.FC = () => {
     const fetchCats = async () => {
       const { data } = await supabase.from('categories').select('*').order('name');
       if (data) {
-        setCategories(data.filter((c: any) => c.type === 'product').map((c: any) => ({ id: c.id, name: c.name, type: c.type })));
+        setCategories((data as Array<{ id: string; name: string; type: string }>).filter(c => c.type === 'product').map(c => ({ id: c.id, name: c.name, type: c.type as Category['type'] })));
       }
     };
     fetchCats();

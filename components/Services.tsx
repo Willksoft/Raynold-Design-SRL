@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { servicesData, ServiceDetail } from '../data/services';
+import { SupabaseServiceRow } from '../types';
 import TiltCard from './TiltCard';
 import { useUI } from '../context/UIContext';
 import { supabase } from '../lib/supabaseClient';
@@ -47,7 +48,7 @@ const Services: React.FC = () => {
   useEffect(() => {
     supabase.from('services').select('*').eq('is_active', true).order('sort_order').then(({ data }) => {
       if (data && data.length > 0) {
-        setServices(data.map((s: any) => {
+        setServices((data as SupabaseServiceRow[]).map((s: SupabaseServiceRow) => {
           const original = servicesData.find(os => os.slug === s.slug);
           const IconComponent = s.icon && ICONS_MAP[s.icon] ? ICONS_MAP[s.icon] : (original?.icon ?? Monitor);
           return {

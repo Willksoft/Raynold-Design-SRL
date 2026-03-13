@@ -5,7 +5,7 @@ export const api = {
     const response = await fetch(`${API_BASE}${endpoint}`);
     return response.json();
   },
-  post: async (endpoint: string, data: any) => {
+  post: async (endpoint: string, data: unknown) => {
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

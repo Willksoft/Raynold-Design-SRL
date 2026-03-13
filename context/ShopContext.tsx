@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ProductItem } from '../types';
+import { ProductItem, SupabaseProductRow } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 interface ShopContextType {
@@ -20,7 +20,7 @@ interface ShopContextType {
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
-const mapRow = (row: any): ProductItem & { slug?: string } => ({
+const mapRow = (row: SupabaseProductRow): ProductItem & { slug?: string } => ({
   id: row.id,
   title: row.title,
   category: row.category,
@@ -88,7 +88,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateProduct = async (id: string, updatedFields: Partial<ProductItem>) => {
-    const updates: any = {
+    type ProductUpdateRow = {
+      title?: string; category?: string; image?: string; price?: string;
+      description?: string; reference?: string; type?: string; unit?: string; slug?: string;
+    };
+    const updates: ProductUpdateRow = {
       title: updatedFields.title, category: updatedFields.category,
       image: updatedFields.image, price: updatedFields.price,
       description: updatedFields.description, reference: updatedFields.reference,

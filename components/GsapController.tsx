@@ -140,8 +140,19 @@ const GsapController: React.FC = () => {
       });
     }
 
-    const timer = setTimeout(() => ScrollTrigger.refresh(), 500);
-    return () => clearTimeout(timer);
+    let frame1: number;
+    let frame2: number;
+    // Sync refresh directly with the CPU/Render pipeline instead of a blind timeout
+    frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => {
+        ScrollTrigger.refresh();
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame1);
+      cancelAnimationFrame(frame2);
+    };
 
   }, [location.pathname]); 
 

@@ -16,7 +16,7 @@ export interface DGIIResult {
     telefono?: string;
     fecha_constitucion?: string;
     tipo?: string; // Persona Fisica / Persona Juridica
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface DGIISearchResponse {

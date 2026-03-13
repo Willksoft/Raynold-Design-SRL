@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Receipt, Search, Filter, Paperclip, FileText, X, UserPlus, Users } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { ExpenseRow } from '../types';
 
 export interface Expense {
   id: string;
@@ -54,7 +55,7 @@ const AdminExpenses = () => {
       supabase.from('accounts').select('id, name, balance'),
       supabase.from('suppliers').select('id, name, rnc, phone, email').order('name')
     ]);
-    if (exps) setExpenses(exps.map((e: any) => ({
+    if (exps) setExpenses(exps.map((e: ExpenseRow) => ({
       id: e.id, date: e.date, description: e.description, category: e.category,
       amount: Number(e.amount), reference: e.reference || '',
       attachmentUrl: e.attachment_url || '', attachmentName: e.attachment_name || '',
@@ -153,7 +154,12 @@ const AdminExpenses = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingExpense) return;
-    const row: any = {
+    type ExpenseInsertRow = {
+      date: string; description: string; category: string; amount: number;
+      reference: string; attachment_url: string | null; attachment_name: string | null;
+      account_id: string | null; supplier_id: string | null;
+    };
+    const row: ExpenseInsertRow = {
       date: editingExpense.date, description: editingExpense.description,
       category: editingExpense.category, amount: editingExpense.amount,
       reference: editingExpense.reference, attachment_url: editingExpense.attachmentUrl || null,

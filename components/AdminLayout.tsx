@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File, BarChart2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { SearchResults } from '../types';
 import AdminDashboard from './AdminDashboard';
 import AdminPanel from './AdminPanel';
 import AdminHero from './AdminHero';
@@ -35,11 +36,7 @@ export const AdminLayout = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<{
-    clients: any[];
-    products: any[];
-    invoices: any[];
-  }>({ clients: [], products: [], invoices: [] });
+  const [searchResults, setSearchResults] = useState<SearchResults>({ clients: [], products: [], invoices: [] });
   const [isDesignMenuOpen, setIsDesignMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,6 +107,12 @@ export const AdminLayout = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+
+    if (!email.toLowerCase().endsWith('@raynolddesignssrl.com')) {
+      setLoginError('Acceso denegado. Se requiere credencial administrativa.');
+      return;
+    }
+
     setLoginLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoginLoading(false);

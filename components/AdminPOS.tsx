@@ -5,6 +5,7 @@ import { Client } from './AdminClients';
 import { Seller } from './AdminSellers';
 import { Account } from './AdminAccounts';
 import { supabase } from '../lib/supabaseClient';
+import { ProductItem, POSInvoice, InvoiceItem as POSItem, Payment } from '../types';
 
 interface CartItem {
   id: string;
@@ -41,12 +42,12 @@ const AdminPOS = () => {
   const [newProduct, setNewProduct] = useState({ title: '', price: '', reference: '' });
 
   // Print state
-  const [lastInvoice, setLastInvoice] = useState<any>(null);
+  const [lastInvoice, setLastInvoice] = useState<POSInvoice | null>(null);
 
   useEffect(() => {
     // Load clients from Supabase
     supabase.from('clients').select('*').order('name').then(({ data }) => {
-      if (data && data.length > 0) setClients(data as any);
+      if (data && data.length > 0) setClients(data.map(c => ({ id: c.id, type: c.type as Client['type'], name: c.name, company: c.company || '', rnc: c.rnc || '', phone: c.phone || '', email: c.email || '', address: c.address || '' })));
       else {
         const saved = localStorage.getItem('raynold_clients');
         if (saved) setClients(JSON.parse(saved));
@@ -55,7 +56,7 @@ const AdminPOS = () => {
 
     // Load sellers from Supabase
     supabase.from('sellers').select('*').order('name').then(({ data }) => {
-      if (data && data.length > 0) setSellers(data as any);
+      if (data && data.length > 0) setSellers(data.map(s => ({ id: s.id, name: s.name })));
       else {
         const saved = localStorage.getItem('admin_sellers');
         if (saved) setSellers(JSON.parse(saved));
@@ -65,8 +66,8 @@ const AdminPOS = () => {
     // Load accounts from Supabase
     supabase.from('accounts').select('*').order('name').then(({ data }) => {
       if (data && data.length > 0) {
-        setAccounts(data as any);
-        const defaultAcc = (data as any).find((a: any) => a.is_default_receiving) || data[0];
+        setAccounts(data.map(a => ({ id: a.id, name: a.name, type: a.type as Account['type'], bankName: a.bank_name || '', accountNumber: a.account_number || '', accountSubType: a.account_sub_type || '', balance: Number(a.balance), isDefaultReceiving: a.is_default_receiving, isDefaultPaying: a.is_default_paying })));
+        const defaultAcc = data.find((a) => a.is_default_receiving) || data[0];
         if (defaultAcc) setPaymentMethod1(defaultAcc.id);
       } else {
         const saved = localStorage.getItem('admin_accounts');
@@ -87,7 +88,7 @@ const AdminPOS = () => {
     p.reference?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: ProductItem) => {
     const numericPrice = parseFloat(product.price?.toString().replace(/[^0-9.-]+/g, "") || "0") || 0;
     const existing = cart.find(item => item.id === product.id);
 
@@ -159,7 +160,7 @@ const AdminPOS = () => {
     const savedInvoices = localStorage.getItem('raynold_invoices');
     let invoices = savedInvoices ? JSON.parse(savedInvoices) : [];
 
-    const nextNumber = String(Math.max(...invoices.map((i: any) => parseInt(i.number) || 0), 1000) + 1).padStart(4, '0');
+    const nextNumber = String(Math.max(...invoices.map((i: POSInvoice) => parseInt(i.number) || 0), 1000) + 1).padStart(4, '0');
 
     const client = clients.find(c => c.id === selectedClient);
     const seller = sellers.find(s => s.id === selectedSeller);
@@ -287,10 +288,12 @@ const AdminPOS = () => {
     setIsCheckoutModalOpen(false);
 
     if (shouldPrint) {
-      // Trigger print after a short delay to allow render
-      setTimeout(() => {
-        window.print();
-      }, 500);
+      // Trigger print synchronized with CPU/render loop instead of static timeout
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+        });
+      });
     }
   };
 
@@ -751,7 +754,7 @@ const AdminPOS = () => {
                   <span className="w-1/4 text-right">Precio</span>
                   <span className="w-1/4 text-right">Total</span>
                 </div>
-                {lastInvoice.items.map((item: any, idx: number) => (
+                {lastInvoice.items.map((item: POSItem, idx: number) => (
                   <div key={idx} className="flex justify-between mb-1">
                     <span className="w-1/2 break-words">{item.quantity}x {item.description}</span>
                     <span className="w-1/4 text-right">{item.unitPrice.toFixed(2)}</span>
@@ -830,7 +833,7 @@ const AdminPOS = () => {
                 <span className="w-1/4 text-right">Precio</span>
                 <span className="w-1/4 text-right">Total</span>
               </div>
-              {lastInvoice.items.map((item: any, idx: number) => (
+              {lastInvoice.items.map((item: POSItem, idx: number) => (
                 <div key={idx} className="flex justify-between mb-1">
                   <span className="w-1/2 break-words">{item.quantity}x {item.description}</span>
                   <span className="w-1/4 text-right">{item.unitPrice.toFixed(2)}</span>
@@ -843,15 +846,15 @@ const AdminPOS = () => {
             <div className="text-right space-y-1 mb-4">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: any) => s + (i.quantity * i.unitPrice), 0))}</span>
+                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: POSItem) => s + (i.quantity * i.unitPrice), 0))}</span>
               </div>
               <div className="flex justify-between">
                 <span>ITBIS:</span>
-                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: any) => s + (i.quantity * i.unitPrice), 0) * 0.18)}</span>
+                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: POSItem) => s + (i.quantity * i.unitPrice), 0) * 0.18)}</span>
               </div>
               <div className="flex justify-between font-bold text-sm mt-1 border-t border-black border-dashed pt-1">
                 <span>TOTAL:</span>
-                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: any) => s + (i.quantity * i.unitPrice), 0) * 1.18)}</span>
+                <span>{formatCurrency(lastInvoice.items.reduce((s: number, i: POSItem) => s + (i.quantity * i.unitPrice), 0) * 1.18)}</span>
               </div>
             </div>
 
@@ -859,7 +862,7 @@ const AdminPOS = () => {
               <div className="mb-4">
                 <p>================================</p>
                 <p className="font-bold">Pagos:</p>
-                {lastInvoice.payments.map((p: any, idx: number) => (
+                {lastInvoice.payments.map((p: Payment, idx: number) => (
                   <div key={idx} className="flex justify-between">
                     <span>{p.method}:</span>
                     <span>{formatCurrency(p.amount)}</span>

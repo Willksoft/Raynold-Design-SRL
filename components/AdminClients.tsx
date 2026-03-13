@@ -189,9 +189,9 @@ const AdminClients = () => {
 
   const applyDGIIResult = (r: DGIIResult) => {
     const isJuridica = r.tipo?.toLowerCase().includes('juridica') || (r.rnc?.replace(/[-\s]/g, '').length === 9);
-    const newType = isJuridica ? 'Empresa' : 'Persona Física';
+    const newType: 'Empresa' | 'Persona Física' = isJuridica ? 'Empresa' : 'Persona Física';
 
-    setValue('type', newType as any, { shouldValidate: true });
+    setValue('type', newType, { shouldValidate: true });
     setValue('rnc', r.rnc || '', { shouldValidate: true });
     setRncInput(r.rnc || '');
 

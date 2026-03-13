@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShoppingBag, Plus, Check, Star, ShieldCheck, Truck, ArrowUpRight, Share2, Package, Ruler, Tag } from 'lucide-react';
-import { ProductItem } from '../types';
+import { ProductItem, SupabaseProductRow } from '../types';
 import { useShop } from '../context/ShopContext';
 import { supabase } from '../lib/supabaseClient';
 
@@ -67,7 +67,7 @@ const ProductDetailPage: React.FC = () => {
                     .limit(4);
 
                 if (related) {
-                    setRelatedProducts(related.map((p: any) => ({
+                    setRelatedProducts(related.map((p: SupabaseProductRow) => ({
                         id: p.slug || p.id,
                         title: p.title,
                         price: p.price && !isNaN(Number(p.price)) && Number(p.price) > 0 ? `RD$ ${Number(p.price).toLocaleString()}` : '',

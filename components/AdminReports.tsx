@@ -5,10 +5,11 @@ import {
     Calendar, Filter, Printer, BarChart2, RefreshCw, ChevronDown,
     Receipt, Loader2, CheckCircle, Clock, AlertTriangle, Shield,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { ReportInvoice, ReportData, ReportPayment, InvoiceItem, CellValue } from '../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface DateRange { from: string; to: string; }
-interface ReportData { invoices: any[]; expenses: any[]; payments: any[]; }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
@@ -17,15 +18,15 @@ const fmtDate = (d: string) =>
     new Date(d + 'T00:00:00').toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' });
 const fmtNum = (n: number) => n.toFixed(2);
 
-const invSubtotal = (inv: any) =>
-    (inv.items || []).reduce((s: number, it: any) => s + (it.quantity || 0) * (it.unit_price || 0), 0);
-const invTax = (inv: any) => {
+const invSubtotal = (inv: ReportInvoice) =>
+    (inv.items || []).reduce((s: number, it: InvoiceItem) => s + ((it.quantity || 0) * (it.unit_price || it.unitPrice || 0)), 0);
+const invTax = (inv: ReportInvoice) => {
     const sub = invSubtotal(inv);
     return inv.apply_tax !== false ? sub * 0.18 : 0;
 };
-const invTotal = (inv: any) => invSubtotal(inv) + invTax(inv);
+const invTotal = (inv: ReportInvoice) => invSubtotal(inv) + invTax(inv);
 
-const sumInvoices = (invs: any[]) => invs.reduce((a, i) => a + invTotal(i), 0);
+const sumInvoices = (invs: ReportInvoice[]) => invs.reduce((a, i) => a + invTotal(i), 0);
 
 const today = () => new Date().toISOString().slice(0, 10);
 const monthStart = () => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10); };
@@ -46,18 +47,18 @@ const downloadText = (content: string, filename: string, mime = 'text/plain') =>
     const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
 };
-const exportCSV = (rows: any[][], filename: string) => {
+const exportCSV = (rows: CellValue[][], filename: string) => {
     const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     downloadText('\ufeff' + csv, filename, 'text/csv');
 };
 // Pipe-delimited (formato DGII)
-const exportPipe = (rows: any[][], filename: string) => {
+const exportPipe = (rows: CellValue[][], filename: string) => {
     const txt = rows.map(r => r.map(c => String(c ?? '').replace(/\|/g, '')).join('|')).join('\r\n');
     downloadText(txt, filename, 'text/plain');
 };
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
-const KPICard = ({ label, value, icon: Icon, color, sub }: { label: string; value: string; icon: any; color: string; sub?: string }) => (
+const KPICard = ({ label, value, icon: Icon, color, sub }: { label: string; value: string; icon: LucideIcon; color: string; sub?: string }) => (
     <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-5 flex gap-4 items-start">
         <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
             <Icon size={20} className="text-white" />
@@ -128,9 +129,9 @@ const AdminReports: React.FC = () => {
                 .lte('date', range.to)
                 .order('date', { ascending: false }),
         ]);
-        const payments: any[] = [];
-        (invRes.data || []).forEach((inv: any) => {
-            (inv.payments || []).forEach((p: any) => {
+        const payments: ReportPayment[] = [];
+        (invRes.data || []).forEach((inv: ReportInvoice) => {
+            (inv.payments || []).forEach((p: ReportPayment) => {
                 if (p.date >= range.from && p.date <= range.to)
                     payments.push({ ...p, invoiceNumber: inv.number, clientName: inv.client_name });
             });
@@ -268,7 +269,7 @@ const AdminReports: React.FC = () => {
 
     // ── Export full accounting ─────────────────────────────────────────────────
     const exportFullCSV = () => {
-        const rows: any[][] = [
+        const rows: CellValue[][] = [
             ['RAYNOLD DESIGN SRL — REPORTE CONTABLE COMPLETO'],
             [`Período: ${fmtDate(range.from)} al ${fmtDate(range.to)}`],
             [`Generado: ${new Date().toLocaleString('es-DO')}`],

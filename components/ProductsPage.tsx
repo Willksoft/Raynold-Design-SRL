@@ -59,7 +59,7 @@ const ProductsPage: React.FC = () => {
         {/* Grid */}
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <AnimatePresence>
-            {filteredProducts.map((product: any) => {
+            {filteredProducts.map((product: ProductItem & { slug?: string }) => {
               const isInCart = cart.some(item => item.id === product.id);
 
               return (

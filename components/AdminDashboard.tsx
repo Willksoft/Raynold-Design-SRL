@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useShop } from '../context/ShopContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { supabase } from '../lib/supabaseClient';
+import { SalesDataPoint, CategoryDataPoint, Payment } from '../types';
 
 interface DashboardStats {
   totalIngresos: number;
@@ -12,8 +13,8 @@ interface DashboardStats {
   facturasPendientes: number;
   totalCotizaciones: number;
   totalClientes: number;
-  salesData: any[];
-  categoryData: any[];
+  salesData: SalesDataPoint[];
+  categoryData: CategoryDataPoint[];
 }
 
 const formatCurrency = (amount: number) => {
@@ -79,9 +80,9 @@ const AdminDashboard = () => {
 
       invoices.forEach(inv => {
         if (inv.payments && inv.payments.length > 0) {
-          inv.payments.forEach((payment: any) => {
+          inv.payments.forEach((payment: Payment & { created_at?: string }) => {
             totalIngresos += Number(payment.amount);
-            const date = new Date(payment.date || payment.created_at);
+            const date = new Date(payment.date || payment.created_at || '');
             if (!isNaN(date.getTime()) && date.getFullYear() === new Date().getFullYear()) {
               const monthIndex = date.getMonth();
               const monthName = monthNames[monthIndex];
