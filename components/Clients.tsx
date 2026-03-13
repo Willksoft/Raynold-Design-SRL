@@ -60,10 +60,18 @@ const Clients: React.FC = () => {
 
   if (brands.length === 0) return null;
 
-  // Each brand card = 200px width + 48px margin (mx-6 = 24px each side)
-  // Total per brand = 248px
-  const brandWidth = 248;
-  const totalWidth = brands.length * brandWidth;
+  // Each brand = 200px + 48px margins = 248px
+  const BRAND_WIDTH = 248;
+  const VIEWPORT_WIDTH = 2000; // generous max viewport
+
+  // Repeat brands enough times so one "set" fills the viewport
+  const repeatsNeeded = Math.max(2, Math.ceil(VIEWPORT_WIDTH / (brands.length * BRAND_WIDTH)));
+  const repeatedBrands: Brand[] = [];
+  for (let i = 0; i < repeatsNeeded; i++) {
+    repeatedBrands.push(...brands);
+  }
+
+  const setWidth = repeatedBrands.length * BRAND_WIDTH;
 
   return (
     <section className="py-12 bg-black border-y border-white/5 overflow-hidden relative">
@@ -76,24 +84,19 @@ const Clients: React.FC = () => {
         </p>
       </div>
 
-      {/* 
-        Infinite scroll: two identical sets side by side.
-        The animation translates -50% (= one full set), 
-        then jumps back to 0%, creating a seamless infinite loop.
-        The inline width ensures both sets together = 2x the total brand width.
-      */}
+      {/* Two identical sets side by side. Animation moves -50% then loops back seamlessly */}
       <div
         className="animate-scroll flex"
-        style={{ width: `${totalWidth * 2}px` }}
+        style={{ width: `${setWidth * 2}px` }}
       >
-        <div className="flex items-center" style={{ width: `${totalWidth}px` }}>
-          {brands.map((brand) => (
-            <BrandLogo key={brand.id} brand={brand} />
+        <div className="flex items-center" style={{ width: `${setWidth}px` }}>
+          {repeatedBrands.map((brand, i) => (
+            <BrandLogo key={`a-${i}`} brand={brand} />
           ))}
         </div>
-        <div className="flex items-center" style={{ width: `${totalWidth}px` }} aria-hidden="true">
-          {brands.map((brand) => (
-            <BrandLogo key={`dup-${brand.id}`} brand={brand} />
+        <div className="flex items-center" style={{ width: `${setWidth}px` }} aria-hidden="true">
+          {repeatedBrands.map((brand, i) => (
+            <BrandLogo key={`b-${i}`} brand={brand} />
           ))}
         </div>
       </div>
