@@ -8,7 +8,7 @@ Bienvenido al manual de su sitio web **Raynold Design SRL**. Esta guía le expli
 
 ## Acceder al Panel de Administración
 
-1. Abra su navegador y vaya a: **[raynolddesign.com/admin](https://raynolddesign.com/admin)**
+1. Abra su navegador y vaya a: **[raynolddesignssrl.com/admin](https://raynolddesignssrl.com/admin)**
 2. Ingrese su **correo electrónico** y **contraseña**
 3. Haga clic en **Iniciar Sesión**
 
@@ -230,8 +230,8 @@ Su página web tiene estas funciones para sus visitantes:
 
 | Dato | Valor |
 | --- | --- |
-| **Sitio Web** | [raynolddesign.com](https://raynolddesign.com) |
-| **Panel Admin** | [raynolddesign.com/admin](https://raynolddesign.com/admin) |
+| **Sitio Web** | [raynolddesignssrl.com](https://raynolddesignssrl.com) |
+| **Panel Admin** | [raynolddesignssrl.com/admin](https://raynolddesignssrl.com/admin) |
 | **WhatsApp** | +1 (829) 580-7411 |
 | **Horario del Chatbot** | Lun-Vie 8:30 AM - 7:00 PM, Sáb 8:30 AM - 1:00 PM |
 
