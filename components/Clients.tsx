@@ -84,10 +84,13 @@ const Clients: React.FC = () => {
         </p>
       </div>
 
-      {/* Two identical sets side by side. Animation moves -50% then loops back seamlessly */}
+      {/* Two identical sets side by side. Duration calculated for ~20px/sec speed */}
       <div
-        className="animate-scroll flex"
-        style={{ width: `${setWidth * 2}px` }}
+        className="flex"
+        style={{
+          width: `${setWidth * 2}px`,
+          animation: `scroll-infinite ${Math.round(setWidth / 20)}s linear infinite`,
+        }}
       >
         <div className="flex items-center" style={{ width: `${setWidth}px` }}>
           {repeatedBrands.map((brand, i) => (
