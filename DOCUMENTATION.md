@@ -36,7 +36,7 @@
 | Servicio | Uso |
 |---|---|
 | **Supabase** | PostgreSQL + Auth + Storage + API |
-| **Google Gemini API** | Consultor IA integrado |
+
 | **DGII API** | Autocompletado de RNC y contribuyentes |
 | **Vercel** | Deploy y hosting |
 | **Express + TSX** | Dev server local |
@@ -84,7 +84,7 @@ raynold-design-srl/
 │   ├── About.tsx             # Página "Nosotros"
 │   ├── Contact.tsx           # Sección de contacto (home)
 │   ├── ContactPage.tsx       # Página de contacto completa
-│   ├── AiConsultant.tsx      # Consultor inteligente con Gemini
+
 │   │
 │   ├── ─── NAVEGACIÓN & UI ───
 │   ├── Navbar.tsx            # Barra de navegación principal
@@ -347,10 +347,6 @@ interface ServiceItem {
 - **Número:** +1 (829) 580-7411
 - **Integración:** Botón flotante circular con deep link `wa.me`
 
-### Google Gemini AI
-
-- **Componente:** `AiConsultant.tsx`
-- **Uso:** Consultor inteligente para cotizaciones y preguntas
 
 ---
 
@@ -362,7 +358,7 @@ interface ServiceItem {
 | `VITE_SUPABASE_ANON_KEY` | Anon key de Supabase | ✅ |
 | `VITE_DGII_API_KEY` | API key para DGII lookup | ✅ |
 | `VITE_DGII_API_URL` | URL base de la API DGII | ❌ (tiene default) |
-| `GEMINI_API_KEY` | API key de Google Gemini | ❌ |
+
 
 > ⚠️ Estas variables deben configurarse tanto en `.env.local` (desarrollo) como en **Vercel Dashboard → Settings → Environment Variables** (producción).
 

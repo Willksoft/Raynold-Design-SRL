@@ -15,7 +15,7 @@ import ProjectDetailPage from './components/ProjectDetailPage';
 import ProductDetailPage from './components/ProductDetailPage';
 import AdminLayout from './components/AdminLayout';
 import About from './components/About';
-import AiConsultant from './components/AiConsultant';
+
 import Contact from './components/Contact';
 import ContactPage from './components/ContactPage';
 import Footer from './components/Footer';
@@ -140,7 +140,7 @@ const Home = () => (
     <HomeProjects />
     <div id="process"><Process /></div>
     <Products />
-    <AiConsultant />
+
     <Contact />
   </>
 );
