@@ -108,7 +108,8 @@ export const AdminLayout = () => {
     e.preventDefault();
     setLoginError('');
 
-    if (!email.toLowerCase().endsWith('@raynolddesignssrl.com')) {
+    const lowerEmail = email.toLowerCase().trim();
+    if (!lowerEmail.endsWith('@raynolddesignssrl.com') && lowerEmail !== 'raynolddesignssrl@admin.com') {
       setLoginError('Acceso denegado. Se requiere credencial administrativa.');
       return;
     }
