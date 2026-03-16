@@ -14,7 +14,7 @@ const VerifiedBadge: React.FC<{ size?: number }> = ({ size = 14 }) => (
 
 interface PaymentPage {
   id: string; name: string; username: string; bio: string; avatar_url: string;
-  theme: string; accent_color: string; is_active: boolean; slug: string;
+  theme: string; accent_color: string; is_active: boolean; slug: string; rnc: string;
 }
 
 interface PaymentMethod {
@@ -116,7 +116,7 @@ const AdminPaymentLinks: React.FC = () => {
     .filter(m => filterType === 'all' || m.type === filterType);
 
   const openPageModal = (page?: PaymentPage) => {
-    setEditPage(page || { id: '', name: '', username: '', bio: '', avatar_url: '', theme: 'light', accent_color: '#E60000', is_active: true, slug: '' });
+    setEditPage(page || { id: '', name: '', username: '', bio: '', avatar_url: '', theme: 'light', accent_color: '#E60000', is_active: true, slug: '', rnc: '' });
     setIsPageModal(true);
   };
 
@@ -129,7 +129,7 @@ const AdminPaymentLinks: React.FC = () => {
   const savePage = async () => {
     if (!editPage) return;
     const slug = editPage.slug || editPage.username.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const row = { name: editPage.name, username: editPage.username, bio: editPage.bio, avatar_url: editPage.avatar_url, theme: editPage.theme, accent_color: editPage.accent_color, is_active: editPage.is_active, slug };
+    const row = { name: editPage.name, username: editPage.username, bio: editPage.bio, avatar_url: editPage.avatar_url, theme: editPage.theme, accent_color: editPage.accent_color, is_active: editPage.is_active, slug, rnc: editPage.rnc };
     if (pages.find(p => p.id === editPage.id)) {
       await supabase.from('payment_pages').update(row).eq('id', editPage.id);
     } else {
@@ -376,7 +376,10 @@ const AdminPaymentLinks: React.FC = () => {
                     <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Nombre</label><input type="text" value={editPage.name} onChange={e => setEditPage({ ...editPage, name: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Juan Pérez" /></div>
                     <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Username</label><input type="text" value={editPage.username} onChange={e => setEditPage({ ...editPage, username: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-') })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="juanperez" /></div>
                   </div>
-                  <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Bio</label><input type="text" value={editPage.bio} onChange={e => setEditPage({ ...editPage, bio: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Diseñador Web" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Bio</label><input type="text" value={editPage.bio} onChange={e => setEditPage({ ...editPage, bio: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Diseñador Web" /></div>
+                    <div><label className="text-[10px] text-gray-500 uppercase block mb-1">RNC / Cédula</label><input type="text" value={editPage.rnc || ''} onChange={e => setEditPage({ ...editPage, rnc: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm font-mono" placeholder="130-00000-0" /></div>
+                  </div>
                   <div>
                     <label className="text-[10px] text-gray-500 uppercase block mb-1">Foto de Perfil</label>
                     <div className="flex items-center gap-3">
