@@ -93,7 +93,7 @@ const ProductsPage: React.FC = () => {
 
                   <div className="p-5 flex-1 flex flex-col">
                     <h3 className="text-lg font-bold text-white font-futuristic mb-2">{product.title}</h3>
-
+                    {product.show_price && product.price && <p className="text-gray-400 text-sm font-mono mb-4">{product.price}</p>}
 
                     <div className="mt-auto">
                       <a

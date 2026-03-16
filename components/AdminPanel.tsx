@@ -33,7 +33,8 @@ const AdminPanel: React.FC = () => {
     price: '',
     description: '',
     type: 'product' as 'product' | 'service',
-    unit: 'Unidad'
+    unit: 'Unidad',
+    show_price: false
   });
 
   const handleCreateCategory = async () => {
@@ -59,7 +60,8 @@ const AdminPanel: React.FC = () => {
         price: product.price || '',
         description: product.description || '',
         type: product.type || 'product',
-        unit: product.unit || 'Unidad'
+        unit: product.unit || 'Unidad',
+        show_price: product.show_price ?? false
       });
     } else {
       setEditingProduct(null);
@@ -72,7 +74,8 @@ const AdminPanel: React.FC = () => {
         price: '',
         description: '',
         type: 'product',
-        unit: 'Unidad'
+        unit: 'Unidad',
+        show_price: false
       });
     }
     setIsModalOpen(true);
@@ -429,6 +432,17 @@ const AdminPanel: React.FC = () => {
                       className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       placeholder="Ej. RD$4,500+ o Cotizar"
                     />
+                    <label
+                      className="flex items-center gap-3 mt-2 cursor-pointer select-none group"
+                      onClick={() => setFormData({ ...formData, show_price: !formData.show_price })}
+                    >
+                      <div className={`w-10 h-5 rounded-full relative transition-colors ${formData.show_price ? 'bg-raynold-green' : 'bg-white/10'}`}>
+                        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${formData.show_price ? 'left-[22px]' : 'left-0.5'}`}></div>
+                      </div>
+                      <span className={`text-xs font-bold uppercase tracking-wider ${formData.show_price ? 'text-raynold-green' : 'text-gray-500'}`}>
+                        {formData.show_price ? 'Precio Público' : 'Precio Oculto'}
+                      </span>
+                    </label>
                   </div>
 
                   <div className="space-y-2">

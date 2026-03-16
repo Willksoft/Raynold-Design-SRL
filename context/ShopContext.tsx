@@ -30,6 +30,7 @@ const mapRow = (row: SupabaseProductRow): ProductItem & { slug?: string } => ({
   reference: row.reference || '',
   type: (row.type as 'product' | 'service') || 'product',
   unit: row.unit || 'Unidad',
+  show_price: row.show_price ?? false,
   slug: row.slug || '',
 });
 
@@ -82,6 +83,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       image: product.image, price: product.price,
       description: product.description, reference: product.reference,
       type: product.type || 'product', unit: product.unit || 'Unidad',
+      show_price: product.show_price ?? false,
       slug
     }]);
     await refreshProducts();
@@ -91,12 +93,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     type ProductUpdateRow = {
       title?: string; category?: string; image?: string; price?: string;
       description?: string; reference?: string; type?: string; unit?: string; slug?: string;
+      show_price?: boolean;
     };
     const updates: ProductUpdateRow = {
       title: updatedFields.title, category: updatedFields.category,
       image: updatedFields.image, price: updatedFields.price,
       description: updatedFields.description, reference: updatedFields.reference,
-      type: updatedFields.type, unit: updatedFields.unit
+      type: updatedFields.type, unit: updatedFields.unit,
+      show_price: updatedFields.show_price
     };
     if (updatedFields.title) updates.slug = generateSlug(updatedFields.title);
     await supabase.from('products').update(updates).eq('id', id);

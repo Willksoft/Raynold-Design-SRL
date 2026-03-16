@@ -15,7 +15,7 @@ const Products: React.FC = () => {
   useEffect(() => {
     supabase
       .from('products')
-      .select('id, title, description, price, image, category, reference, unit, slug')
+      .select('id, title, description, price, image, category, reference, unit, slug, show_price')
       .eq('is_active', true)
       .limit(6)
       .then(({ data }) => {
@@ -24,12 +24,13 @@ const Products: React.FC = () => {
             id: p.id,
             title: p.title,
             description: p.description || '',
-            price: p.price && !isNaN(Number(p.price)) && Number(p.price) > 0 ? `RD$ ${Number(p.price).toLocaleString()}` : '',
+            price: p.price || '',
             image: p.image || `https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600`,
             category: p.category || 'Producto',
             reference: p.reference,
             unit: p.unit,
             slug: p.slug,
+            show_price: p.show_price ?? false,
           })));
         }
       });
@@ -91,7 +92,7 @@ const Products: React.FC = () => {
                       {product.category}
                     </span>
                     <h3 className="text-2xl font-bold text-white font-futuristic mb-2">{product.title}</h3>
-
+                    {product.show_price && product.price && <span className="text-white font-medium block mb-4">{product.price}</span>}
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
                       <a

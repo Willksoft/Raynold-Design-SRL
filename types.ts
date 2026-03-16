@@ -18,6 +18,7 @@ export interface ProductItem {
   description?: string;
   type?: 'product' | 'service';
   unit?: string;
+  show_price?: boolean;
 }
 
 export interface Category {
@@ -209,6 +210,7 @@ export interface SupabaseProductRow {
   type: string;
   unit: string;
   slug: string;
+  show_price?: boolean;
   is_active?: boolean;
   created_at?: string;
 }

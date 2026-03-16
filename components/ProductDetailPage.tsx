@@ -49,12 +49,13 @@ const ProductDetailPage: React.FC = () => {
                     id: data.id,
                     title: data.title,
                     description: data.description || '',
-                    price: data.price && !isNaN(Number(data.price)) && Number(data.price) > 0 ? `RD$ ${Number(data.price).toLocaleString()}` : '',
+                    price: data.price || '',
                     image: data.image || 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=800',
                     category: data.category || 'Producto',
                     reference: data.reference,
                     unit: data.unit,
                     features: data.features || [],
+                    show_price: data.show_price ?? false,
                 });
 
                 // Fetch related products from same category
@@ -70,10 +71,11 @@ const ProductDetailPage: React.FC = () => {
                     setRelatedProducts(related.map((p: SupabaseProductRow) => ({
                         id: p.slug || p.id,
                         title: p.title,
-                        price: p.price && !isNaN(Number(p.price)) && Number(p.price) > 0 ? `RD$ ${Number(p.price).toLocaleString()}` : '',
+                        price: p.price || '',
                         image: p.image || 'https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=600',
                         category: p.category || 'Producto',
                         reference: p.reference,
+                        show_price: p.show_price ?? false,
                     })));
                 }
             }
@@ -191,7 +193,11 @@ const ProductDetailPage: React.FC = () => {
                             {product.title}
                         </h1>
 
-
+                        {product.show_price && product.price && (
+                            <p className="text-3xl text-raynold-green font-mono font-bold mb-8">
+                                {product.price}
+                            </p>
+                        )}
 
                         {/* Description */}
                         <div className="mb-8">
