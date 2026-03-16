@@ -85,6 +85,9 @@ const AdminPaymentLinks: React.FC = () => {
   const [qrShowLink, setQrShowLink] = useState(true);
   const [qrCustomText, setQrCustomText] = useState('Escanea para pagar');
   const qrContainerRef = useRef<HTMLDivElement>(null);
+  const [savedQrs, setSavedQrs] = useState<any[]>([]);
+  const [qrName, setQrName] = useState('Mi QR');
+  const [selectedQrId, setSelectedQrId] = useState('');
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,6 +111,34 @@ const AdminPaymentLinks: React.FC = () => {
     if (p) setPages(p); if (m) setMethods(m);
     if (p && p.length > 0 && !selectedPageId) setSelectedPageId(p[0].id);
     setLoading(false);
+  };
+
+  const fetchSavedQrs = async (pageId: string) => {
+    const { data } = await supabase.from('saved_qr_codes').select('*').eq('page_id', pageId).order('created_at', { ascending: false });
+    if (data) setSavedQrs(data);
+  };
+
+  const saveQr = async () => {
+    if (!currentPage) return;
+    const row = { page_id: currentPage.id, name: qrName, style: qrStyle, accent_color: qrAccent, bg_color: qrBg, fg_color: qrFg, qr_size: qrSize, show_logo: qrShowLogo, show_photo: qrShowPhoto, show_name: qrShowName, show_user: qrShowUser, show_link: qrShowLink, custom_text: qrCustomText };
+    if (selectedQrId) {
+      await supabase.from('saved_qr_codes').update({ ...row, updated_at: new Date().toISOString() }).eq('id', selectedQrId);
+    } else {
+      const { data } = await supabase.from('saved_qr_codes').insert([row]).select();
+      if (data) setSelectedQrId(data[0].id);
+    }
+    fetchSavedQrs(currentPage.id);
+  };
+
+  const loadQr = (qr: any) => {
+    setSelectedQrId(qr.id); setQrName(qr.name); setQrStyle(qr.style); setQrAccent(qr.accent_color); setQrBg(qr.bg_color); setQrFg(qr.fg_color); setQrSize(qr.qr_size); setQrShowLogo(qr.show_logo); setQrShowPhoto(qr.show_photo); setQrShowName(qr.show_name); setQrShowUser(qr.show_user); setQrShowLink(qr.show_link); setQrCustomText(qr.custom_text || '');
+  };
+
+  const deleteQr = async (id: string) => {
+    if (!window.confirm('¿Eliminar este QR guardado?')) return;
+    await supabase.from('saved_qr_codes').delete().eq('id', id);
+    if (selectedQrId === id) setSelectedQrId('');
+    if (currentPage) fetchSavedQrs(currentPage.id);
   };
 
   const currentPage = pages.find(p => p.id === selectedPageId);
@@ -235,7 +266,7 @@ const AdminPaymentLinks: React.FC = () => {
                   <div className="flex gap-2 mb-6 flex-wrap">
                     <button onClick={() => openPageModal(currentPage)} className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-bold flex items-center gap-2"><Edit2 size={14} /> Editar</button>
                     <a href={`/pagar/${currentPage.slug}`} target="_blank" rel="noopener noreferrer" className="px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-bold flex items-center gap-2"><ExternalLink size={14} /> Ir al Link</a>
-                    <button onClick={() => { setQrAccent(currentPage.accent_color); setShowQrModal(true); }} className="px-3 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold flex items-center gap-2"><QrCode size={14} /> Generar QR</button>
+                    <button onClick={() => { setQrAccent(currentPage.accent_color); setShowQrModal(true); fetchSavedQrs(currentPage.id); setSelectedQrId(''); }} className="px-3 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold flex items-center gap-2"><QrCode size={14} /> Generar QR</button>
                     <button onClick={() => copyToClipboard(`${window.location.origin}/pagar/${currentPage.slug}`, 'link')} className="px-3 py-2 bg-green-500/20 text-green-400 rounded-lg text-xs font-bold flex items-center gap-2">
                       {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />} {copied === 'link' ? '¡Copiado!' : 'Copiar Link'}
                     </button>
@@ -536,13 +567,40 @@ const AdminPaymentLinks: React.FC = () => {
                 <span className="px-2 py-0.5 bg-raynold-red/20 text-raynold-red rounded-full text-[9px] font-black uppercase">Pro</span>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => downloadQr('png')} className="px-4 py-2 btn-animated font-bold rounded-lg text-xs flex items-center gap-2"><Download size={14} /> Descargar PNG</button>
+                <button onClick={saveQr} className="px-3 py-2 bg-green-500/20 text-green-400 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-green-500/30"><Save size={14} /> {selectedQrId ? 'Actualizar' : 'Guardar'}</button>
+                <button onClick={() => downloadQr('png')} className="px-4 py-2 btn-animated font-bold rounded-lg text-xs flex items-center gap-2"><Download size={14} /> PNG</button>
                 <button onClick={() => setShowQrModal(false)}><X size={18} className="text-gray-400" /></button>
               </div>
             </div>
             <div className="flex-1 overflow-hidden flex">
               {/* Left: Controls */}
               <div className="w-[380px] shrink-0 overflow-y-auto scrollbar-modern p-4 space-y-4 border-r border-white/10">
+                {/* Saved QRs */}
+                {savedQrs.length > 0 && (
+                  <div className="bg-white/5 rounded-xl p-3">
+                    <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">QR Guardados</label>
+                    <div className="space-y-1 max-h-28 overflow-y-auto">
+                      {savedQrs.map(q => (
+                        <div key={q.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer ${selectedQrId === q.id ? 'bg-raynold-red/15 border border-raynold-red/30' : 'hover:bg-white/5'}`}>
+                          <button onClick={() => loadQr(q)} className="flex-1 text-left">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded" style={{ backgroundColor: q.accent_color }} />
+                              <span className="text-xs text-white font-medium">{q.name}</span>
+                            </div>
+                          </button>
+                          <button onClick={() => deleteQr(q.id)} className="text-gray-600 hover:text-red-400"><Trash2 size={11} /></button>
+                        </div>
+                      ))}
+                    </div>
+                    <button onClick={() => { setSelectedQrId(''); setQrName('Nuevo QR'); }} className="mt-1.5 w-full px-3 py-1.5 border border-dashed border-white/15 rounded-lg text-[10px] text-gray-500 hover:text-white flex items-center justify-center gap-1"><Plus size={10} /> Nuevo QR</button>
+                  </div>
+                )}
+
+                {/* QR Name */}
+                <div className="bg-white/5 rounded-xl p-3">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-1.5">Nombre del QR</label>
+                  <input type="text" value={qrName} onChange={e => setQrName(e.target.value)} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-xs" placeholder="Mi QR" />
+                </div>
                 {/* Style Tabs */}
                 <div className="flex rounded-xl bg-white/5 p-1">
                   {([['classic','Clásico'],['modern','Moderno'],['card','Tarjeta']] as const).map(([v,l]) => (
