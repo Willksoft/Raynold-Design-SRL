@@ -93,27 +93,17 @@ const ProductsPage: React.FC = () => {
 
                   <div className="p-5 flex-1 flex flex-col">
                     <h3 className="text-lg font-bold text-white font-futuristic mb-2">{product.title}</h3>
-                    {product.price && <p className="text-gray-400 text-sm font-mono mb-4">{product.price}</p>}
 
-                    <div className="mt-auto flex gap-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                        disabled={isInCart}
-                        className={`flex-1 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${isInCart
-                          ? 'bg-green-900/50 text-green-400 border border-green-500/30 cursor-default'
-                          : 'bg-white text-black hover:bg-gray-200'
-                          }`}
-                      >
-                        {isInCart ? <><Check size={16} /> Agregado</> : <><Plus size={16} /> Añadir</>}
-                      </button>
+
+                    <div className="mt-auto">
                       <a
                         href={`https://wa.me/18295807411?text=Hola,%20me%20interesa%20el%20producto:%20${product.title}`}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="p-2.5 border border-white/20 text-white rounded-lg hover:bg-raynold-green hover:border-raynold-green transition-colors"
+                        className="w-full py-2.5 bg-raynold-green text-black font-bold text-sm rounded-lg hover:bg-green-400 transition-colors flex items-center justify-center gap-2"
                       >
-                        <ArrowUpRight size={18} />
+                        Cotizar por WhatsApp <ArrowUpRight size={16} />
                       </a>
                     </div>
                   </div>

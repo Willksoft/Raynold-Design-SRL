@@ -191,11 +191,7 @@ const ProductDetailPage: React.FC = () => {
                             {product.title}
                         </h1>
 
-                        {product.price && (
-                            <p className="text-3xl text-raynold-green font-mono font-bold mb-8">
-                                {product.price}
-                            </p>
-                        )}
+
 
                         {/* Description */}
                         <div className="mb-8">
@@ -244,20 +240,14 @@ const ProductDetailPage: React.FC = () => {
 
                         {/* CTA buttons */}
                         <div className="space-y-3 mt-auto">
-                            <button
-                                onClick={() => addToCart(product)}
-                                disabled={isInCart}
-                                className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg ${isInCart
-                                    ? 'bg-green-900/30 text-green-500 border border-green-500/30 cursor-default'
-                                    : 'btn-animated shadow-raynold-red/20'
-                                    }`}
+                            <a
+                                href={`https://wa.me/18295807411?text=Hola,%20me%20interesa%20el%20producto:%20${encodeURIComponent(product.title)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-lg bg-raynold-green text-black hover:bg-green-400 shadow-raynold-green/20"
                             >
-                                {isInCart ? (
-                                    <>Agregado al Carrito <Check size={22} /></>
-                                ) : (
-                                    <>Añadir a Cotización <ShoppingBag size={22} /></>
-                                )}
-                            </button>
+                                Cotizar por WhatsApp <ArrowUpRight size={22} />
+                            </a>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <a
@@ -307,7 +297,7 @@ const ProductDetailPage: React.FC = () => {
                                     </div>
                                     <div className="p-4">
                                         <h3 className="text-sm font-bold text-white mb-1 line-clamp-2">{rp.title}</h3>
-                                        {rp.price && <span className="text-raynold-green text-xs font-mono">{rp.price}</span>}
+
                                     </div>
                                 </div>
                             ))}

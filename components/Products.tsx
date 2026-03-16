@@ -91,23 +91,17 @@ const Products: React.FC = () => {
                       {product.category}
                     </span>
                     <h3 className="text-2xl font-bold text-white font-futuristic mb-2">{product.title}</h3>
-                    {product.price && <span className="text-white font-medium block mb-4">{product.price}</span>}
+
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); addToCart(product); }}
-                        className="flex-1 py-2 bg-white text-black font-bold text-sm rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
-                      >
-                        <Plus size={16} /> Agregar
-                      </button>
                       <a
                         href={`https://wa.me/18295807411?text=Hola,%20me%20interesa%20el%20producto:%20${product.title}`}
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="w-10 h-10 rounded-lg border border-white/20 text-white flex items-center justify-center hover:bg-raynold-green hover:border-raynold-green transition-colors"
+                        className="flex-1 py-2.5 bg-raynold-green text-black font-bold text-sm rounded-lg hover:bg-green-400 transition-colors flex items-center justify-center gap-2"
                       >
-                        <ArrowUpRight size={20} />
+                        Cotizar <ArrowUpRight size={16} />
                       </a>
                     </div>
                   </div>
