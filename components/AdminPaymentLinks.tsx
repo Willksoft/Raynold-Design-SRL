@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Plus, Edit2, Trash2, X, Save, Eye, Copy, Check, ChevronDown, ChevronUp,
   Loader2, CreditCard, Landmark, Link2, Bitcoin, ExternalLink,
-  Globe, User, Sparkles, Smartphone, Upload, Camera, QrCode, Download
+  Globe, User, Sparkles, Smartphone, Upload, Camera, QrCode, Download, FileText
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
 import { BANK_OPTIONS, BankOption } from './bankOptions';
 
@@ -752,8 +754,9 @@ const AdminPaymentLinks: React.FC = () => {
                 {/* Download Buttons */}
                 <div className="flex gap-2 mt-6">
                   <button onClick={() => downloadQr('png')} className="px-4 py-2.5 bg-cyan-500/20 text-cyan-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-cyan-500/30"><Download size={13} /> PNG</button>
-                  <button onClick={() => downloadQr('svg')} className="px-4 py-2.5 bg-purple-500/20 text-purple-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-purple-500/30"><Download size={13} /> SVG</button>
                   <button onClick={() => downloadQr('jpg')} className="px-4 py-2.5 bg-amber-500/20 text-amber-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-amber-500/30"><Download size={13} /> JPG</button>
+                  <button onClick={() => downloadQr('pdf')} className="px-4 py-2.5 bg-rose-500/20 text-rose-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-rose-500/30"><FileText size={13} /> PDF</button>
+                  <button onClick={() => downloadQr('svg')} className="px-4 py-2.5 bg-purple-500/20 text-purple-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-purple-500/30"><Download size={13} /> SVG</button>
                 </div>
 
                 {/* Pro Tip */}
@@ -770,48 +773,52 @@ const AdminPaymentLinks: React.FC = () => {
     </div>
   );
 
-  function downloadQr(format: 'png' | 'svg' | 'jpg') {
+  async function downloadQr(format: 'png' | 'svg' | 'jpg' | 'pdf') {
     const container = qrContainerRef.current;
     if (!container) return;
-    const svgEl = container.querySelector('svg');
-    if (!svgEl) return;
+    const slug = currentPage?.slug || 'pago';
 
     if (format === 'svg') {
-      // Build a standalone SVG with the full card design
+      const svgEl = container.querySelector('svg');
+      if (!svgEl) return;
       const svgData = new XMLSerializer().serializeToString(svgEl);
       const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `qr-${currentPage?.slug || 'pago'}.svg`; a.click();
+      a.href = url; a.download = `qr-${slug}.svg`; a.click();
       URL.revokeObjectURL(url);
       return;
     }
 
-    // For PNG/JPG: render the entire container to canvas
-    const scale = 3;
-    const canvas = document.createElement('canvas');
-    const rect = container.getBoundingClientRect();
-    canvas.width = rect.width * scale;
-    canvas.height = rect.height * scale;
-    const ctx = canvas.getContext('2d')!;
-    ctx.scale(scale, scale);
+    // Use html2canvas for pixel-perfect rendering
+    const canvas = await html2canvas(container, {
+      scale: 3,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+    });
 
-    // Use html2canvas-like approach: serialize to SVG foreignObject
-    const data = new XMLSerializer().serializeToString(container);
-    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${data}</div></foreignObject></svg>`;
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0);
-      const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
-      canvas.toBlob(blob => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `qr-${currentPage?.slug || 'pago'}.${format}`; a.click();
-        URL.revokeObjectURL(url);
-      }, mimeType, 0.95);
-    };
-    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+    if (format === 'pdf') {
+      const imgData = canvas.toDataURL('image/png');
+      const pxW = canvas.width;
+      const pxH = canvas.height;
+      const pdfW = pxW * 0.264583; // px to mm at 96dpi
+      const pdfH = pxH * 0.264583;
+      const pdf = new jsPDF({ orientation: pdfW > pdfH ? 'l' : 'p', unit: 'mm', format: [pdfW, pdfH] });
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+      pdf.save(`qr-${slug}.pdf`);
+      return;
+    }
+
+    const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `qr-${slug}.${format}`; a.click();
+      URL.revokeObjectURL(url);
+    }, mimeType, 0.95);
   }
 };
 
