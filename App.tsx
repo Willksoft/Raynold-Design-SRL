@@ -23,6 +23,7 @@ import CartSidebar from './components/CartSidebar';
 import Process from './components/Process';
 import Features from './components/Features';
 import ServiceDetail from './components/ServiceDetail';
+import PublicPaymentPage from './components/PublicPaymentPage';
 import FloatingButtons from './components/FloatingButtons';
 import CrtTransition from './components/CrtTransition';
 import ParallaxParticles from './components/ParallaxParticles';
@@ -125,6 +126,9 @@ const AnimatedRoutes = () => {
         <Route path="/contact" element={
           <CrtTransition><ContactPage /></CrtTransition>
         } />
+        <Route path="/pagar/:slug" element={
+          <PublicPaymentPage />
+        } />
       </Routes>
     </AnimatePresence>
   );
@@ -148,11 +152,12 @@ const Home = () => (
 const AppContent = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isPaymentRoute = location.pathname.startsWith('/pagar');
 
   return (
     <div className={`min-h-screen bg-raynold-black text-white selection:bg-raynold-red selection:text-white font-sans flex flex-col relative overflow-x-hidden opacity-100 transition-opacity duration-1000`}>
 
-      {!isAdminRoute && (
+      {!isAdminRoute && !isPaymentRoute && (
         <>
           <Navbar />
           <CartSidebar />
@@ -165,7 +170,7 @@ const AppContent = () => {
         <AnimatedRoutes />
       </main>
 
-      {!isAdminRoute && (
+      {!isAdminRoute && !isPaymentRoute && (
         <div className="relative z-20">
           <Footer />
         </div>
