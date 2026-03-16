@@ -58,6 +58,16 @@ const AdminServices = () => {
     setServices(prev => prev.filter(s => s.id !== id));
   };
 
+  const handleDuplicate = (service: Service) => {
+    setEditingService({
+      ...service,
+      id: '',
+      title: service.title + ' (Copia)',
+      slug: service.slug + '-copia',
+    });
+    setIsModalOpen(true);
+  };
+
   const handleOpenModal = (service?: Service) => {
     setEditingService(service ?? {
       id: '', slug: '', title: '', description: '', full_description: '',
@@ -154,6 +164,7 @@ const AdminServices = () => {
                   <td className="p-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => handleOpenModal(s)} className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors" title="Editar"><Edit2 size={16} /></button>
+                      <button onClick={() => handleDuplicate(s)} className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors" title="Duplicar"><Copy size={16} /></button>
                       <button onClick={() => handleDelete(s.id)} className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                     </div>
                   </td>
@@ -171,6 +182,7 @@ const AdminServices = () => {
               <div className="p-6">
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => handleOpenModal(s)} className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"><Edit2 size={16} /></button>
+                  <button onClick={() => handleDuplicate(s)} className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors" title="Duplicar"><Copy size={16} /></button>
                   <button onClick={() => handleDelete(s.id)} className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors"><Trash2 size={16} /></button>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">{s.title}</h3>

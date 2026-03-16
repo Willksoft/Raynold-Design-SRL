@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit2, Trash2, X, Save, Users, Loader2, Search, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, Users, Loader2, Search, CheckCircle, AlertCircle, Copy } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '../lib/supabaseClient';
@@ -187,6 +187,24 @@ const AdminClients = () => {
     }
   };
 
+  const handleDuplicate = (client: Client) => {
+    setDgiiApplied(null);
+    setRncInput('');
+    setDgiiSearchQuery('');
+    setShowDgiiDropdown(false);
+    setEditingClient(null);
+    reset({
+      name: (client.name || client.company) + ' (Copia)',
+      type: client.type === 'EMPRESA' ? 'Empresa' : 'Persona Física',
+      rnc: '',
+      company: client.type === 'EMPRESA' ? client.company + ' (Copia)' : '',
+      email: client.email,
+      phone: client.phone,
+      address: client.address,
+    });
+    setIsModalOpen(true);
+  };
+
   const applyDGIIResult = (r: DGIIResult) => {
     const isJuridica = r.tipo?.toLowerCase().includes('juridica') || (r.rnc?.replace(/[-\s]/g, '').length === 9);
     const newType: 'Empresa' | 'Persona Física' = isJuridica ? 'Empresa' : 'Persona Física';
@@ -289,6 +307,9 @@ const AdminClients = () => {
                       <div className="flex justify-end gap-2">
                         <button onClick={() => handleOpenModal(client)} className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors" title="Editar">
                           <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDuplicate(client)} className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors" title="Duplicar">
+                          <Copy size={16} />
                         </button>
                         <button onClick={() => handleDelete(client.id)} className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors" title="Eliminar">
                           <Trash2 size={16} />

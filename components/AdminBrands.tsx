@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Image as ImageIcon, X, Save, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Image as ImageIcon, X, Save, Loader2, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface Brand {
@@ -30,6 +30,11 @@ const AdminBrands = () => {
       await supabase.from('brands').delete().eq('id', id);
       fetchBrands();
     }
+  };
+
+  const handleDuplicate = (brand: Brand) => {
+    setEditingBrand({ ...brand, id: '', name: brand.name + ' (Copia)' });
+    setIsModalOpen(true);
   };
 
   const handleOpenModal = (brand?: Brand) => {
@@ -106,6 +111,9 @@ const AdminBrands = () => {
               <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button onClick={() => handleOpenModal(brand)} className="p-2 bg-blue-500/80 text-white rounded-lg hover:bg-blue-500 transition-colors" title="Editar">
                   <Edit2 size={16} />
+                </button>
+                <button onClick={() => handleDuplicate(brand)} className="p-2 bg-green-500/80 text-white rounded-lg hover:bg-green-500 transition-colors" title="Duplicar">
+                  <Copy size={16} />
                 </button>
                 <button onClick={() => handleDelete(brand.id)} className="p-2 bg-red-500/80 text-white rounded-lg hover:bg-red-500 transition-colors" title="Eliminar">
                   <Trash2 size={16} />

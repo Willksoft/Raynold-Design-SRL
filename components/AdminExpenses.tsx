@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Edit2, Receipt, Search, Filter, Paperclip, FileText, X, UserPlus, Users } from 'lucide-react';
+import { Plus, Trash2, Edit2, Receipt, Search, Filter, Paperclip, FileText, X, UserPlus, Users, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { ExpenseRow } from '../types';
 
@@ -182,6 +182,16 @@ const AdminExpenses = () => {
     }
   };
 
+  const handleDuplicate = (expense: Expense) => {
+    handleOpenModal({
+      ...expense,
+      id: crypto.randomUUID(),
+      description: expense.description + ' (Copia)',
+      date: new Date().toISOString().split('T')[0],
+      reference: '',
+    });
+  };
+
   const filteredExpenses = expenses.filter(exp => {
     const matchesSearch = exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exp.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -286,6 +296,7 @@ const AdminExpenses = () => {
                   <td className="p-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button onClick={() => handleOpenModal(expense)} className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors" title="Editar"><Edit2 size={16} /></button>
+                      <button onClick={() => handleDuplicate(expense)} className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors" title="Duplicar"><Copy size={16} /></button>
                       <button onClick={() => handleDelete(expense.id)} className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                     </div>
                   </td>

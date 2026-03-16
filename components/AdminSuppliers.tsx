@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Edit2, Trash2, ShieldAlert, Save, X, Search, Phone, Mail, MapPin, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, ShieldAlert, Save, X, Search, Phone, Mail, MapPin, Loader2, CheckCircle, AlertCircle, Copy } from 'lucide-react';
 import { Supplier } from '../types';
 import { supabase } from '../lib/supabaseClient';
 import { consultarRNC, buscarContribuyentes, DGIIResult } from '../lib/dgiiService';
@@ -105,6 +105,12 @@ const AdminSuppliers = () => {
     }
   };
 
+  const handleDuplicate = (supplier: Supplier) => {
+    setEditingSupplier({ ...supplier, id: '', name: supplier.name + ' (Copia)', taxId: '' });
+    setDgiiResult(null); setDgiiStatus('idle'); setDgiiSearchQ(''); setDgiiSearchResults([]); setShowDgiiDD(false);
+    setIsModalOpen(true);
+  };
+
   const filteredSuppliers = suppliers.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.contactName && s.contactName.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -150,6 +156,7 @@ const AdminSuppliers = () => {
               <div key={supplier.id} className="bg-[#0A0A0A] border border-white/10 rounded-xl p-6 hover:border-white/20 transition-colors relative group">
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => handleOpenModal(supplier)} className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors" title="Editar"><Edit2 size={16} /></button>
+                  <button onClick={() => handleDuplicate(supplier)} className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors" title="Duplicar"><Copy size={16} /></button>
                   <button onClick={() => handleDelete(supplier.id)} className="p-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                 </div>
                 <h3 className="text-xl font-bold text-white mb-1 pr-16">{supplier.name}</h3>
