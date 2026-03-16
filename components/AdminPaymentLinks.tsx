@@ -203,6 +203,7 @@ const AdminPaymentLinks: React.FC = () => {
                   {/* Page Actions */}
                   <div className="flex gap-2 mb-6 flex-wrap">
                     <button onClick={() => openPageModal(currentPage)} className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-bold flex items-center gap-2"><Edit2 size={14} /> Editar</button>
+                    <a href={`/pagar/${currentPage.slug}`} target="_blank" rel="noopener noreferrer" className="px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-bold flex items-center gap-2"><ExternalLink size={14} /> Ir al Link</a>
                     <button onClick={() => copyToClipboard(`${window.location.origin}/pagar/${currentPage.slug}`, 'link')} className="px-3 py-2 bg-green-500/20 text-green-400 rounded-lg text-xs font-bold flex items-center gap-2">
                       {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />} {copied === 'link' ? '¡Copiado!' : 'Copiar Link'}
                     </button>
