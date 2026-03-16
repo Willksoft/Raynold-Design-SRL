@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Edit2, Trash2, X, Save, Eye, Copy, Check, ChevronDown, ChevronUp,
-  Loader2, CreditCard, Landmark, Link2, Bitcoin, GripVertical, ExternalLink,
-  QrCode, Globe, User
+  Loader2, CreditCard, Landmark, Link2, Bitcoin, ExternalLink,
+  Globe, User, Sparkles, Smartphone
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { BANK_OPTIONS, BankOption } from './bankOptions';
@@ -23,18 +23,34 @@ const THEMES = [
   { id: 'dark', label: 'Oscuro', bg: '#0f0f23', card: '#1a1a3e', text: '#fff' },
   { id: 'light', label: 'Claro', bg: '#f8fafc', card: '#ffffff', text: '#1e293b' },
   { id: 'glass', label: 'Cristal', bg: '#0c1222', card: 'rgba(255,255,255,0.08)', text: '#fff' },
+  { id: 'midnight', label: 'Midnight', bg: '#1a1a2e', card: '#16213e', text: '#eee' },
+  { id: 'sunset', label: 'Sunset', bg: '#2d1b69', card: '#3d2d7a', text: '#fff' },
+  { id: 'forest', label: 'Forest', bg: '#0a211a', card: '#0d2b22', text: '#d4edda' },
 ];
 
-const ACCENTS = ['#6366f1', '#E60000', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316'];
-
-const TYPE_ICONS: Record<string, React.ReactNode> = {
-  bank: <Landmark size={14} />, app: <CreditCard size={14} />,
-  link: <Link2 size={14} />, crypto: <Bitcoin size={14} />,
-};
+const ACCENTS = ['#6366f1', '#E60000', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6', '#a855f7'];
 
 const TYPE_LABELS: Record<string, string> = {
   bank: 'Banco', app: 'App de Pago', link: 'Link de Pago', crypto: 'Cripto',
 };
+
+/* ────────── PLANTILLAS / TEMPLATES ────────── */
+interface PaymentTemplate {
+  id: string; name: string; description: string;
+  theme: string; accent_color: string; bio: string;
+  preview_bg: string; preview_accent: string;
+}
+
+const PAYMENT_TEMPLATES: PaymentTemplate[] = [
+  { id: 'elegante', name: 'Elegante Oscuro', description: 'Tema oscuro con acento indigo, ideal para profesionales', theme: 'dark', accent_color: '#6366f1', bio: 'Profesional · Pagos Seguros', preview_bg: '#0f0f23', preview_accent: '#6366f1' },
+  { id: 'corporativo', name: 'Corporativo Rojo', description: 'Estilo corporativo con rojo intenso', theme: 'dark', accent_color: '#E60000', bio: 'Empresa · Pagos Corporativos', preview_bg: '#0f0f23', preview_accent: '#E60000' },
+  { id: 'minimalista', name: 'Minimalista Claro', description: 'Diseño limpio y moderno sobre fondo claro', theme: 'light', accent_color: '#6366f1', bio: 'Pagos rápidos y seguros', preview_bg: '#f8fafc', preview_accent: '#6366f1' },
+  { id: 'neón', name: 'Neón Cristal', description: 'Efecto glassmorphism con brillo cyan', theme: 'glass', accent_color: '#06b6d4', bio: '✨ Transferencias Instantáneas', preview_bg: '#0c1222', preview_accent: '#06b6d4' },
+  { id: 'dorado', name: 'Premium Dorado', description: 'Estilo lujoso con acentos dorados', theme: 'midnight', accent_color: '#f59e0b', bio: 'Premium · VIP Payments', preview_bg: '#1a1a2e', preview_accent: '#f59e0b' },
+  { id: 'rosa', name: 'Rosa Moderno', description: 'Diseño fresco y vibrante en rosa', theme: 'sunset', accent_color: '#ec4899', bio: '💅 Pagos con Estilo', preview_bg: '#2d1b69', preview_accent: '#ec4899' },
+  { id: 'natura', name: 'Naturaleza', description: 'Tonos verdes inspirados en la naturaleza', theme: 'forest', accent_color: '#10b981', bio: '🌿 Eco-Friendly Payments', preview_bg: '#0a211a', preview_accent: '#10b981' },
+  { id: 'sunset', name: 'Sunset Purple', description: 'Degradado violeta con acento naranja', theme: 'sunset', accent_color: '#f97316', bio: '🌅 Pagos al Instante', preview_bg: '#2d1b69', preview_accent: '#f97316' },
+];
 
 const AdminPaymentLinks: React.FC = () => {
   const [pages, setPages] = useState<PaymentPage[]>([]);
@@ -50,7 +66,6 @@ const AdminPaymentLinks: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [bankSearch, setBankSearch] = useState('');
   const [showBankPicker, setShowBankPicker] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -72,6 +87,12 @@ const AdminPaymentLinks: React.FC = () => {
   const openPageModal = (page?: PaymentPage) => {
     setEditPage(page || { id: '', name: '', username: '', bio: '', avatar_url: '', theme: 'dark', accent_color: '#6366f1', is_active: true, slug: '' });
     setIsPageModal(true);
+  };
+
+  const applyTemplate = (tpl: PaymentTemplate) => {
+    if (editPage) {
+      setEditPage({ ...editPage, theme: tpl.theme, accent_color: tpl.accent_color, bio: tpl.bio });
+    }
   };
 
   const savePage = async () => {
@@ -159,7 +180,6 @@ const AdminPaymentLinks: React.FC = () => {
       <div className="flex-1 overflow-hidden flex">
         {/* Left: Page List + Methods */}
         <div className="flex-1 overflow-y-auto scrollbar-modern p-6">
-          {/* Page Selector */}
           {pages.length === 0 ? (
             <div className="text-center py-20">
               <CreditCard className="text-gray-600 mx-auto mb-4" size={48} />
@@ -181,11 +201,10 @@ const AdminPaymentLinks: React.FC = () => {
               {currentPage && (
                 <>
                   {/* Page Actions */}
-                  <div className="flex gap-2 mb-6">
-                    <button onClick={() => openPageModal(currentPage)} className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-bold flex items-center gap-2"><Edit2 size={14} /> Editar Página</button>
-                    <button onClick={() => setPreviewOpen(true)} className="px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-bold flex items-center gap-2"><Eye size={14} /> Vista Previa</button>
+                  <div className="flex gap-2 mb-6 flex-wrap">
+                    <button onClick={() => openPageModal(currentPage)} className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-bold flex items-center gap-2"><Edit2 size={14} /> Editar</button>
                     <button onClick={() => copyToClipboard(`${window.location.origin}/pagar/${currentPage.slug}`, 'link')} className="px-3 py-2 bg-green-500/20 text-green-400 rounded-lg text-xs font-bold flex items-center gap-2">
-                      {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />} {copied === 'link' ? 'Copiado!' : 'Copiar Link'}
+                      {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />} {copied === 'link' ? '¡Copiado!' : 'Copiar Link'}
                     </button>
                     <button onClick={() => deletePage(currentPage.id)} className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold flex items-center gap-2"><Trash2 size={14} /> Eliminar</button>
                   </div>
@@ -252,59 +271,114 @@ const AdminPaymentLinks: React.FC = () => {
           )}
         </div>
 
-        {/* Right: Live Preview */}
-        {currentPage && previewOpen && (
-          <div className="w-[380px] border-l border-white/10 bg-[#111] flex flex-col shrink-0">
-            <div className="flex items-center justify-between p-3 border-b border-white/10">
-              <span className="text-xs font-bold text-gray-400">VISTA PREVIA MOBILE</span>
-              <button onClick={() => setPreviewOpen(false)} className="text-gray-400 hover:text-white"><X size={16} /></button>
+        {/* Right: Always Visible Mobile Preview */}
+        {currentPage && (
+          <div className="w-[400px] border-l border-white/10 bg-[#0A0A0A] flex flex-col shrink-0">
+            <div className="flex items-center gap-2 p-3 border-b border-white/10">
+              <Smartphone size={14} className="text-raynold-red" />
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vista Previa Mobile</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="mx-auto" style={{ maxWidth: '360px' }}>
-                <PaymentPagePreview page={currentPage} methods={methods.filter(m => m.page_id === currentPage.id && m.is_active)} />
+            <div className="flex-1 overflow-y-auto p-4 flex justify-center">
+              {/* Phone Frame */}
+              <div style={{ width: '320px', minHeight: '580px', borderRadius: '32px', border: '3px solid #333', backgroundColor: '#1a1a1a', padding: '8px', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
+                {/* Notch */}
+                <div style={{ width: '100px', height: '6px', backgroundColor: '#333', borderRadius: '10px', margin: '0 auto 6px' }} />
+                <div style={{ borderRadius: '24px', overflow: 'hidden', height: 'calc(100% - 12px)' }}>
+                  <div style={{ overflowY: 'auto', height: '100%' }}>
+                    <PaymentPagePreview page={currentPage} methods={methods.filter(m => m.page_id === currentPage.id && m.is_active)} />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Page Modal */}
+      {/* Page Modal with Templates */}
       {isPageModal && editPage && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="text-lg font-bold text-white">{editPage.id ? 'Editar Página' : 'Nueva Página'}</h2>
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-3xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-white/10 shrink-0">
+              <h2 className="text-lg font-bold text-white">{editPage.id ? 'Editar Página' : 'Nueva Página de Pago'}</h2>
               <button onClick={() => setIsPageModal(false)}><X size={20} className="text-gray-400" /></button>
             </div>
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Nombre Completo</label><input type="text" value={editPage.name} onChange={e => setEditPage({ ...editPage, name: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Juan Pérez" /></div>
-                <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Username</label><input type="text" value={editPage.username} onChange={e => setEditPage({ ...editPage, username: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-') })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="juanperez" /></div>
-              </div>
-              <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Bio / Descripción</label><input type="text" value={editPage.bio} onChange={e => setEditPage({ ...editPage, bio: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Diseñador & Desarrollador Web" /></div>
-              <div><label className="text-[10px] text-gray-500 uppercase block mb-1">URL Avatar</label><input type="text" value={editPage.avatar_url} onChange={e => setEditPage({ ...editPage, avatar_url: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="https://..." /></div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {/* Templates Section */}
               <div>
-                <label className="text-[10px] text-gray-500 uppercase block mb-2">Tema</label>
-                <div className="flex gap-2">
-                  {THEMES.map(t => (
-                    <button key={t.id} onClick={() => setEditPage({ ...editPage, theme: t.id })}
-                      className={`flex-1 p-2.5 rounded-xl border-2 text-center ${editPage.theme === t.id ? 'border-raynold-red' : 'border-white/10'}`}>
-                      <div className="w-full h-6 rounded-lg mb-1.5" style={{ backgroundColor: t.bg }} />
-                      <span className="text-[10px] font-bold text-gray-400">{t.label}</span>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Sparkles size={14} className="text-raynold-red" /> Plantillas</h3>
+                <div className="grid grid-cols-4 gap-2">
+                  {PAYMENT_TEMPLATES.map(tpl => (
+                    <button key={tpl.id} onClick={() => applyTemplate(tpl)}
+                      className={`rounded-xl border-2 overflow-hidden text-left transition-all hover:scale-[1.02] ${editPage.theme === tpl.theme && editPage.accent_color === tpl.accent_color ? 'border-raynold-red shadow-[0_0_12px_rgba(230,0,0,0.2)]' : 'border-white/10 hover:border-white/20'}`}>
+                      {/* Mini preview */}
+                      <div className="h-20 relative" style={{ backgroundColor: tpl.preview_bg }}>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: tpl.preview_accent + '30', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px' }}>
+                            <User size={12} style={{ color: tpl.preview_accent }} />
+                          </div>
+                          <div style={{ width: '40px', height: '3px', borderRadius: '2px', backgroundColor: tpl.preview_accent + '60', marginBottom: '3px' }} />
+                          <div style={{ width: '30px', height: '2px', borderRadius: '2px', backgroundColor: tpl.preview_accent + '30' }} />
+                          <div className="absolute bottom-2 left-2 right-2 space-y-1">
+                            <div style={{ height: '4px', borderRadius: '2px', backgroundColor: tpl.preview_accent + '15' }} />
+                            <div style={{ height: '4px', borderRadius: '2px', backgroundColor: tpl.preview_accent + '10' }} />
+                          </div>
+                        </div>
+                        {editPage.theme === tpl.theme && editPage.accent_color === tpl.accent_color && (
+                          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-raynold-red rounded-full flex items-center justify-center"><Check size={10} className="text-white" /></div>
+                        )}
+                      </div>
+                      <div className="p-2 bg-[#111]">
+                        <p className="text-[10px] font-bold text-white truncate">{tpl.name}</p>
+                        <p className="text-[8px] text-gray-500 truncate">{tpl.description}</p>
+                      </div>
                     </button>
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="text-[10px] text-gray-500 uppercase block mb-2">Color Acento</label>
-                <div className="flex gap-2">
-                  {ACCENTS.map(c => (
-                    <button key={c} onClick={() => setEditPage({ ...editPage, accent_color: c })}
-                      className={`w-8 h-8 rounded-full border-2 transition-all ${editPage.accent_color === c ? 'border-white scale-110' : 'border-transparent'}`}
-                      style={{ backgroundColor: c }} />
-                  ))}
+
+              {/* Page Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Nombre</label><input type="text" value={editPage.name} onChange={e => setEditPage({ ...editPage, name: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Juan Pérez" /></div>
+                    <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Username</label><input type="text" value={editPage.username} onChange={e => setEditPage({ ...editPage, username: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-') })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="juanperez" /></div>
+                  </div>
+                  <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Bio</label><input type="text" value={editPage.bio} onChange={e => setEditPage({ ...editPage, bio: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Diseñador Web" /></div>
+                  <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Avatar URL</label><input type="text" value={editPage.avatar_url} onChange={e => setEditPage({ ...editPage, avatar_url: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="https://" /></div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 uppercase block mb-2">Tema</label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {THEMES.map(t => (
+                        <button key={t.id} onClick={() => setEditPage({ ...editPage, theme: t.id })}
+                          className={`p-2 rounded-xl border-2 text-center ${editPage.theme === t.id ? 'border-raynold-red' : 'border-white/10'}`}>
+                          <div className="w-full h-5 rounded-lg mb-1" style={{ backgroundColor: t.bg }} />
+                          <span className="text-[9px] font-bold text-gray-400">{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 uppercase block mb-2">Color Acento</label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {ACCENTS.map(c => (
+                        <button key={c} onClick={() => setEditPage({ ...editPage, accent_color: c })}
+                          className={`w-7 h-7 rounded-full border-2 transition-all ${editPage.accent_color === c ? 'border-white scale-110' : 'border-transparent'}`}
+                          style={{ backgroundColor: c }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {/* Live Preview in Modal */}
+                <div className="bg-[#111] rounded-2xl p-3 flex items-start justify-center overflow-hidden">
+                  <div style={{ width: '260px', borderRadius: '24px', overflow: 'hidden', border: '2px solid #333', backgroundColor: '#1a1a1a', padding: '6px' }}>
+                    <div style={{ width: '60px', height: '4px', backgroundColor: '#333', borderRadius: '10px', margin: '0 auto 4px' }} />
+                    <div style={{ borderRadius: '18px', overflow: 'hidden' }}>
+                      <PaymentPagePreviewMini page={editPage} />
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <div className="pt-3 flex justify-end gap-3">
                 <button onClick={() => setIsPageModal(false)} className="px-5 py-2 text-gray-400 font-bold rounded-lg hover:text-white">Cancelar</button>
                 <button onClick={savePage} className="px-5 py-2 btn-animated font-bold rounded-lg flex items-center gap-2"><Save size={16} /> Guardar</button>
@@ -323,7 +397,6 @@ const AdminPaymentLinks: React.FC = () => {
               <button onClick={() => setIsMethodModal(false)}><X size={20} className="text-gray-400" /></button>
             </div>
             <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Bank Picker */}
               <div>
                 <label className="text-[10px] text-gray-500 uppercase block mb-2">Seleccionar Banco / App</label>
                 {editMethod.bank_name ? (
@@ -362,7 +435,6 @@ const AdminPaymentLinks: React.FC = () => {
                   </div>
                 )}
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Tipo de Cuenta</label>
                   <select value={editMethod.account_type} onChange={e => setEditMethod({ ...editMethod, account_type: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm">
@@ -375,8 +447,8 @@ const AdminPaymentLinks: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Titular de la Cuenta</label><input type="text" value={editMethod.account_holder} onChange={e => setEditMethod({ ...editMethod, account_holder: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" /></div>
-              <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Número de Cuenta / ID</label><input type="text" value={editMethod.account_number} onChange={e => setEditMethod({ ...editMethod, account_number: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm font-mono" placeholder="Ej. 830-123456-7" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Titular</label><input type="text" value={editMethod.account_holder} onChange={e => setEditMethod({ ...editMethod, account_holder: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Número de Cuenta / ID</label><input type="text" value={editMethod.account_number} onChange={e => setEditMethod({ ...editMethod, account_number: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm font-mono" placeholder="830-123456-7" /></div>
               {editMethod.type !== 'bank' && (
                 <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Link de Pago (opcional)</label><input type="text" value={editMethod.payment_url} onChange={e => setEditMethod({ ...editMethod, payment_url: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="https://paypal.me/..." /></div>
               )}
@@ -392,7 +464,47 @@ const AdminPaymentLinks: React.FC = () => {
   );
 };
 
-/* ────────── PUBLIC PREVIEW COMPONENT ────────── */
+/* ────────── MINI PREVIEW (for modal) ────────── */
+const PaymentPagePreviewMini: React.FC<{ page: PaymentPage }> = ({ page }) => {
+  const theme = THEMES.find(t => t.id === page.theme) || THEMES[0];
+  return (
+    <div style={{ fontFamily: "'Inter',sans-serif", backgroundColor: theme.bg, padding: '20px 12px', minHeight: '350px', color: theme.text }}>
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        {page.avatar_url ? (
+          <img src={page.avatar_url} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 8px', border: `2px solid ${page.accent_color}` }} />
+        ) : (
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: page.accent_color + '30', margin: '0 auto 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <User size={20} style={{ color: page.accent_color }} />
+          </div>
+        )}
+        <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 2px' }}>{page.name || 'Tu Nombre'}</h3>
+        <p style={{ fontSize: '10px', color: page.accent_color, fontWeight: 600 }}>@{page.username || 'usuario'} ✓</p>
+        {page.bio && <p style={{ fontSize: '9px', opacity: 0.5, marginTop: '4px' }}>{page.bio}</p>}
+      </div>
+      <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '12px', border: `1px solid ${page.accent_color}30`, fontSize: '8px', fontWeight: 700, color: page.accent_color }}>
+          <Globe size={8} /> /pagar/{page.slug || 'slug'}
+        </div>
+      </div>
+      {/* Placeholder cards */}
+      {[1, 2, 3].map(i => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '10px', backgroundColor: theme.card, border: '1px solid rgba(255,255,255,0.06)', marginBottom: '6px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: `${page.accent_color}20` }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ width: `${50 + i * 15}px`, height: '6px', borderRadius: '3px', backgroundColor: `${theme.text}20`, marginBottom: '4px' }} />
+            <div style={{ width: '40px', height: '4px', borderRadius: '2px', backgroundColor: `${theme.text}10` }} />
+          </div>
+          <ChevronDown size={10} style={{ opacity: 0.2 }} />
+        </div>
+      ))}
+      <div style={{ textAlign: 'center', marginTop: '16px' }}>
+        <p style={{ fontSize: '7px', opacity: 0.2 }}>⚡ Verifica antes de transferir.</p>
+      </div>
+    </div>
+  );
+};
+
+/* ────────── FULL PREVIEW COMPONENT ────────── */
 const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[] }> = ({ page, methods }) => {
   const [expanded, setExpanded] = useState<string>('');
   const [copied, setCopied] = useState('');
@@ -412,65 +524,68 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
   };
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: theme.bg, borderRadius: '24px', padding: '24px 16px', minHeight: '600px', color: theme.text }}>
-      {/* Avatar */}
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: theme.bg, padding: '24px 14px', minHeight: '500px', color: theme.text }}>
+      <div style={{ textAlign: 'center', marginBottom: '18px' }}>
         {page.avatar_url ? (
-          <img src={page.avatar_url} alt="" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 12px', border: `3px solid ${page.accent_color}` }} />
+          <img src={page.avatar_url} alt="" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 10px', border: `3px solid ${page.accent_color}`, boxShadow: `0 0 15px ${page.accent_color}30` }} />
         ) : (
-          <div style={{ width: '72px', height: '72px', borderRadius: '50%', backgroundColor: page.accent_color + '30', margin: '0 auto 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <User size={28} style={{ color: page.accent_color }} />
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: page.accent_color + '30', margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <User size={24} style={{ color: page.accent_color }} />
           </div>
         )}
-        <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px' }}>{page.name}</h2>
-        <p style={{ fontSize: '12px', color: page.accent_color, fontWeight: 600 }}>@{page.username} ✓</p>
-        {page.bio && <p style={{ fontSize: '12px', opacity: 0.6, marginTop: '6px' }}>{page.bio}</p>}
+        <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 3px' }}>{page.name}</h2>
+        <p style={{ fontSize: '11px', color: page.accent_color, fontWeight: 600 }}>@{page.username} ✓</p>
+        {page.bio && <p style={{ fontSize: '10px', opacity: 0.5, marginTop: '5px' }}>{page.bio}</p>}
       </div>
 
-      {/* Link pill */}
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', border: `1px solid ${page.accent_color}40`, fontSize: '10px', fontWeight: 700, color: page.accent_color }}>
-          <Globe size={10} /> {window.location.host}/pagar/{page.slug}
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '16px', border: `1px solid ${page.accent_color}35`, fontSize: '9px', fontWeight: 700, color: page.accent_color }}>
+          <Globe size={9} /> /pagar/{page.slug}
         </div>
       </div>
 
-      {/* Payment Methods */}
       {Object.entries(grouped).map(([type, items]) => {
         if (!items.length) return null;
         return (
-          <div key={type} style={{ marginBottom: '16px' }}>
-            <p style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.5, marginBottom: '8px', paddingLeft: '4px' }}>
+          <div key={type} style={{ marginBottom: '14px' }}>
+            <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.4, marginBottom: '6px', paddingLeft: '4px' }}>
               {TYPE_LABELS[type]}s
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               {items.map(m => (
                 <div key={m.id}>
                   <button onClick={() => setExpanded(expanded === m.id ? '' : m.id)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '14px', backgroundColor: theme.card, border: expanded === m.id ? `2px solid ${page.accent_color}` : '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
-                    <img src={m.logo_url} alt="" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover', backgroundColor: '#fff' }} />
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '12px', backgroundColor: theme.card, border: expanded === m.id ? `2px solid ${page.accent_color}` : '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
+                    <img src={m.logo_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover', backgroundColor: '#fff' }} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '14px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.bank_name}</p>
-                      <p style={{ fontSize: '11px', opacity: 0.5, margin: 0 }}>{m.account_type} · {m.currency}</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.bank_name}</p>
+                      <p style={{ fontSize: '9px', opacity: 0.4, margin: 0 }}>{m.account_type} · {m.currency}</p>
                     </div>
-                    <ChevronDown size={16} style={{ opacity: 0.3, transform: expanded === m.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                    <ChevronDown size={14} style={{ opacity: 0.25, transform: expanded === m.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                   </button>
                   {expanded === m.id && (
-                    <div style={{ padding: '12px 14px', marginTop: '4px', borderRadius: '12px', backgroundColor: `${page.accent_color}10`, border: `1px solid ${page.accent_color}20` }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                        <div><p style={{ fontSize: '9px', opacity: 0.5, textTransform: 'uppercase', margin: '0 0 2px' }}>Titular</p><p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>{m.account_holder}</p></div>
-                        <div><p style={{ fontSize: '9px', opacity: 0.5, textTransform: 'uppercase', margin: '0 0 2px' }}>Tipo</p><p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>{m.account_type}</p></div>
+                    <div style={{ padding: '10px 12px', marginTop: '3px', borderRadius: '10px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}18` }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+                        <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                          <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Titular</p>
+                          <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_holder}</p>
+                        </div>
+                        <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                          <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Moneda</p>
+                          <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.currency}</p>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '10px', backgroundColor: `${page.accent_color}15` }}>
-                        <p style={{ flex: 1, fontSize: '14px', fontWeight: 800, fontFamily: 'monospace', margin: 0, letterSpacing: '0.5px' }}>{m.account_number}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}12` }}>
+                        <p style={{ flex: 1, fontSize: '12px', fontWeight: 800, fontFamily: 'monospace', margin: 0, letterSpacing: '0.5px' }}>{m.account_number}</p>
                         <button onClick={() => copy(m.account_number, m.id)}
-                          style={{ padding: '6px 12px', borderRadius: '8px', backgroundColor: page.accent_color, color: '#fff', fontSize: '11px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          {copied === m.id ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
+                          style={{ padding: '5px 10px', borderRadius: '6px', backgroundColor: page.accent_color, color: '#fff', fontSize: '9px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
+                          {copied === m.id ? <><Check size={10} /> ¡Copiado!</> : <><Copy size={10} /> Copiar</>}
                         </button>
                       </div>
                       {m.payment_url && (
                         <a href={m.payment_url} target="_blank" rel="noopener noreferrer"
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '8px', padding: '8px', borderRadius: '10px', backgroundColor: page.accent_color, color: '#fff', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}>
-                          <ExternalLink size={14} /> Ir al Link de Pago
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', marginTop: '6px', padding: '7px', borderRadius: '8px', backgroundColor: page.accent_color, color: '#fff', fontSize: '10px', fontWeight: 700, textDecoration: 'none' }}>
+                          <ExternalLink size={12} /> Link de Pago
                         </a>
                       )}
                     </div>
@@ -482,9 +597,15 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
         );
       })}
 
-      {/* Footer */}
-      <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '16px', borderTop: `1px solid ${theme.text}10` }}>
-        <p style={{ fontSize: '9px', opacity: 0.3 }}>⚡ Información proporcionada por el titular. Verifica antes de transferir.</p>
+      {methods.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '30px 0', opacity: 0.3 }}>
+          <CreditCard size={28} style={{ margin: '0 auto 8px' }} />
+          <p style={{ fontSize: '10px' }}>Añade métodos de pago</p>
+        </div>
+      )}
+
+      <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '12px', borderTop: `1px solid ${theme.text}08` }}>
+        <p style={{ fontSize: '8px', opacity: 0.2 }}>⚡ Información del titular. Verifica antes de transferir.</p>
       </div>
     </div>
   );

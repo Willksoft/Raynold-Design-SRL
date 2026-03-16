@@ -414,134 +414,157 @@ const AdminCatalog: React.FC = () => {
           </div>
         )}
 
-        {/* DESIGN TAB */}
+        {/* DESIGN TAB - Split: Controls Left + Preview Right */}
         {activeTab === 'design' && (
-          <div className="w-full p-6 overflow-y-auto scrollbar-modern">
-            <div className="max-w-3xl mx-auto space-y-5">
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left: Design Controls */}
+            <div className="w-[420px] shrink-0 overflow-y-auto scrollbar-modern p-5 space-y-4 border-r border-white/10">
               {/* Logo */}
-              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><ImageIcon size={14} className="text-raynold-red" /> Logo</h3>
-                <div className="flex gap-3 items-center flex-wrap">
-                  {config.logoUrl && <img src={config.logoUrl} alt="" className="h-10 object-contain bg-white/10 rounded-lg px-3 py-1" />}
-                  <button onClick={() => logoInputRef.current?.click()} className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 hover:bg-white/10 flex items-center gap-2"><Upload size={14} /> Subir Logo</button>
-                  <button onClick={useWebLogo} className="px-3 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-xs text-blue-400 hover:bg-blue-500/30 flex items-center gap-2"><Globe size={14} /> Logo de la Web</button>
-                  {config.logoUrl && <button onClick={() => setConfig({ ...config, logoUrl: '' })} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg"><Trash2 size={14} /></button>}
+                <div className="flex gap-2 items-center flex-wrap">
+                  {config.logoUrl && <img src={config.logoUrl} alt="" className="h-8 object-contain bg-white/10 rounded-lg px-2 py-0.5" />}
+                  <button onClick={() => logoInputRef.current?.click()} className="px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 hover:bg-white/10 flex items-center gap-1.5"><Upload size={12} /> Subir</button>
+                  <button onClick={useWebLogo} className="px-2.5 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-lg text-[10px] text-blue-400 hover:bg-blue-500/30 flex items-center gap-1.5"><Globe size={12} /> Web</button>
+                  {config.logoUrl && <button onClick={() => setConfig({ ...config, logoUrl: '' })} className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg"><Trash2 size={12} /></button>}
                   <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                 </div>
               </div>
               {/* Cover */}
-              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Portada</h3>
                 <div className="space-y-3">
-                  <input type="text" value={config.title} onChange={e => setConfig({ ...config, title: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:border-raynold-red focus:outline-none" placeholder="Título" />
-                  <input type="text" value={config.subtitle} onChange={e => setConfig({ ...config, subtitle: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:border-raynold-red focus:outline-none" placeholder="Subtítulo" />
+                  <input type="text" value={config.title} onChange={e => setConfig({ ...config, title: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-xs focus:border-raynold-red focus:outline-none" placeholder="Título" />
+                  <input type="text" value={config.subtitle} onChange={e => setConfig({ ...config, subtitle: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-xs focus:border-raynold-red focus:outline-none" placeholder="Subtítulo" />
                   <div>
-                    <label className="text-[10px] text-gray-500 mb-2 block">Degradado de Portada / Contraportada</label>
-                    <div className="grid grid-cols-4 gap-2">
+                    <label className="text-[10px] text-gray-500 mb-1.5 block">Degradado</label>
+                    <div className="grid grid-cols-4 gap-1.5">
                       {GRADIENT_PRESETS.map(g => (
                         <button key={g.name} onClick={() => setConfig({ ...config, coverGradient: g.value })}
                           className={`rounded-lg border-2 overflow-hidden transition-all ${config.coverGradient === g.value ? 'border-raynold-red' : 'border-white/10 hover:border-white/20'}`}>
-                          <div className="h-8 w-full" style={{ background: g.value }} />
-                          <p className="text-[8px] text-gray-400 font-bold p-1 bg-[#0A0A0A] text-center">{g.name}</p>
+                          <div className="h-6 w-full" style={{ background: g.value }} />
+                          <p className="text-[7px] text-gray-400 font-bold p-0.5 bg-[#0A0A0A] text-center truncate">{g.name}</p>
                         </button>
                       ))}
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <button onClick={() => coverInputRef.current?.click()} className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300 hover:bg-white/10 flex items-center gap-2"><Upload size={14} /> Imagen de Portada</button>
-                    {config.coverImage && <button onClick={() => setConfig({ ...config, coverImage: '' })} className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg text-xs">Quitar Imagen</button>}
+                  <div className="flex gap-2">
+                    <button onClick={() => coverInputRef.current?.click()} className="px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 hover:bg-white/10 flex items-center gap-1.5"><Upload size={12} /> Imagen Portada</button>
+                    {config.coverImage && <button onClick={() => setConfig({ ...config, coverImage: '' })} className="px-2.5 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-[10px]">Quitar</button>}
                   </div>
                   <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
                 </div>
               </div>
               {/* Layout */}
-              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><LayoutGrid size={14} className="text-raynold-red" /> Distribución</h3>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   {LAYOUT_OPTIONS.map(o => (
-                    <button key={o.value} onClick={() => setConfig({ ...config, pageLayout: o.value })} className={`p-3 rounded-xl border text-center transition-all ${config.pageLayout === o.value ? 'bg-raynold-red/10 border-raynold-red/50' : 'border-white/10 hover:border-white/20'}`}>
-                      <p className="text-xs font-bold text-white">{o.label}</p>
-                      <p className="text-[9px] text-gray-500">{o.desc}</p>
+                    <button key={o.value} onClick={() => setConfig({ ...config, pageLayout: o.value })} className={`p-2 rounded-xl border text-center transition-all ${config.pageLayout === o.value ? 'bg-raynold-red/10 border-raynold-red/50' : 'border-white/10 hover:border-white/20'}`}>
+                      <p className="text-[10px] font-bold text-white">{o.label}</p>
+                      <p className="text-[8px] text-gray-500">{o.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
               {/* Toggles */}
-              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Settings2 size={14} className="text-raynold-red" /> Opciones</h3>
-                <div className="space-y-2">
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Settings2 size={14} className="text-raynold-red" /> Opciones</h3>
+                <div className="grid grid-cols-2 gap-1.5">
                   {([
                     { k: 'showPrice' as const, l: 'Precios' }, { k: 'showCategory' as const, l: 'Categoría' },
                     { k: 'showDescription' as const, l: 'Descripción' }, { k: 'showReference' as const, l: 'Referencia' },
                     { k: 'showPageNumbers' as const, l: 'Núm. Páginas' }, { k: 'showTOC' as const, l: 'Índice' },
-                    { k: 'showCategoryHeaders' as const, l: 'Separadores Categoría' }, { k: 'showBackCover' as const, l: 'Contraportada' },
+                    { k: 'showCategoryHeaders' as const, l: 'Separadores' }, { k: 'showBackCover' as const, l: 'Contraportada' },
                   ]).map(o => (
-                    <button key={o.k} onClick={() => setConfig({ ...config, [o.k]: !config[o.k] })} className="flex items-center justify-between w-full p-2.5 rounded-lg border border-white/5 hover:border-white/10">
-                      <span className="text-xs text-white font-medium">{o.l}</span>
-                      {config[o.k] ? <ToggleRight size={22} className="text-raynold-green" /> : <ToggleLeft size={22} className="text-gray-600" />}
+                    <button key={o.k} onClick={() => setConfig({ ...config, [o.k]: !config[o.k] })} className="flex items-center justify-between p-2 rounded-lg border border-white/5 hover:border-white/10">
+                      <span className="text-[10px] text-white font-medium">{o.l}</span>
+                      {config[o.k] ? <ToggleRight size={18} className="text-raynold-green" /> : <ToggleLeft size={18} className="text-gray-600" />}
                     </button>
                   ))}
                 </div>
               </div>
               {/* Sort / Style */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Ordenar</h3>
-                  <div className="space-y-1.5">
-                    {([{ v: 'category' as const, l: 'Categoría' }, { v: 'name-asc' as const, l: 'Nombre A→Z' }, { v: 'name-desc' as const, l: 'Nombre Z→A' }, { v: 'price-asc' as const, l: 'Precio ↑' }]).map(s => (
-                      <button key={s.v} onClick={() => setConfig({ ...config, sortMode: s.v })} className={`w-full py-1.5 px-3 rounded-lg text-[11px] font-bold text-left ${config.sortMode === s.v ? 'bg-raynold-red/20 text-raynold-red' : 'text-gray-400 hover:text-white'}`}>{s.l}</button>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Ordenar</h3>
+                  <div className="space-y-1">
+                    {([{ v: 'category' as const, l: 'Categoría' }, { v: 'name-asc' as const, l: 'A→Z' }, { v: 'name-desc' as const, l: 'Z→A' }, { v: 'price-asc' as const, l: 'Precio ↑' }]).map(s => (
+                      <button key={s.v} onClick={() => setConfig({ ...config, sortMode: s.v })} className={`w-full py-1 px-2 rounded-lg text-[10px] font-bold text-left ${config.sortMode === s.v ? 'bg-raynold-red/20 text-raynold-red' : 'text-gray-400 hover:text-white'}`}>{s.l}</button>
                     ))}
                   </div>
                 </div>
-                <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Estilo Tarjetas</h3>
-                  <div className="space-y-1.5">
-                    {([{ v: 'clean' as const, l: 'Limpio' }, { v: 'bordered' as const, l: 'Con Borde' }, { v: 'shadow' as const, l: 'Con Sombra' }, { v: 'accent' as const, l: 'Barra Acento' }]).map(s => (
-                      <button key={s.v} onClick={() => setConfig({ ...config, productCardStyle: s.v })} className={`w-full py-1.5 px-3 rounded-lg text-[11px] font-bold text-left ${config.productCardStyle === s.v ? 'bg-raynold-red/20 text-raynold-red' : 'text-gray-400 hover:text-white'}`}>{s.l}</button>
+                <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Tarjetas</h3>
+                  <div className="space-y-1">
+                    {([{ v: 'clean' as const, l: 'Limpio' }, { v: 'bordered' as const, l: 'Borde' }, { v: 'shadow' as const, l: 'Sombra' }, { v: 'accent' as const, l: 'Acento' }]).map(s => (
+                      <button key={s.v} onClick={() => setConfig({ ...config, productCardStyle: s.v })} className={`w-full py-1 px-2 rounded-lg text-[10px] font-bold text-left ${config.productCardStyle === s.v ? 'bg-raynold-red/20 text-raynold-red' : 'text-gray-400 hover:text-white'}`}>{s.l}</button>
                     ))}
                   </div>
                 </div>
               </div>
-              {/* Colors */}
-              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Palette size={14} className="text-raynold-red" /> Colores y Tipografía</h3>
-                <div className="grid grid-cols-3 gap-3 mb-3">
+              {/* Colors & Fonts */}
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Palette size={14} className="text-raynold-red" /> Colores y Fuente</h3>
+                <div className="grid grid-cols-3 gap-2 mb-2">
                   {[{ k: 'pageColor' as const, l: 'Fondo' }, { k: 'textColor' as const, l: 'Texto' }, { k: 'accentColor' as const, l: 'Acento' }].map(c => (
                     <div key={c.k}>
-                      <label className="text-[9px] text-gray-500 mb-1 block">{c.l}</label>
-                      <div className="flex gap-1.5 items-center">
-                        <input type="color" value={config[c.k]} onChange={e => setConfig({ ...config, [c.k]: e.target.value })} className="w-7 h-7 rounded cursor-pointer border border-white/10 bg-transparent" />
-                        <input type="text" value={config[c.k]} onChange={e => setConfig({ ...config, [c.k]: e.target.value })} className="flex-1 bg-black border border-white/20 rounded px-2 py-1 text-white font-mono text-[10px]" />
+                      <label className="text-[8px] text-gray-500 mb-0.5 block">{c.l}</label>
+                      <div className="flex gap-1 items-center">
+                        <input type="color" value={config[c.k]} onChange={e => setConfig({ ...config, [c.k]: e.target.value })} className="w-6 h-6 rounded cursor-pointer border border-white/10 bg-transparent" />
+                        <input type="text" value={config[c.k]} onChange={e => setConfig({ ...config, [c.k]: e.target.value })} className="flex-1 bg-black border border-white/20 rounded px-1.5 py-0.5 text-white font-mono text-[9px]" />
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[9px] text-gray-500 mb-1 block">Fuente</label>
-                    <select value={config.fontFamily} onChange={e => setConfig({ ...config, fontFamily: e.target.value as any })} className="w-full bg-black border border-white/20 rounded-lg px-2 py-1.5 text-white text-xs">{FONTS.map(f => <option key={f}>{f}</option>)}</select>
-                  </div>
-                  <div>
-                    <label className="text-[9px] text-gray-500 mb-1 block">Tamaño</label>
-                    <div className="flex rounded-lg border border-white/10 overflow-hidden">{(['sm', 'md', 'lg'] as const).map(s => (<button key={s} onClick={() => setConfig({ ...config, fontSize: s })} className={`flex-1 py-1.5 text-xs font-bold ${config.fontSize === s ? 'bg-raynold-red/20 text-raynold-red' : 'text-gray-400'}`}>{s.toUpperCase()}</button>))}</div>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={config.fontFamily} onChange={e => setConfig({ ...config, fontFamily: e.target.value as any })} className="bg-black border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px]">{FONTS.map(f => <option key={f}>{f}</option>)}</select>
+                  <div className="flex rounded-lg border border-white/10 overflow-hidden">{(['sm', 'md', 'lg'] as const).map(s => (<button key={s} onClick={() => setConfig({ ...config, fontSize: s })} className={`flex-1 py-1.5 text-[10px] font-bold ${config.fontSize === s ? 'bg-raynold-red/20 text-raynold-red' : 'text-gray-400'}`}>{s.toUpperCase()}</button>))}</div>
                 </div>
               </div>
-              {/* Header & Back */}
-              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Estilo Encabezados</h3>
-                <div className="grid grid-cols-4 gap-2">
+              {/* Headers */}
+              <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Encabezados</h3>
+                <div className="grid grid-cols-4 gap-1.5">
                   {([{ v: 'bar', l: 'Barra' }, { v: 'line', l: 'Línea' }, { v: 'block', l: 'Bloque' }, { v: 'minimal', l: 'Mínimo' }] as const).map(s => (
-                    <button key={s.v} onClick={() => setConfig({ ...config, headerStyle: s.v })} className={`py-2 rounded-lg text-[11px] font-bold ${config.headerStyle === s.v ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 border border-white/10'}`}>{s.l}</button>
+                    <button key={s.v} onClick={() => setConfig({ ...config, headerStyle: s.v })} className={`py-1.5 rounded-lg text-[10px] font-bold ${config.headerStyle === s.v ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 border border-white/10'}`}>{s.l}</button>
                   ))}
                 </div>
               </div>
               {config.showBackCover && (
-                <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-5">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Texto Contraportada</h3>
-                  <textarea value={config.backCoverText} onChange={e => setConfig({ ...config, backCoverText: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm h-24 resize-none" />
+                <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Contraportada</h3>
+                  <textarea value={config.backCoverText} onChange={e => setConfig({ ...config, backCoverText: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-[11px] h-20 resize-none" />
                 </div>
               )}
+            </div>
+            {/* Right: Live Preview */}
+            <div className="flex-1 flex flex-col overflow-hidden bg-[#111]">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 shrink-0">
+                <div className="flex items-center gap-2">
+                  <Eye size={14} className="text-raynold-red" />
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">Vista Previa en Vivo</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setPreviewPage(Math.max(0, previewPage - 1))} disabled={previewPage === 0} className="p-1 rounded border border-white/10 text-gray-400 hover:text-white disabled:opacity-30"><ChevronLeft size={14} /></button>
+                  <span className="text-[10px] text-white font-bold">{previewPage + 1}/{pages.length}</span>
+                  <button onClick={() => setPreviewPage(Math.min(pages.length - 1, previewPage + 1))} disabled={previewPage >= pages.length - 1} className="p-1 rounded border border-white/10 text-gray-400 hover:text-white disabled:opacity-30"><ChevronRight size={14} /></button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto p-4 flex items-start justify-center">
+                <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center' }}>
+                  {pages[previewPage] && renderPage(pages[previewPage], previewPage)}
+                </div>
+              </div>
+              <div className="flex gap-1 p-1.5 border-t border-white/10 overflow-x-auto scrollbar-modern shrink-0 bg-[#0A0A0A]">
+                {pages.map((pg, i) => (
+                  <button key={i} onClick={() => setPreviewPage(i)} className={`flex-shrink-0 w-10 h-14 rounded border-2 overflow-hidden ${i === previewPage ? 'border-raynold-red' : 'border-white/10 opacity-40'}`}>
+                    <div className="w-full h-full flex items-center justify-center text-[6px] font-bold text-gray-400" style={{ background: pg.type === 'cover' || pg.type === 'back' || pg.type === 'category-divider' ? config.coverGradient : config.pageColor }}>
+                      {pg.type === 'cover' ? '📄' : pg.type === 'toc' ? '📋' : pg.type === 'back' ? '📕' : pg.type === 'category-divider' ? '📂' : i}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
