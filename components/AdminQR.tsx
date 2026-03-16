@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { QrCode, Download, Copy, Check, Link2, Palette, Image as ImageIcon, Trash2, RotateCcw, Sparkles } from 'lucide-react';
+import { QrCode, Download, Copy, Check, Link2, Palette, Image as ImageIcon, Trash2, RotateCcw, Sparkles, Save, FolderOpen, Clock, ExternalLink } from 'lucide-react';
 import QRCode from 'qrcode';
+import { supabase } from '../lib/supabaseClient';
 
 type QRStyle = 'square' | 'rounded' | 'dots';
 
@@ -13,6 +14,20 @@ interface QRConfig {
   size: number;
   margin: number;
   errorCorrection: 'L' | 'M' | 'Q' | 'H';
+}
+
+interface SavedQR {
+  id: string;
+  name: string;
+  url: string;
+  fg_color: string;
+  bg_color: string;
+  logo_url: string | null;
+  style: string;
+  size: number;
+  error_correction: string;
+  preview_image: string | null;
+  created_at: string;
 }
 
 const PRESET_COLORS = [
@@ -38,6 +53,11 @@ const AdminQR: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedQRs, setSavedQRs] = useState<SavedQR[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(true);
 
   const [config, setConfig] = useState<QRConfig>({
     url: 'https://raynolddesignssrl.com',
@@ -49,6 +69,19 @@ const AdminQR: React.FC = () => {
     margin: 2,
     errorCorrection: 'H',
   });
+
+  // Load saved QRs
+  useEffect(() => {
+    const fetchSaved = async () => {
+      const { data } = await supabase
+        .from('saved_qr_codes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (data) setSavedQRs(data as SavedQR[]);
+      setLoadingSaved(false);
+    };
+    fetchSaved();
+  }, []);
 
   const drawRoundedRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
     ctx.beginPath();
@@ -76,7 +109,6 @@ const AdminQR: React.FC = () => {
     canvas.width = size;
     canvas.height = size;
 
-    // Generate raw QR data
     const qrData = await QRCode.create(config.url, {
       errorCorrectionLevel: config.errorCorrection,
     });
@@ -86,11 +118,9 @@ const AdminQR: React.FC = () => {
     const cellSize = (size - config.margin * 2) / moduleCount;
     const offset = config.margin;
 
-    // Background
     ctx.fillStyle = config.bgColor;
     ctx.fillRect(0, 0, size, size);
 
-    // Draw modules with style
     ctx.fillStyle = config.fgColor;
 
     for (let row = 0; row < moduleCount; row++) {
@@ -117,7 +147,6 @@ const AdminQR: React.FC = () => {
       }
     }
 
-    // Draw logo in center if provided
     if (config.logoUrl) {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -127,18 +156,15 @@ const AdminQR: React.FC = () => {
         const logoY = (size - logoSize) / 2;
         const padding = logoSize * 0.1;
 
-        // White background behind logo
         ctx.fillStyle = config.bgColor;
         drawRoundedRect(ctx, logoX - padding, logoY - padding, logoSize + padding * 2, logoSize + padding * 2, 12);
 
-        // Border
         ctx.strokeStyle = config.fgColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.roundRect(logoX - padding, logoY - padding, logoSize + padding * 2, logoSize + padding * 2, 12);
         ctx.stroke();
 
-        // Logo
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(logoX, logoY, logoSize, logoSize, 8);
@@ -168,6 +194,65 @@ const AdminQR: React.FC = () => {
     }
   };
 
+  const getPreviewDataUrl = (): string => {
+    if (!canvasRef.current) return '';
+    // Create a small thumbnail for storage
+    const thumb = document.createElement('canvas');
+    thumb.width = 200;
+    thumb.height = 200;
+    const tCtx = thumb.getContext('2d');
+    if (tCtx && canvasRef.current) {
+      tCtx.drawImage(canvasRef.current, 0, 0, 200, 200);
+    }
+    return thumb.toDataURL('image/png', 0.7);
+  };
+
+  const handleSaveQR = async () => {
+    if (!saveName.trim()) return;
+    setSaving(true);
+
+    const previewImage = getPreviewDataUrl();
+
+    const { data, error } = await supabase.from('saved_qr_codes').insert([{
+      name: saveName.trim(),
+      url: config.url,
+      fg_color: config.fgColor,
+      bg_color: config.bgColor,
+      logo_url: config.logoUrl || null,
+      style: config.style,
+      size: config.size,
+      error_correction: config.errorCorrection,
+      preview_image: previewImage,
+    }]).select();
+
+    if (!error && data) {
+      setSavedQRs([data[0] as SavedQR, ...savedQRs]);
+    }
+
+    setSaving(false);
+    setIsSaveModalOpen(false);
+    setSaveName('');
+  };
+
+  const loadSavedQR = (qr: SavedQR) => {
+    setConfig({
+      url: qr.url,
+      fgColor: qr.fg_color,
+      bgColor: qr.bg_color,
+      logoUrl: qr.logo_url || '',
+      style: qr.style as QRStyle,
+      size: qr.size,
+      margin: 2,
+      errorCorrection: qr.error_correction as 'L' | 'M' | 'Q' | 'H',
+    });
+  };
+
+  const deleteSavedQR = async (id: string) => {
+    if (!window.confirm('¿Eliminar este QR guardado?')) return;
+    await supabase.from('saved_qr_codes').delete().eq('id', id);
+    setSavedQRs(savedQRs.filter(q => q.id !== id));
+  };
+
   const downloadQR = (format: 'png' | 'svg') => {
     if (!canvasRef.current) return;
     if (format === 'png') {
@@ -176,7 +261,6 @@ const AdminQR: React.FC = () => {
       link.href = canvasRef.current.toDataURL('image/png');
       link.click();
     } else {
-      // SVG export via QRCode lib
       QRCode.toString(config.url, {
         type: 'svg',
         color: { dark: config.fgColor, light: config.bgColor },
@@ -203,7 +287,6 @@ const AdminQR: React.FC = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: download instead
       downloadQR('png');
     }
   };
@@ -296,7 +379,6 @@ const AdminQR: React.FC = () => {
                 <Palette size={16} className="text-raynold-red" /> Colores
               </h3>
 
-              {/* Presets */}
               <div className="grid grid-cols-4 gap-2 mb-6">
                 {PRESET_COLORS.map((preset) => (
                   <button
@@ -316,7 +398,6 @@ const AdminQR: React.FC = () => {
                 ))}
               </div>
 
-              {/* Custom Colors */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-gray-500 mb-2 block">Color del QR</label>
@@ -424,6 +505,72 @@ const AdminQR: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Saved QRs Gallery */}
+            <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6">
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <FolderOpen size={16} className="text-raynold-red" /> QR Guardados ({savedQRs.length})
+              </h3>
+              {loadingSaved ? (
+                <p className="text-gray-500 text-sm text-center py-6">Cargando...</p>
+              ) : savedQRs.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-6">No tienes QR guardados aún. Crea uno y presiona "Guardar QR".</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {savedQRs.map((qr) => (
+                    <div
+                      key={qr.id}
+                      className="bg-black border border-white/10 rounded-xl overflow-hidden hover:border-raynold-red/50 transition-colors group"
+                    >
+                      {/* Preview */}
+                      <div
+                        className="aspect-square flex items-center justify-center p-3 cursor-pointer"
+                        style={{ backgroundColor: qr.bg_color }}
+                        onClick={() => loadSavedQR(qr)}
+                      >
+                        {qr.preview_image ? (
+                          <img src={qr.preview_image} alt={qr.name} className="w-full h-full object-contain rounded-lg" />
+                        ) : (
+                          <QrCode size={48} style={{ color: qr.fg_color }} />
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="p-3">
+                        <p className="text-white text-sm font-bold truncate mb-1">{qr.name}</p>
+                        <div className="flex items-center gap-1 mb-2">
+                          <ExternalLink size={10} className="text-gray-500" />
+                          <p className="text-gray-500 text-[10px] font-mono truncate">{qr.url}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Clock size={10} className="text-gray-600" />
+                            <span className="text-[10px] text-gray-600">
+                              {new Date(qr.created_at).toLocaleDateString('es-DO', { day: '2-digit', month: 'short' })}
+                            </span>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => loadSavedQR(qr)}
+                              className="p-1.5 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"
+                              title="Cargar"
+                            >
+                              <FolderOpen size={12} />
+                            </button>
+                            <button
+                              onClick={() => deleteSavedQR(qr.id)}
+                              className="p-1.5 bg-red-500/20 text-red-400 rounded hover:bg-red-500/40 transition-colors"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: Preview + Actions */}
@@ -449,6 +596,14 @@ const AdminQR: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="space-y-3">
+                {/* Save Button */}
+                <button
+                  onClick={() => setIsSaveModalOpen(true)}
+                  className="w-full py-3 bg-raynold-green text-black font-bold rounded-xl flex items-center justify-center gap-2 text-sm hover:bg-green-400 transition-colors"
+                >
+                  <Save size={16} /> Guardar QR
+                </button>
+
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => downloadQR('png')}
@@ -487,6 +642,42 @@ const AdminQR: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Save Modal */}
+      {isSaveModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Save size={20} className="text-raynold-green" /> Guardar Código QR
+            </h3>
+            <p className="text-gray-400 text-sm mb-4">Dale un nombre para identificarlo después.</p>
+            <input
+              type="text"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              placeholder="Ej: QR WhatsApp Rojo, QR Catálogo Dorado..."
+              className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white focus:border-raynold-green focus:outline-none transition-colors mb-4"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveQR()}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setIsSaveModalOpen(false); setSaveName(''); }}
+                className="flex-1 py-2.5 rounded-lg font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveQR}
+                disabled={saving || !saveName.trim()}
+                className="flex-1 py-2.5 bg-raynold-green text-black font-bold rounded-lg hover:bg-green-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {saving ? 'Guardando...' : <><Save size={16} /> Guardar</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
