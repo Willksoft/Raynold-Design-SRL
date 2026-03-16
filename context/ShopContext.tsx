@@ -25,7 +25,7 @@ const mapRow = (row: SupabaseProductRow): ProductItem & { slug?: string } => ({
   title: row.title,
   category: row.category,
   image: row.image || '',
-  price: row.price && !isNaN(Number(row.price)) && Number(row.price) > 0 ? `RD$ ${Number(row.price).toLocaleString()}` : '',
+  price: row.price || '',
   description: row.description || '',
   reference: row.reference || '',
   type: (row.type as 'product' | 'service') || 'product',
