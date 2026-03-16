@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File, BarChart2, QrCode } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { SearchResults } from '../types';
 import AdminDashboard from './AdminDashboard';
@@ -24,6 +24,7 @@ import AdminMedia from './AdminMedia';
 import AdminProcess from './AdminProcess';
 import AdminFeatures from './AdminFeatures';
 import AdminReports from './AdminReports';
+import AdminQR from './AdminQR';
 
 export const AdminLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -348,6 +349,13 @@ export const AdminLayout = () => {
                   <span className="font-bold text-xs">Ventajas (Features)</span>
                 </Link>
                 <Link
+                  to="/admin/qr"
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/qr') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  <QrCode size={14} />
+                  <span className="font-bold text-xs">Generador QR</span>
+                </Link>
+                <Link
                   to="/admin/settings"
                   className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${location.pathname.includes('/settings') ? 'text-raynold-red' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                 >
@@ -578,6 +586,7 @@ export const AdminLayout = () => {
             <Route path="/process" element={<AdminProcess />} />
             <Route path="/features" element={<AdminFeatures />} />
             <Route path="/reports" element={<AdminReports />} />
+            <Route path="/qr" element={<AdminQR />} />
           </Routes>
         </div>
       </div>
