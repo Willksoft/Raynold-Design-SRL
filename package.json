@@ -27,6 +27,7 @@
     "lucide-react": "0.562.0",
     "postcss": "^8.5.8",
     "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-doctor": "^0.0.30",
     "react-dom": "^18.2.0",

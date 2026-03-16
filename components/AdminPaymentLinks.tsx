@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Plus, Edit2, Trash2, X, Save, Eye, Copy, Check, ChevronDown, ChevronUp,
   Loader2, CreditCard, Landmark, Link2, Bitcoin, ExternalLink,
-  Globe, User, Sparkles, Smartphone, Upload, Camera
+  Globe, User, Sparkles, Smartphone, Upload, Camera, QrCode, Download
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabaseClient';
 import { BANK_OPTIONS, BankOption } from './bankOptions';
 
@@ -71,6 +72,12 @@ const AdminPaymentLinks: React.FC = () => {
   const [bankSearch, setBankSearch] = useState('');
   const [showBankPicker, setShowBankPicker] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrAccent, setQrAccent] = useState('#E60000');
+  const [qrBg, setQrBg] = useState('#ffffff');
+  const [qrFg, setQrFg] = useState('#000000');
+  const [qrSize, setQrSize] = useState(280);
+  const qrContainerRef = useRef<HTMLDivElement>(null);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -221,6 +228,7 @@ const AdminPaymentLinks: React.FC = () => {
                   <div className="flex gap-2 mb-6 flex-wrap">
                     <button onClick={() => openPageModal(currentPage)} className="px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-bold flex items-center gap-2"><Edit2 size={14} /> Editar</button>
                     <a href={`/pagar/${currentPage.slug}`} target="_blank" rel="noopener noreferrer" className="px-3 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-bold flex items-center gap-2"><ExternalLink size={14} /> Ir al Link</a>
+                    <button onClick={() => { setQrAccent(currentPage.accent_color); setShowQrModal(true); }} className="px-3 py-2 bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold flex items-center gap-2"><QrCode size={14} /> Generar QR</button>
                     <button onClick={() => copyToClipboard(`${window.location.origin}/pagar/${currentPage.slug}`, 'link')} className="px-3 py-2 bg-green-500/20 text-green-400 rounded-lg text-xs font-bold flex items-center gap-2">
                       {copied === 'link' ? <Check size={14} /> : <Link2 size={14} />} {copied === 'link' ? '¡Copiado!' : 'Copiar Link'}
                     </button>
@@ -473,7 +481,7 @@ const AdminPaymentLinks: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Tipo de Cuenta</label>
                   <select value={editMethod.account_type} onChange={e => setEditMethod({ ...editMethod, account_type: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm">
-                    <option>Ahorros</option><option>Corriente</option><option>Nómina</option><option>Wallet</option><option>Otro</option>
+                    <option>Ahorros</option><option>Corriente</option><option>Empresarial</option><option>Nómina</option><option>Wallet</option><option>Otro</option>
                   </select>
                 </div>
                 <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Moneda</label>
@@ -495,8 +503,134 @@ const AdminPaymentLinks: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* QR Code Modal */}
+      {showQrModal && currentPage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-white/10">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2"><QrCode size={20} className="text-cyan-400" /> QR de Cuentas</h2>
+              <button onClick={() => setShowQrModal(false)}><X size={20} className="text-gray-400" /></button>
+            </div>
+            <div className="p-5 flex gap-6">
+              {/* Left: QR Preview */}
+              <div className="flex-1 flex flex-col items-center">
+                <div ref={qrContainerRef} className="rounded-3xl p-6 flex flex-col items-center" style={{ backgroundColor: qrBg, width: '340px' }}>
+                  {/* Name + Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
+                    {currentPage.avatar_url && <img src={currentPage.avatar_url} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${qrAccent}` }} />}
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: qrFg }}>{currentPage.name}</span>
+                    <img src="/verified-badge.svg" alt="" style={{ width: '16px', height: '16px' }} />
+                  </div>
+                  {/* QR */}
+                  <div style={{ padding: '12px', borderRadius: '16px', border: `3px solid ${qrAccent}`, backgroundColor: '#fff' }}>
+                    <QRCodeSVG
+                      value={`${window.location.origin}/pagar/${currentPage.slug}`}
+                      size={qrSize}
+                      level="H"
+                      fgColor={qrFg}
+                      bgColor="#ffffff"
+                      imageSettings={currentPage.avatar_url ? {
+                        src: currentPage.avatar_url,
+                        height: 40,
+                        width: 40,
+                        excavate: true,
+                      } : undefined}
+                    />
+                  </div>
+                  {/* URL */}
+                  <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '20px', border: `2px solid ${qrAccent}30`, backgroundColor: `${qrAccent}08` }}>
+                    <Globe size={11} style={{ color: qrAccent }} />
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: qrAccent, letterSpacing: '0.3px' }}>/pagar/{currentPage.slug}</span>
+                  </div>
+                  {/* Subtitle */}
+                  <p style={{ fontSize: '9px', color: qrFg, opacity: 0.3, marginTop: '10px', fontWeight: 600 }}>Escanea para ver cuentas de pago</p>
+                </div>
+              </div>
+              {/* Right: Options */}
+              <div className="w-[220px] shrink-0 space-y-4">
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase block mb-2">Color Acento</label>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {ACCENTS.map(c => (
+                      <button key={c} onClick={() => setQrAccent(c)} className={`w-6 h-6 rounded-full border-2 ${qrAccent === c ? 'border-white scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase block mb-2">Fondo QR</label>
+                  <div className="flex gap-2">
+                    {[{ c: '#ffffff', l: 'Blanco' }, { c: '#0f0f23', l: 'Oscuro' }, { c: '#f8fafc', l: 'Claro' }, { c: '#1a1a2e', l: 'Midnight' }].map(bg => (
+                      <button key={bg.c} onClick={() => { setQrBg(bg.c); setQrFg(bg.c === '#ffffff' || bg.c === '#f8fafc' ? '#000000' : '#ffffff'); }}
+                        className={`flex-1 p-1.5 rounded-lg border-2 text-center ${qrBg === bg.c ? 'border-raynold-red' : 'border-white/10'}`}>
+                        <div className="w-full h-4 rounded" style={{ backgroundColor: bg.c }} />
+                        <p className="text-[7px] text-gray-500 mt-0.5">{bg.l}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase block mb-2">Tamaño QR</label>
+                  <input type="range" min="180" max="400" value={qrSize} onChange={e => setQrSize(Number(e.target.value))} className="w-full accent-raynold-red" />
+                  <p className="text-[10px] text-gray-500 text-center">{qrSize}px</p>
+                </div>
+                <div className="border-t border-white/10 pt-4 space-y-2">
+                  <label className="text-[10px] text-gray-500 uppercase block mb-1">Descargar</label>
+                  <button onClick={() => downloadQr('png')} className="w-full px-3 py-2.5 bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-cyan-500/30"><Download size={14} /> PNG (Alta Calidad)</button>
+                  <button onClick={() => downloadQr('svg')} className="w-full px-3 py-2.5 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-purple-500/30"><Download size={14} /> SVG (Vectorial)</button>
+                  <button onClick={() => downloadQr('jpg')} className="w-full px-3 py-2.5 bg-amber-500/20 text-amber-400 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-amber-500/30"><Download size={14} /> JPG (Comprimido)</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  function downloadQr(format: 'png' | 'svg' | 'jpg') {
+    const container = qrContainerRef.current;
+    if (!container) return;
+    const svgEl = container.querySelector('svg');
+    if (!svgEl) return;
+
+    if (format === 'svg') {
+      // Build a standalone SVG with the full card design
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `qr-${currentPage?.slug || 'pago'}.svg`; a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    // For PNG/JPG: render the entire container to canvas
+    const scale = 3;
+    const canvas = document.createElement('canvas');
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width * scale;
+    canvas.height = rect.height * scale;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(scale, scale);
+
+    // Use html2canvas-like approach: serialize to SVG foreignObject
+    const data = new XMLSerializer().serializeToString(container);
+    const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${rect.width}" height="${rect.height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${data}</div></foreignObject></svg>`;
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+      const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `qr-${currentPage?.slug || 'pago'}.${format}`; a.click();
+        URL.revokeObjectURL(url);
+      }, mimeType, 0.95);
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+  }
 };
 
 /* ────────── MINI PREVIEW (for modal) ────────── */
