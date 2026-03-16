@@ -18,6 +18,9 @@ const THEMES: Record<string, { bg: string; card: string; text: string }> = {
   dark: { bg: '#0f0f23', card: '#1a1a3e', text: '#ffffff' },
   light: { bg: '#f8fafc', card: '#ffffff', text: '#1e293b' },
   glass: { bg: '#0c1222', card: 'rgba(255,255,255,0.08)', text: '#ffffff' },
+  midnight: { bg: '#1a1a2e', card: '#16213e', text: '#eeeeee' },
+  sunset: { bg: '#2d1b69', card: '#3d2d7a', text: '#ffffff' },
+  forest: { bg: '#0a211a', card: '#0d2b22', text: '#d4edda' },
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -86,7 +89,7 @@ const PublicPaymentPage: React.FC = () => {
             </div>
           )}
           <h1 style={{ fontSize: '22px', fontWeight: 800, color: theme.text, margin: '0 0 4px' }}>{page.name}</h1>
-          <p style={{ fontSize: '13px', color: page.accent_color, fontWeight: 600 }}>@{page.username} <span style={{ color: page.accent_color }}>✓</span></p>
+          <p style={{ fontSize: '13px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>@{page.username} <img src="/verified-badge.svg" alt="Verificado" style={{ width: '16px', height: '16px' }} /></p>
           {page.bio && <p style={{ fontSize: '13px', color: theme.text, opacity: 0.5, marginTop: '8px', lineHeight: 1.4 }}>{page.bio}</p>}
         </div>
 

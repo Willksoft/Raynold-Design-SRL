@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus, Edit2, Trash2, X, Save, Eye, Copy, Check, ChevronDown, ChevronUp,
   Loader2, CreditCard, Landmark, Link2, Bitcoin, ExternalLink,
-  Globe, User, Sparkles, Smartphone
+  Globe, User, Sparkles, Smartphone, Upload, Camera
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { BANK_OPTIONS, BankOption } from './bankOptions';
+
+const VerifiedBadge: React.FC<{ size?: number }> = ({ size = 14 }) => (
+  <img src="/verified-badge.svg" alt="Verificado" style={{ width: size, height: size, display: 'inline-block', verticalAlign: 'middle' }} />
+);
 
 interface PaymentPage {
   id: string; name: string; username: string; bio: string; avatar_url: string;
@@ -66,6 +70,19 @@ const AdminPaymentLinks: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [bankSearch, setBankSearch] = useState('');
   const [showBankPicker, setShowBankPicker] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editPage) return;
+    const ext = file.name.split('.').pop();
+    const path = `payment-avatars/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('raynold-media').upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: { publicUrl } } = supabase.storage.from('raynold-media').getPublicUrl(path);
+      setEditPage({ ...editPage, avatar_url: publicUrl });
+    }
+  };
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -85,7 +102,7 @@ const AdminPaymentLinks: React.FC = () => {
     .filter(m => filterType === 'all' || m.type === filterType);
 
   const openPageModal = (page?: PaymentPage) => {
-    setEditPage(page || { id: '', name: '', username: '', bio: '', avatar_url: '', theme: 'dark', accent_color: '#6366f1', is_active: true, slug: '' });
+    setEditPage(page || { id: '', name: '', username: '', bio: '', avatar_url: '', theme: 'light', accent_color: '#E60000', is_active: true, slug: '' });
     setIsPageModal(true);
   };
 
@@ -345,7 +362,24 @@ const AdminPaymentLinks: React.FC = () => {
                     <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Username</label><input type="text" value={editPage.username} onChange={e => setEditPage({ ...editPage, username: e.target.value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-') })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="juanperez" /></div>
                   </div>
                   <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Bio</label><input type="text" value={editPage.bio} onChange={e => setEditPage({ ...editPage, bio: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="Diseñador Web" /></div>
-                  <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Avatar URL</label><input type="text" value={editPage.avatar_url} onChange={e => setEditPage({ ...editPage, avatar_url: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="https://" /></div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 uppercase block mb-1">Foto de Perfil</label>
+                    <div className="flex items-center gap-3">
+                      {editPage.avatar_url ? (
+                        <img src={editPage.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover border-2 border-white/20" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center"><User size={20} className="text-gray-500" /></div>
+                      )}
+                      <div className="flex-1 flex flex-col gap-1.5">
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => avatarInputRef.current?.click()} className="px-3 py-1.5 bg-raynold-red/20 text-raynold-red rounded-lg text-[10px] font-bold flex items-center gap-1.5 hover:bg-raynold-red/30"><Camera size={12} /> Subir Foto</button>
+                          {editPage.avatar_url && <button type="button" onClick={() => setEditPage({ ...editPage, avatar_url: '' })} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-[10px] font-bold">Quitar</button>}
+                        </div>
+                        <input type="text" value={editPage.avatar_url} onChange={e => setEditPage({ ...editPage, avatar_url: e.target.value })} className="w-full bg-black border border-white/20 rounded px-2 py-1 text-white text-[10px] font-mono" placeholder="o pegar URL de imagen..." />
+                      </div>
+                      <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                    </div>
+                  </div>
                   <div>
                     <label className="text-[10px] text-gray-500 uppercase block mb-2">Tema</label>
                     <div className="grid grid-cols-3 gap-1.5">
@@ -479,7 +513,7 @@ const PaymentPagePreviewMini: React.FC<{ page: PaymentPage }> = ({ page }) => {
           </div>
         )}
         <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 2px' }}>{page.name || 'Tu Nombre'}</h3>
-        <p style={{ fontSize: '10px', color: page.accent_color, fontWeight: 600 }}>@{page.username || 'usuario'} ✓</p>
+        <p style={{ fontSize: '10px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>@{page.username || 'usuario'} <VerifiedBadge size={12} /></p>
         {page.bio && <p style={{ fontSize: '9px', opacity: 0.5, marginTop: '4px' }}>{page.bio}</p>}
       </div>
       <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -535,7 +569,7 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
           </div>
         )}
         <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 3px' }}>{page.name}</h2>
-        <p style={{ fontSize: '11px', color: page.accent_color, fontWeight: 600 }}>@{page.username} ✓</p>
+        <p style={{ fontSize: '11px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>@{page.username} <VerifiedBadge size={14} /></p>
         {page.bio && <p style={{ fontSize: '10px', opacity: 0.5, marginTop: '5px' }}>{page.bio}</p>}
       </div>
 
