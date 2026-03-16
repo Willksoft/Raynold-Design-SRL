@@ -73,10 +73,17 @@ const AdminPaymentLinks: React.FC = () => {
   const [showBankPicker, setShowBankPicker] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [qrStyle, setQrStyle] = useState<'classic'|'modern'|'card'>('card');
   const [qrAccent, setQrAccent] = useState('#E60000');
   const [qrBg, setQrBg] = useState('#ffffff');
   const [qrFg, setQrFg] = useState('#000000');
-  const [qrSize, setQrSize] = useState(280);
+  const [qrSize, setQrSize] = useState(240);
+  const [qrShowLogo, setQrShowLogo] = useState(true);
+  const [qrShowPhoto, setQrShowPhoto] = useState(true);
+  const [qrShowName, setQrShowName] = useState(true);
+  const [qrShowUser, setQrShowUser] = useState(true);
+  const [qrShowLink, setQrShowLink] = useState(true);
+  const [qrCustomText, setQrCustomText] = useState('Escanea para pagar');
   const qrContainerRef = useRef<HTMLDivElement>(null);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -504,87 +511,201 @@ const AdminPaymentLinks: React.FC = () => {
         </div>
       )}
 
-      {/* QR Code Modal */}
-      {showQrModal && currentPage && (
+      {/* QR Studio Pro Modal */}
+      {showQrModal && currentPage && (() => {
+        const QR_THEMES = [
+          ['#1a1a2e','#6366f1'],['#1a1a2e','#06b6d4'],['#1a1a2e','#3b82f6'],['#1a1a2e','#8b5cf6'],['#1a1a2e','#ec4899'],
+          ['#ffffff','#E60000'],['#ffffff','#10b981'],['#ffffff','#f59e0b'],['#ffffff','#6366f1'],['#ffffff','#000000'],
+          ['#0f0f23','#E60000'],['#0f0f23','#06b6d4'],['#0f0f23','#f97316'],['#0f0f23','#10b981'],['#0f0f23','#a855f7'],
+          ['#f8fafc','#6366f1'],['#f8fafc','#E60000'],['#f8fafc','#10b981'],['#f8fafc','#f59e0b'],['#f8fafc','#ec4899'],
+          ['#0a211a','#10b981'],['#2d1b69','#f97316'],['#0c1222','#06b6d4'],['#1e293b','#f59e0b'],['#1e1e1e','#ffffff'],
+        ];
+        const qrLink = `${window.location.origin}/pagar/${currentPage.slug}`;
+        const isLight = qrBg === '#ffffff' || qrBg === '#f8fafc';
+        return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-white/10">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2"><QrCode size={20} className="text-cyan-400" /> QR de Cuentas</h2>
-              <button onClick={() => setShowQrModal(false)}><X size={20} className="text-gray-400" /></button>
-            </div>
-            <div className="p-5 flex gap-6">
-              {/* Left: QR Preview */}
-              <div className="flex-1 flex flex-col items-center">
-                <div ref={qrContainerRef} className="rounded-3xl p-6 flex flex-col items-center" style={{ backgroundColor: qrBg, width: '340px' }}>
-                  {/* Name + Badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
-                    {currentPage.avatar_url && <img src={currentPage.avatar_url} alt="" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${qrAccent}` }} />}
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: qrFg }}>{currentPage.name}</span>
-                    <img src="/verified-badge.svg" alt="" style={{ width: '16px', height: '16px' }} />
-                  </div>
-                  {/* QR */}
-                  <div style={{ padding: '12px', borderRadius: '16px', border: `3px solid ${qrAccent}`, backgroundColor: '#fff' }}>
-                    <QRCodeSVG
-                      value={`${window.location.origin}/pagar/${currentPage.slug}`}
-                      size={qrSize}
-                      level="H"
-                      fgColor={qrFg}
-                      bgColor="#ffffff"
-                      imageSettings={currentPage.avatar_url ? {
-                        src: currentPage.avatar_url,
-                        height: 40,
-                        width: 40,
-                        excavate: true,
-                      } : undefined}
-                    />
-                  </div>
-                  {/* URL */}
-                  <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '20px', border: `2px solid ${qrAccent}30`, backgroundColor: `${qrAccent}08` }}>
-                    <Globe size={11} style={{ color: qrAccent }} />
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: qrAccent, letterSpacing: '0.3px' }}>/pagar/{currentPage.slug}</span>
-                  </div>
-                  {/* Subtitle */}
-                  <p style={{ fontSize: '9px', color: qrFg, opacity: 0.3, marginTop: '10px', fontWeight: 600 }}>Escanea para ver cuentas de pago</p>
-                </div>
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-[900px] overflow-hidden max-h-[92vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-2">
+                <QrCode size={20} className="text-cyan-400" />
+                <h2 className="text-base font-bold text-white">QR Studio</h2>
+                <span className="px-2 py-0.5 bg-raynold-red/20 text-raynold-red rounded-full text-[9px] font-black uppercase">Pro</span>
               </div>
-              {/* Right: Options */}
-              <div className="w-[220px] shrink-0 space-y-4">
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase block mb-2">Color Acento</label>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {ACCENTS.map(c => (
-                      <button key={c} onClick={() => setQrAccent(c)} className={`w-6 h-6 rounded-full border-2 ${qrAccent === c ? 'border-white scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
-                    ))}
-                  </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => downloadQr('png')} className="px-4 py-2 btn-animated font-bold rounded-lg text-xs flex items-center gap-2"><Download size={14} /> Descargar PNG</button>
+                <button onClick={() => setShowQrModal(false)}><X size={18} className="text-gray-400" /></button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden flex">
+              {/* Left: Controls */}
+              <div className="w-[380px] shrink-0 overflow-y-auto scrollbar-modern p-4 space-y-4 border-r border-white/10">
+                {/* Style Tabs */}
+                <div className="flex rounded-xl bg-white/5 p-1">
+                  {([['classic','Clásico'],['modern','Moderno'],['card','Tarjeta']] as const).map(([v,l]) => (
+                    <button key={v} onClick={() => setQrStyle(v)} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${qrStyle === v ? 'bg-raynold-red text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>{l}</button>
+                  ))}
                 </div>
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase block mb-2">Fondo QR</label>
-                  <div className="flex gap-2">
-                    {[{ c: '#ffffff', l: 'Blanco' }, { c: '#0f0f23', l: 'Oscuro' }, { c: '#f8fafc', l: 'Claro' }, { c: '#1a1a2e', l: 'Midnight' }].map(bg => (
-                      <button key={bg.c} onClick={() => { setQrBg(bg.c); setQrFg(bg.c === '#ffffff' || bg.c === '#f8fafc' ? '#000000' : '#ffffff'); }}
-                        className={`flex-1 p-1.5 rounded-lg border-2 text-center ${qrBg === bg.c ? 'border-raynold-red' : 'border-white/10'}`}>
-                        <div className="w-full h-4 rounded" style={{ backgroundColor: bg.c }} />
-                        <p className="text-[7px] text-gray-500 mt-0.5">{bg.l}</p>
+
+                {/* Page Selector */}
+                <div className="bg-white/5 rounded-xl p-3">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-1.5">Enlace de Pago</label>
+                  <select value={selectedPageId} onChange={e => setSelectedPageId(e.target.value)} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm">
+                    {pages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+
+                {/* Toggle Elements */}
+                <div className="bg-white/5 rounded-xl p-3">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Elementos Visibles</label>
+                  <div className="space-y-1">
+                    {([
+                      { k: 'qrShowLogo', l: 'Logo en QR', v: qrShowLogo, s: setQrShowLogo, icon: <QrCode size={12}/> },
+                      { k: 'qrShowPhoto', l: 'Foto de Perfil', v: qrShowPhoto, s: setQrShowPhoto, icon: <Camera size={12}/> },
+                      { k: 'qrShowName', l: 'Nombre', v: qrShowName, s: setQrShowName, icon: <User size={12}/> },
+                      { k: 'qrShowUser', l: 'Usuario', v: qrShowUser, s: setQrShowUser, icon: <Globe size={12}/> },
+                      { k: 'qrShowLink', l: 'Link Completo', v: qrShowLink, s: setQrShowLink, icon: <Link2 size={12}/> },
+                    ]).map(o => (
+                      <button key={o.k} onClick={() => o.s(!o.v)} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/5">
+                        <span className="text-gray-500">{o.icon}</span>
+                        <span className="flex-1 text-left text-xs text-white font-medium">{o.l}</span>
+                        <div className={`w-8 h-4 rounded-full transition-colors ${o.v ? 'bg-raynold-red' : 'bg-gray-700'}`}>
+                          <div className={`w-3.5 h-3.5 rounded-full bg-white mt-[1px] transition-transform ${o.v ? 'translate-x-[17px]' : 'translate-x-[1px]'}`} />
+                        </div>
                       </button>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase block mb-2">Tamaño QR</label>
-                  <input type="range" min="180" max="400" value={qrSize} onChange={e => setQrSize(Number(e.target.value))} className="w-full accent-raynold-red" />
-                  <p className="text-[10px] text-gray-500 text-center">{qrSize}px</p>
+
+                {/* Custom Text */}
+                <div className="bg-white/5 rounded-xl p-3">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-1.5">Texto Personalizado</label>
+                  <input type="text" value={qrCustomText} onChange={e => setQrCustomText(e.target.value)} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-xs" placeholder="Escanea para pagar" />
+                  <p className="text-[8px] text-gray-600 mt-1">Aparece encima del código QR.</p>
                 </div>
-                <div className="border-t border-white/10 pt-4 space-y-2">
-                  <label className="text-[10px] text-gray-500 uppercase block mb-1">Descargar</label>
-                  <button onClick={() => downloadQr('png')} className="w-full px-3 py-2.5 bg-cyan-500/20 text-cyan-400 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-cyan-500/30"><Download size={14} /> PNG (Alta Calidad)</button>
-                  <button onClick={() => downloadQr('svg')} className="w-full px-3 py-2.5 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-purple-500/30"><Download size={14} /> SVG (Vectorial)</button>
-                  <button onClick={() => downloadQr('jpg')} className="w-full px-3 py-2.5 bg-amber-500/20 text-amber-400 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-amber-500/30"><Download size={14} /> JPG (Comprimido)</button>
+
+                {/* Predefined Themes */}
+                <div className="bg-white/5 rounded-xl p-3">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Temas Predefinidos</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {QR_THEMES.map(([bg, accent], i) => (
+                      <button key={i} onClick={() => { setQrBg(bg); setQrAccent(accent); setQrFg(bg === '#ffffff' || bg === '#f8fafc' ? '#000000' : '#ffffff'); }}
+                        className={`w-full aspect-square rounded-xl border-2 overflow-hidden ${qrBg === bg && qrAccent === accent ? 'border-white shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'border-transparent'}`}>
+                        <div className="w-full h-full relative" style={{ backgroundColor: bg }}>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div style={{ width: '16px', height: '16px', borderRadius: '3px', backgroundColor: accent }} />
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Color + Background */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 rounded-xl p-3">
+                    <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Color Principal</label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {ACCENTS.map(c => (
+                        <button key={c} onClick={() => setQrAccent(c)} className={`w-6 h-6 rounded-full border-2 ${qrAccent === c ? 'border-white scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                      ))}
+                      <label className="w-6 h-6 rounded-full border border-dashed border-white/30 flex items-center justify-center cursor-pointer">
+                        <Plus size={10} className="text-gray-500" />
+                        <input type="color" value={qrAccent} onChange={e => setQrAccent(e.target.value)} className="sr-only" />
+                      </label>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-3">
+                    <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Fondo</label>
+                    <div className="flex gap-2">
+                      {[{c:'#ffffff',l:'⬜'},{c:'#f8fafc',l:'🔲'},{c:'#1a1a2e',l:'🌙'}].map(bg => (
+                        <button key={bg.c} onClick={() => { setQrBg(bg.c); setQrFg(bg.c === '#ffffff' || bg.c === '#f8fafc' ? '#000000' : '#ffffff'); }}
+                          className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center text-sm ${qrBg === bg.c ? 'border-raynold-red' : 'border-white/10'}`}
+                          style={{ backgroundColor: bg.c }}>{bg.l}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Size */}
+                <div className="bg-white/5 rounded-xl p-3">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-1.5">Tamaño QR: {qrSize}px</label>
+                  <input type="range" min="160" max="360" value={qrSize} onChange={e => setQrSize(Number(e.target.value))} className="w-full accent-raynold-red" />
+                </div>
+              </div>
+
+              {/* Right: QR Preview */}
+              <div className="flex-1 flex flex-col items-center justify-center bg-[#111] p-6 overflow-auto">
+                <div ref={qrContainerRef} className="flex flex-col items-center" style={{
+                  backgroundColor: qrBg,
+                  borderRadius: qrStyle === 'card' ? '24px' : qrStyle === 'modern' ? '16px' : '0',
+                  padding: qrStyle === 'card' ? '32px 28px' : qrStyle === 'modern' ? '24px 20px' : '20px',
+                  boxShadow: qrStyle === 'card' ? `0 20px 60px ${qrAccent}15, 0 4px 20px rgba(0,0,0,0.3)` : 'none',
+                  border: qrStyle === 'card' ? `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.1)'}` : 'none',
+                  minWidth: '300px',
+                }}>
+                  {/* Photo */}
+                  {qrShowPhoto && currentPage.avatar_url && (
+                    <img src={currentPage.avatar_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${qrAccent}`, marginBottom: '12px', boxShadow: `0 4px 12px ${qrAccent}25` }} />
+                  )}
+                  {/* Name + Badge */}
+                  {qrShowName && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: qrFg, fontFamily: "'Inter',sans-serif" }}>{currentPage.name}</span>
+                      <img src="/verified-badge.svg" alt="" style={{ width: '18px', height: '18px' }} />
+                    </div>
+                  )}
+                  {/* Username */}
+                  {qrShowUser && (
+                    <p style={{ fontSize: '12px', color: qrAccent, fontWeight: 600, marginBottom: '16px', fontFamily: "'Inter',sans-serif" }}>@{currentPage.username}</p>
+                  )}
+                  {/* Custom text */}
+                  {qrCustomText && (
+                    <p style={{ fontSize: '10px', color: qrFg, opacity: 0.4, marginBottom: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Inter',sans-serif" }}>{qrCustomText}</p>
+                  )}
+                  {/* QR */}
+                  <div style={{
+                    padding: qrStyle === 'card' ? '14px' : '10px',
+                    borderRadius: qrStyle === 'classic' ? '0' : '16px',
+                    border: `3px solid ${qrAccent}`,
+                    backgroundColor: '#ffffff',
+                  }}>
+                    <QRCodeSVG
+                      value={qrLink}
+                      size={qrSize}
+                      level="H"
+                      fgColor={qrAccent}
+                      bgColor="#ffffff"
+                      imageSettings={qrShowLogo && currentPage.avatar_url ? { src: currentPage.avatar_url, height: 36, width: 36, excavate: true } : undefined}
+                    />
+                  </div>
+                  {/* Link */}
+                  {qrShowLink && (
+                    <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 16px', borderRadius: '20px', border: `1.5px solid ${qrAccent}30`, backgroundColor: `${qrAccent}08` }}>
+                      <Globe size={10} style={{ color: qrAccent }} />
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: qrAccent, letterSpacing: '0.3px', fontFamily: "'Inter',sans-serif", textTransform: 'uppercase' }}>{window.location.host}/pagar/{currentPage.slug}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Download Buttons */}
+                <div className="flex gap-2 mt-6">
+                  <button onClick={() => downloadQr('png')} className="px-4 py-2.5 bg-cyan-500/20 text-cyan-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-cyan-500/30"><Download size={13} /> PNG</button>
+                  <button onClick={() => downloadQr('svg')} className="px-4 py-2.5 bg-purple-500/20 text-purple-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-purple-500/30"><Download size={13} /> SVG</button>
+                  <button onClick={() => downloadQr('jpg')} className="px-4 py-2.5 bg-amber-500/20 text-amber-400 rounded-lg text-[11px] font-bold flex items-center gap-2 hover:bg-amber-500/30"><Download size={13} /> JPG</button>
+                </div>
+
+                {/* Pro Tip */}
+                <div className="mt-4 p-3 bg-[#1a1a2e] rounded-xl max-w-xs">
+                  <p className="text-[10px] font-bold text-cyan-400 mb-1">💡 Consejo Pro</p>
+                  <p className="text-[9px] text-gray-400 leading-relaxed">Usa el estilo "Tarjeta" para imprimir y colocar en tu mostrador. Incluye tu foto para generar más confianza.</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 
