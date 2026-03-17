@@ -104,6 +104,7 @@ const AdminPaymentLinks: React.FC = () => {
   };
 
   useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { if (selectedPageId) fetchSavedQrs(selectedPageId); }, [selectedPageId]);
 
   const fetchAll = async () => {
     const [{ data: p }, { data: m }] = await Promise.all([
@@ -274,6 +275,31 @@ const AdminPaymentLinks: React.FC = () => {
                     </button>
                     <button onClick={() => deletePage(currentPage.id)} className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold flex items-center gap-2"><Trash2 size={14} /> Eliminar</button>
                   </div>
+
+                  {/* Saved QR Codes List */}
+                  {savedQrs.length > 0 && (
+                    <div className="mb-6">
+                      <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2">QR Guardados ({savedQrs.length})</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {savedQrs.map(q => (
+                          <div key={q.id} className="bg-[#0A0A0A] border border-white/10 rounded-xl p-3 hover:border-white/20 transition-colors">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-5 h-5 rounded-md" style={{ backgroundColor: q.accent_color }} />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-white truncate">{q.name}</p>
+                                <p className="text-[9px] text-gray-500">{q.style === 'card' ? 'Tarjeta' : q.style === 'modern' ? 'Moderno' : 'Clásico'}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => { loadQr(q); setShowQrModal(true); }} className="flex-1 px-2 py-1.5 bg-cyan-500/15 text-cyan-400 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-cyan-500/25"><Edit2 size={10} /> Editar</button>
+                              <button onClick={() => { loadQr(q); setShowQrModal(true); }} className="flex-1 px-2 py-1.5 bg-purple-500/15 text-purple-400 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 hover:bg-purple-500/25"><Download size={10} /> Descargar</button>
+                              <button onClick={() => deleteQr(q.id)} className="px-2 py-1.5 bg-red-500/15 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-500/25"><Trash2 size={10} /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Filter */}
                   <div className="flex gap-2 mb-4">
