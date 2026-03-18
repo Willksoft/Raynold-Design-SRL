@@ -347,29 +347,51 @@ const AdminCatalog: React.FC = () => {
   const coverDate = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long' });
   const coverPos = `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%`;
   const coverScalePct = `${config.coverImageScale ?? 100}%`;
-  // Helper: renders a div that fills its parent with the cover image using background-image for reliable crop
-  const coverBg = (extraStyle?: React.CSSProperties) => config.coverImage ? (
-    <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: coverScalePct === '100%' ? 'cover' : coverScalePct, backgroundPosition: coverPos, backgroundRepeat: 'no-repeat', ...extraStyle }} />
-  ) : null;
   const renderCover = (idx: number) => {
     const cs = config.coverStyle || 'centered';
-    const bgImg = config.coverImage ? { position: 'absolute' as const, inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: coverScalePct === '100%' ? 'cover' : coverScalePct, backgroundPosition: coverPos, backgroundRepeat: 'no-repeat' as const, opacity: 0.2 } : undefined;
 
+    // ====== FULL PHOTO COVER (when image is uploaded) ======
+    if (config.coverImage) {
+      const bgSize = coverScalePct === '100%' ? 'cover' : coverScalePct;
+      return (
+        <div key={idx} data-catalog-page style={{ ...PAGE, position: 'relative', overflow: 'hidden' }}>
+          {/* Background image - fills entire page */}
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: bgSize, backgroundPosition: coverPos, backgroundRepeat: 'no-repeat' }} />
+          {/* Dark gradient overlay for text readability */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.6) 100%)' }} />
+          {/* Content on top */}
+          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', padding: '1in 0.8in' }}>
+            {/* Top: Logo */}
+            <div>
+              {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '50px', objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))' }} />}
+            </div>
+            {/* Bottom: Title & info */}
+            <div>
+              <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, marginBottom: '15px' }} />
+              <h1 style={{ fontSize: '36px', fontWeight: 900, color: '#fff', letterSpacing: '2px', lineHeight: 1.1, margin: '0 0 10px', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{config.title}</h1>
+              <p style={{ fontSize: '13px', fontWeight: 300, color: config.accentColor, letterSpacing: '4px', textTransform: 'uppercase', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>{config.subtitle}</p>
+              <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.6)', marginTop: '20px' }}>{coverDate}</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ====== DEFAULT STYLE COVERS (no image uploaded) ======
     if (cs === 'centered') return (
       <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1in' }}>
-        {bgImg && <div style={bgImg} />}
         <div style={{ position: 'relative', zIndex: 1 }}>
           {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '60px', marginBottom: '40px', objectFit: 'contain' }} />}
           <div style={{ width: '60px', height: '3px', backgroundColor: config.accentColor, margin: '0 auto 30px' }} />
           <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#fff', letterSpacing: '3px', lineHeight: 1.1, margin: '0 0 12px' }}>{config.title}</h1>
           <p style={{ fontSize: '14px', fontWeight: 300, color: config.accentColor, letterSpacing: '5px', textTransform: 'uppercase' }}>{config.subtitle}</p>
+          <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '40px' }}>{coverDate}</p>
         </div>
       </div>
     );
 
     if (cs === 'left-block') return (
       <div key={idx} style={{ ...PAGE, background: config.secondaryColor, display: 'flex', position: 'relative' }}>
-        {bgImg && <div style={bgImg} />}
         <div style={{ width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1in 0.8in', position: 'relative', zIndex: 1 }}>
           <div>{config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '40px', objectFit: 'contain', marginBottom: '20px' }} />}</div>
           <div>
@@ -380,15 +402,12 @@ const AdminCatalog: React.FC = () => {
           </div>
           <div />
         </div>
-        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative', overflow: 'hidden' }}>
-          {coverBg({ mixBlendMode: 'multiply', opacity: 0.6 })}
-        </div>
+        <div style={{ width: '45%', backgroundColor: config.accentColor }} />
       </div>
     );
 
     if (cs === 'split-diagonal') return (
       <div key={idx} style={{ ...PAGE, background: '#fff', position: 'relative', overflow: 'hidden' }}>
-        {/* Diagonal block */}
         <div style={{ position: 'absolute', top: 0, right: 0, width: '55%', height: '100%', backgroundColor: config.accentColor, clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0 100%)' }} />
         <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', backgroundColor: config.secondaryColor, clipPath: 'polygon(20% 0, 100% 0, 100% 100%, 5% 100%)' }} />
         <div style={{ position: 'relative', zIndex: 1, padding: '1in', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -413,9 +432,7 @@ const AdminCatalog: React.FC = () => {
             <p style={{ fontSize: '10px', fontWeight: 900, color: config.accentColor, letterSpacing: '2px', textTransform: 'uppercase' }}>PRODUCT</p>
             <h1 style={{ fontSize: '42px', fontWeight: 900, color: '#fff', lineHeight: 1, margin: 0 }}>CATALOG</h1>
           </div>
-          <div style={{ width: '280px', height: '280px', borderRadius: '50%', backgroundColor: '#e0e0e0', marginTop: 'auto', marginBottom: 'auto', overflow: 'hidden', border: '6px solid #fff', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', position: 'relative' }}>
-            {config.coverImage ? coverBg() : <div style={{ width: '100%', height: '100%', backgroundColor: '#d0d0d0' }} />}
-          </div>
+          <div style={{ width: '280px', height: '280px', borderRadius: '50%', backgroundColor: '#d0d0d0', marginTop: 'auto', marginBottom: 'auto', border: '6px solid #fff', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }} />
           <div style={{ textAlign: 'center', marginTop: 'auto' }}>
             {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain', marginBottom: '10px' }} />}
             <p style={{ fontSize: '10px', color: '#666', fontWeight: 700 }}>{config.subtitle}</p>
@@ -430,9 +447,6 @@ const AdminCatalog: React.FC = () => {
         <div style={{ flex: 1, position: 'relative', padding: '0.8in 1in' }}>
           {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain' }} />}
           <div style={{ width: '60%', height: '1px', backgroundColor: config.accentColor, margin: '15px 0' }} />
-          {config.coverImage && <div style={{ position: 'absolute', top: '1.2in', right: '0.8in', width: '55%', height: '60%', borderRadius: '8px', overflow: 'hidden', border: `3px solid ${config.accentColor}20` }}>
-            {coverBg()}
-          </div>}
         </div>
         <div style={{ backgroundColor: config.accentColor, padding: '0.8in 1in 0.6in', position: 'relative' }}>
           <h1 style={{ fontSize: '38px', fontWeight: 900, color: '#fff', lineHeight: 1.1, margin: '0 0 8px' }}>{config.title.replace('CATÁLOGO DE ', '').replace('PRODUCTOS', '')}</h1>
@@ -445,7 +459,6 @@ const AdminCatalog: React.FC = () => {
 
     if (cs === 'minimal-frame') return (
       <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1in' }}>
-        {bgImg && <div style={bgImg} />}
         <div style={{ position: 'relative', zIndex: 1, border: `2px solid ${config.accentColor}50`, padding: '60px 50px', textAlign: 'center', width: '80%' }}>
           {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '50px', objectFit: 'contain', marginBottom: '30px' }} />}
           <div style={{ width: '40px', height: '2px', backgroundColor: config.accentColor, margin: '0 auto 25px' }} />
@@ -470,9 +483,7 @@ const AdminCatalog: React.FC = () => {
           </div>
           <div />
         </div>
-        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative', overflow: 'hidden' }}>
-          {coverBg({ opacity: 0.7 })}
-        </div>
+        <div style={{ width: '45%', backgroundColor: config.accentColor }} />
       </div>
     );
 
@@ -488,9 +499,7 @@ const AdminCatalog: React.FC = () => {
             <div style={{ width: '40px', height: '3px', backgroundColor: config.accentColor, marginBottom: '15px' }} />
             <p style={{ fontSize: '9px', color: '#888', lineHeight: 1.5, maxWidth: '80%' }}>{config.title}</p>
           </div>
-          <div style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {config.coverImage && <div style={{ width: '70%', aspectRatio: '4/3', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>{coverBg()}</div>}
-          </div>
+          <div style={{ width: '50%' }} />
         </div>
       </div>
     );
@@ -939,11 +948,7 @@ const AdminCatalog: React.FC = () => {
                         </div>
                       </div>
                       <p className="text-[8px] text-gray-600">
-                        {config.coverStyle === 'photo-circle' ? 'La imagen aparecerá dentro del círculo central' :
-                         config.coverStyle === 'bold-bottom' ? 'La imagen aparecerá como recuadro en la parte superior' :
-                         config.coverStyle === 'left-block' || config.coverStyle === 'landscape-corporate' ? 'La imagen aparecerá en el panel lateral derecho' :
-                         config.coverStyle === 'landscape-wave' ? 'La imagen aparecerá en el recuadro redondeado derecho' :
-                         'La imagen aparecerá como fondo de portada'}
+                        La imagen cubrirá toda la portada como fondo. Usa los controles para ajustar el encuadre.
                       </p>
                     </div>
                   )}
