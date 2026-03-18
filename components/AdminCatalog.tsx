@@ -361,35 +361,54 @@ const AdminCatalog: React.FC = () => {
     );
   };
 
-  const renderBack = (idx: number) => (
-    <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1.2in', position: 'relative' }}>
-      {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '50px', marginBottom: '30px', objectFit: 'contain' }} />}
-      <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '0 auto 30px', borderRadius: '2px' }} />
-      <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginBottom: '25px', letterSpacing: '2px' }}>{config.subtitle}</h2>
-      {config.backCoverText.split('\n').map((l, i) => <p key={i} style={{ fontSize: '11px', color: '#aaa', margin: '3px 0', lineHeight: 1.5 }}>{l}</p>)}
-      {/* Social Icons */}
-      <div style={{ display: 'flex', gap: '18px', marginTop: '40px', alignItems: 'center' }}>
-        {/* Instagram */}
-        <a href="https://instagram.com/raynolddesignsrl" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-        </a>
-        {/* Facebook */}
-        <a href="https://facebook.com/raynolddesignsrl" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-        </a>
-        {/* WhatsApp */}
-        <a href="https://wa.me/18295807411" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        </a>
-        {/* Website */}
-        <a href="https://raynolddesignssrl.com" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </a>
+  const renderBack = (idx: number) => {
+    const iconProps = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: config.accentColor, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+    const contactItems: { icon: React.ReactNode; text: string }[] = [];
+    if (config.contactPhone) contactItems.push({
+      icon: <svg {...iconProps}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+      text: config.contactPhone,
+    });
+    if (config.contactEmail) contactItems.push({
+      icon: <svg {...iconProps}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+      text: config.contactEmail,
+    });
+    if (config.contactWebsite) contactItems.push({
+      icon: <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+      text: config.contactWebsite,
+    });
+    if (config.contactInstagram) contactItems.push({
+      icon: <svg {...iconProps}><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>,
+      text: config.contactInstagram,
+    });
+    if (config.contactFacebook) contactItems.push({
+      icon: <svg {...iconProps}><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>,
+      text: config.contactFacebook,
+    });
+    if (config.contactWhatsapp) contactItems.push({
+      icon: <svg {...iconProps}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>,
+      text: config.contactWhatsapp,
+    });
+    return (
+      <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1.2in', position: 'relative' }}>
+        {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '55px', marginBottom: '35px', objectFit: 'contain' }} />}
+        <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '0 auto 30px', borderRadius: '2px' }} />
+        <h2 style={{ fontSize: '26px', fontWeight: 800, color: '#fff', marginBottom: '35px', letterSpacing: '2px' }}>{config.subtitle}</h2>
+        {/* Contact Items with Icons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
+          {contactItems.map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {item.icon}
+              </div>
+              <span style={{ fontSize: '12px', color: '#ccc', fontWeight: 500, letterSpacing: '0.3px' }}>{item.text}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '40px auto 0', borderRadius: '2px' }} />
+        <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '20px' }}>© {new Date().getFullYear()} {config.subtitle}. Todos los derechos reservados.</p>
       </div>
-      <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '35px auto 0', borderRadius: '2px' }} />
-      <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '20px' }}>© {new Date().getFullYear()} {config.subtitle}. Todos los derechos reservados.</p>
-    </div>
-  );
+    );
+  };
 
   const renderPage = (page: typeof pages[0], idx: number) => {
     if (page.type === 'cover') return renderCover(idx);
@@ -649,8 +668,33 @@ const AdminCatalog: React.FC = () => {
               </div>
               {config.showBackCover && (
                 <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Contraportada</h3>
-                  <textarea value={config.backCoverText} onChange={e => setConfig({ ...config, backCoverText: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-[11px] h-20 resize-none" />
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">📋 Contraportada - Contacto</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-[11px] w-5 text-center">📞</span>
+                      <input type="text" value={config.contactPhone || ''} onChange={e => setConfig({ ...config, contactPhone: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Teléfono" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-[11px] w-5 text-center">✉️</span>
+                      <input type="text" value={config.contactEmail || ''} onChange={e => setConfig({ ...config, contactEmail: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Email" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-[11px] w-5 text-center">🌐</span>
+                      <input type="text" value={config.contactWebsite || ''} onChange={e => setConfig({ ...config, contactWebsite: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Sitio web" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-[11px] w-5 text-center">📸</span>
+                      <input type="text" value={config.contactInstagram || ''} onChange={e => setConfig({ ...config, contactInstagram: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="@usuario Instagram" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-[11px] w-5 text-center">📘</span>
+                      <input type="text" value={config.contactFacebook || ''} onChange={e => setConfig({ ...config, contactFacebook: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Facebook" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-[11px] w-5 text-center">💬</span>
+                      <input type="text" value={config.contactWhatsapp || ''} onChange={e => setConfig({ ...config, contactWhatsapp: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="WhatsApp" />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

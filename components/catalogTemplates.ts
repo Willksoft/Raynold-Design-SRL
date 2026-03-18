@@ -11,6 +11,12 @@ export interface CatalogConfig {
   logoUrl: string;
   showBackCover: boolean;
   backCoverText: string;
+  contactPhone: string;
+  contactEmail: string;
+  contactWebsite: string;
+  contactInstagram: string;
+  contactFacebook: string;
+  contactWhatsapp: string;
   showTOC: boolean;
   showPrice: boolean;
   showCategory: boolean;
@@ -121,12 +127,18 @@ export const TEMPLATES: CatalogTemplate[] = [
 
 export const DEFAULT_CONFIG: CatalogConfig = {
   title: 'CATÁLOGO DE PRODUCTOS',
-  subtitle: 'Raynold Design SRL',
+  subtitle: 'Raynold Designs SRL',
   templateId: 'corporate-red',
   coverImage: '',
   logoUrl: '',
   showBackCover: true,
-  backCoverText: 'Raynold Design SRL\nTeléfono: (829) 580-7411\nEmail: info@raynolddesign.com\nwww.raynolddesignssrl.com',
+  backCoverText: '',
+  contactPhone: '(829) 580-7411',
+  contactEmail: 'cotizaciones@raynolddesignssrl.com',
+  contactWebsite: 'www.raynolddesignssrl.com',
+  contactInstagram: '@raynolddesignsrl',
+  contactFacebook: 'raynolddesignsrl',
+  contactWhatsapp: '8295807411',
   showTOC: true,
   showPrice: false,
   showCategory: true,
