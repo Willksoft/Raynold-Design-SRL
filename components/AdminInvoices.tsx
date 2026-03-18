@@ -905,20 +905,6 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
   if (view === 'preview' && currentInvoice) {
     const previewDocLabel = currentInvoice.type === 'FACTURA' ? 'Factura' : 'Cotizacion';
-    const previewSubtotal = currentInvoice.items.reduce((sum: number, item: InvoiceItem) => sum + item.quantity * item.price, 0);
-    const previewItemDiscounts = currentInvoice.items.reduce((sum: number, item: InvoiceItem) => {
-      const lineTotal = item.quantity * item.price;
-      return sum + (item.discountType === 'fixed' ? (item.discount || 0) : lineTotal * ((item.discount || 0) / 100));
-    }, 0);
-    const previewAfterItemDiscounts = previewSubtotal - previewItemDiscounts;
-    const previewGlobalDiscountAmt = (currentInvoice.globalDiscountType === 'fixed')
-      ? (currentInvoice.globalDiscount || 0)
-      : previewAfterItemDiscounts * ((currentInvoice.globalDiscount || 0) / 100);
-    const previewTaxable = previewAfterItemDiscounts - previewGlobalDiscountAmt;
-    const previewTax = currentInvoice.applyTax !== false ? previewTaxable * 0.18 : 0;
-    const previewTotal = previewTaxable + previewTax;
-    const previewTotalPaid = (currentInvoice.payments || []).reduce((s: number, p: Payment) => s + p.amount, 0);
-    const previewBalanceDue = previewTotal - previewTotalPaid;
 
     return (
       <div className="flex flex-col h-full bg-gray-100 text-black overflow-hidden print:bg-white print:h-auto print:overflow-visible">
@@ -988,7 +974,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
           </div>
         </div>
 
-        {/* Document Preview */}
+        {/* Document Preview - uses exact same templates as editor */}
         <div className="flex-1 overflow-y-auto bg-gray-200 p-8 print:p-0 print:bg-white flex justify-center invoice-container">
           <div className="w-[8.5in] min-h-[11in] bg-white shadow-2xl print:shadow-none relative print-content">
             {currentInvoice.templateId === 'classic' && (
@@ -999,101 +985,264 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="flex flex-col">
                         {companySettings.logoUrl ? (
-                          <img src={companySettings.logoUrl} alt="Logo" className="h-20 object-contain" />
+                          <img src={companySettings.logoUrl} alt={companySettings.name} className="h-14 object-contain" />
                         ) : (
-                          <div className="text-2xl font-black text-gray-900">{companySettings.name}</div>
+                          <>
+                            <span className="text-2xl font-black tracking-tighter leading-none">{companySettings.name}</span>
+                            <span className="text-xl font-black tracking-widest leading-none">{companySettings.subtitle}</span>
+                          </>
                         )}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 space-y-0.5 mt-2">
-                      <p className="font-semibold text-gray-700">{companySettings.name}</p>
-                      {companySettings.rnc && <p>RNC: {companySettings.rnc}</p>}
-                      {companySettings.address && <p>{companySettings.address}</p>}
-                      {companySettings.phone && <p>Tel: {companySettings.phone}</p>}
-                      {companySettings.email && <p>{companySettings.email}</p>}
-                    </div>
                   </div>
-                  <div className="text-right">
-                    <h1 className="text-3xl font-black text-gray-900 mb-1">{currentInvoice.type === 'FACTURA' ? 'FACTURA' : 'COTIZACIÓN'}</h1>
-                    <p className="text-lg font-bold text-gray-700">N. {currentInvoice.number}</p>
-                    <p className="text-sm text-gray-500 mt-1">Fecha: {currentInvoice.date}</p>
-                    {currentInvoice.ncf && <p className="text-xs font-mono text-gray-400 mt-1">NCF: {currentInvoice.ncf}</p>}
-                    <div className="mt-2">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${currentInvoice.status === 'EMITIDA' ? 'bg-green-100 text-green-700' : currentInvoice.status === 'BORRADOR' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                        {currentInvoice.status}
-                      </span>
+                  <div className="text-right text-xs text-gray-600 space-y-1">
+                    <p>Rnc: {companySettings.rnc}</p>
+                    <p>{companySettings.address1}</p>
+                    <p>{companySettings.address2}</p>
+                    <p>Telf.: {companySettings.phone}</p>
+                  </div>
+                </div>
+
+                {/* Title & NCF */}
+                <div className="mb-6">
+                  <h1 className="text-4xl font-bold text-red-600 uppercase">
+                    {currentInvoice.type === 'FACTURA' ? 'FACTURA' : 'COTIZACION'}
+                  </h1>
+                  {currentInvoice.type === 'FACTURA' && currentInvoice.ncf && (
+                    <div className="mt-2 text-sm font-bold text-gray-800">
+                      NCF: <span className="font-mono">{currentInvoice.ncf}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Client Info & Meta */}
+                <div className="flex justify-between mb-8 text-sm">
+                  <div className="space-y-2 flex-1 pr-8">
+                    <p className="font-bold text-gray-800">A la atención de</p>
+                    {currentInvoice.clientName && (
+                      <div className="flex gap-2"><span className="text-gray-600 w-16">Nombre:</span> <span>{currentInvoice.clientName}</span></div>
+                    )}
+                    {currentInvoice.companyName && (
+                      <div className="flex gap-2"><span className="text-gray-600 w-40">Nombre de la empresa:</span> <span>{currentInvoice.companyName}</span></div>
+                    )}
+                    {currentInvoice.clientRnc && (
+                      <div className="flex gap-2"><span className="text-gray-600 w-16">Rnc:</span> <span>{currentInvoice.clientRnc}</span></div>
+                    )}
+                    {currentInvoice.clientPhone && (
+                      <div className="flex gap-2"><span className="text-gray-600 w-16">Telefono:</span> <span>{currentInvoice.clientPhone}</span></div>
+                    )}
+                  </div>
+                  <div className="w-48 space-y-4 text-right">
+                    <div className="font-bold">Fecha: {currentInvoice.date}</div>
+                    <div>
+                      <span className="font-bold">N°</span>
+                      <div className="mt-2">{currentInvoice.number}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Client Info */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                  <p className="text-xs font-bold text-gray-500 uppercase mb-1">{currentInvoice.type === 'FACTURA' ? 'Facturar a' : 'Cotizar a'}</p>
-                  <p className="font-bold text-gray-900">{currentInvoice.companyName || currentInvoice.clientName || 'Sin cliente'}</p>
-                  {currentInvoice.companyName && currentInvoice.clientName && <p className="text-sm text-gray-600">{currentInvoice.clientName}</p>}
+                {/* Table */}
+                <div className="mb-8 flex-grow">
+                  <table className="w-full text-sm print:table">
+                    <thead>
+                      <tr className="bg-red-600 text-white">
+                        <th className="py-2 px-3 text-left font-bold w-24">Ref/ID</th>
+                        <th className="py-2 px-3 text-left font-bold">Descripcion</th>
+                        <th className="py-2 px-3 text-center font-bold w-20">Cant.</th>
+                        <th className="py-2 px-3 text-center font-bold w-28">Precio unit.</th>
+                        <th className="py-2 px-3 text-center font-bold w-20">Desc.</th>
+                        <th className="py-2 px-3 text-right font-bold w-28">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentInvoice.items.map((item, index) => (
+                        <tr key={item.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-100'} print:break-inside-avoid`}>
+                          <td className="py-3 px-3 font-mono text-xs text-gray-500">{item.reference || '-'}</td>
+                          <td className="py-3 px-3 uppercase">{item.description || '-'}</td>
+                          <td className="py-3 px-3 text-center">{item.quantity}</td>
+                          <td className="py-3 px-3 text-center">{formatCurrency(item.unitPrice).replace('DOP', '$')}</td>
+                          <td className="py-3 px-3 text-center text-xs">
+                            {(item.discount || 0) > 0 ? (
+                              <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">
+                                {item.discountType === 'fixed' ? `-$${item.discount}` : `-${item.discount}%`}
+                              </span>
+                            ) : '-'}
+                          </td>
+                          <td className="py-3 px-3 text-right text-gray-600 font-medium">
+                            {formatCurrency(getItemTotal(item)).replace('DOP', '$')}
+                          </td>
+                        </tr>
+                      ))}
+                      {[...Array(Math.max(0, 5 - currentInvoice.items.length))].map((_, i) => (
+                        <tr key={`empty-${i}`} className={(currentInvoice.items.length + i) % 2 === 0 ? 'bg-white' : 'bg-gray-100'}>
+                          <td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Footer & Totals */}
+                <div className="mt-8 print:mt-4 border-t border-gray-300 pt-4 flex justify-between text-sm print:break-inside-avoid">
+                  <div className="w-3/5 pr-8 flex flex-col justify-between">
+                    <div className="flex gap-2">
+                      <span className="text-gray-500 font-medium">Notas:</span>
+                      <p className="flex-1 whitespace-pre-wrap">{currentInvoice.notes}</p>
+                    </div>
+                    <div className="mt-4">
+                      <p className="text-red-600 font-bold uppercase whitespace-pre-wrap">{currentInvoice.paymentTerms}</p>
+                    </div>
+                  </div>
+                  <div className="w-2/5">
+                    {totalDiscounts > 0 && (
+                      <>
+                        <div className="flex justify-between py-1">
+                          <span className="text-gray-500 font-bold">BRUTO</span>
+                          <span className="font-bold text-gray-500">{formatCurrency(rawSubtotal).replace('DOP', '$')}</span>
+                        </div>
+                        <div className="flex justify-between py-1 text-red-500">
+                          <span className="font-bold">DESCUENTOS</span>
+                          <span className="font-bold">-{formatCurrency(totalDiscounts).replace('DOP', '$')}</span>
+                        </div>
+                      </>
+                    )}
+                    <div className="flex justify-between py-1">
+                      <span className="text-red-600 font-bold">SUB TOTAL</span>
+                      <span className="font-bold">{formatCurrency(subtotal).replace('DOP', '$')}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-red-600 font-bold">ITBIS</span>
+                      <span className="font-bold">{formatCurrency(itbis).replace('DOP', '$')}</span>
+                    </div>
+                    <div className="flex justify-between py-2 mt-1">
+                      <span className="font-black text-lg">TOTAL</span>
+                      <span className="font-black text-lg">{formatCurrency(total).replace('DOP', '$')}</span>
+                    </div>
+                    {totalPaid > 0 && (
+                      <>
+                        <div className="flex justify-between py-1 text-green-700">
+                          <span className="font-bold">PAGADO</span>
+                          <span className="font-bold">-{formatCurrency(totalPaid).replace('DOP', '$')}</span>
+                        </div>
+                        <div className="flex justify-between py-2 mt-1 border-t border-gray-300">
+                          <span className="font-black text-lg text-red-600">BALANCE</span>
+                          <span className="font-black text-lg text-red-600">{formatCurrency(balanceDue).replace('DOP', '$')}</span>
+                        </div>
+                      </>
+                    )}
+                    {currentInvoice.paymentStatus === 'PAGADA' && (
+                      <div className="mt-4 border-4 border-green-600 text-green-600 text-center py-2 font-black text-2xl uppercase tracking-widest transform -rotate-6 opacity-80">
+                        PAGADO
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentInvoice.templateId === 'modern' && (
+              <div className="p-10 md:p-12 h-full flex flex-col bg-gray-50">
+                <div className="flex justify-between items-start mb-10 pb-8 border-b-2 border-raynold-red/20">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-4">
+                      {companySettings.logoUrl ? (
+                        <img src={companySettings.logoUrl} alt={companySettings.name} className="h-12 object-contain" />
+                      ) : (
+                        <>
+                          <div className="w-10 h-10 bg-raynold-red rounded-lg flex items-center justify-center text-white font-black text-xl">
+                            {companySettings.name.charAt(0)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-2xl font-black tracking-tight text-gray-900 leading-none">{companySettings.name}</span>
+                            <span className="text-sm font-bold text-raynold-red tracking-widest leading-none mt-1">{companySettings.subtitle}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <p>RNC: {companySettings.rnc}</p>
+                      <p>{companySettings.address1}</p>
+                      <p>{companySettings.address2}</p>
+                      <p>Tel: {companySettings.phone}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h1 className="text-5xl font-black text-gray-900 tracking-tighter uppercase mb-2">
+                      {currentInvoice.type === 'FACTURA' ? 'FACTURA' : 'COTIZACIÓN'}
+                    </h1>
+                    <div className="text-xl font-bold text-raynold-red mb-2">#{currentInvoice.number}</div>
+                    <div className="text-sm text-gray-500 font-medium">Fecha: {currentInvoice.date}</div>
+                    {currentInvoice.type === 'FACTURA' && currentInvoice.ncf && (
+                      <div className="mt-2 text-xs font-bold bg-white px-3 py-1 rounded-full border border-gray-200 inline-block">
+                        NCF: <span className="font-mono text-raynold-red">{currentInvoice.ncf}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mb-8 bg-white rounded-xl p-6 border border-gray-200">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-2">Cliente</p>
+                  <p className="font-bold text-gray-900 text-lg">{currentInvoice.companyName || currentInvoice.clientName || 'Sin cliente'}</p>
+                  {currentInvoice.companyName && currentInvoice.clientName && <p className="text-sm text-gray-500">{currentInvoice.clientName}</p>}
                   {currentInvoice.clientRnc && <p className="text-sm text-gray-500">RNC: {currentInvoice.clientRnc}</p>}
                   {currentInvoice.clientPhone && <p className="text-sm text-gray-500">Tel: {currentInvoice.clientPhone}</p>}
                 </div>
 
-                {/* Items Table */}
-                <table className="w-full mb-6 text-sm">
+                <table className="w-full mb-8 text-sm">
                   <thead>
-                    <tr className="bg-gray-900 text-white text-xs uppercase">
-                      <th className="py-2 px-3 text-left font-bold">Descripción</th>
-                      <th className="py-2 px-3 text-center font-bold">Cant.</th>
-                      <th className="py-2 px-3 text-right font-bold">Precio</th>
-                      <th className="py-2 px-3 text-right font-bold">Desc.</th>
-                      <th className="py-2 px-3 text-right font-bold">Total</th>
+                    <tr className="border-b-2 border-gray-900">
+                      <th className="py-3 px-3 text-left font-black text-xs uppercase text-gray-400">Ref</th>
+                      <th className="py-3 px-3 text-left font-black text-xs uppercase text-gray-400">Descripcion</th>
+                      <th className="py-3 px-3 text-center font-black text-xs uppercase text-gray-400">Cant.</th>
+                      <th className="py-3 px-3 text-center font-black text-xs uppercase text-gray-400">P. Unit</th>
+                      <th className="py-3 px-3 text-center font-black text-xs uppercase text-gray-400">Desc.</th>
+                      <th className="py-3 px-3 text-right font-black text-xs uppercase text-gray-400">Total</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentInvoice.items.map((item: InvoiceItem, idx: number) => {
-                      const lineTotal = item.quantity * item.price;
-                      const itemDisc = item.discountType === 'fixed' ? (item.discount || 0) : lineTotal * ((item.discount || 0) / 100);
-                      return (
-                        <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td className="py-2 px-3 text-gray-900">{item.description}</td>
-                          <td className="py-2 px-3 text-center text-gray-600">{item.quantity}</td>
-                          <td className="py-2 px-3 text-right text-gray-600">{formatCurrency(item.price)}</td>
-                          <td className="py-2 px-3 text-right text-red-500">{itemDisc > 0 ? `-${formatCurrency(itemDisc)}` : '-'}</td>
-                          <td className="py-2 px-3 text-right font-bold text-gray-900">{formatCurrency(lineTotal - itemDisc)}</td>
-                        </tr>
-                      );
-                    })}
+                    {currentInvoice.items.map((item, index) => (
+                      <tr key={item.id} className={`border-b border-gray-100 ${index % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                        <td className="py-3 px-3 font-mono text-xs text-gray-400">{item.reference || '-'}</td>
+                        <td className="py-3 px-3 font-medium text-gray-900">{item.description}</td>
+                        <td className="py-3 px-3 text-center">{item.quantity}</td>
+                        <td className="py-3 px-3 text-center">{formatCurrency(item.unitPrice).replace('DOP', '$')}</td>
+                        <td className="py-3 px-3 text-center text-xs">
+                          {(item.discount || 0) > 0 ? (
+                            <span className="text-raynold-red font-bold">{item.discountType === 'fixed' ? `-$${item.discount}` : `-${item.discount}%`}</span>
+                          ) : '-'}
+                        </td>
+                        <td className="py-3 px-3 text-right font-bold">{formatCurrency(getItemTotal(item)).replace('DOP', '$')}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
 
-                {/* Totals */}
                 <div className="flex justify-end mt-auto">
-                  <div className="w-72 space-y-1 text-sm">
-                    <div className="flex justify-between"><span className="text-gray-500">Subtotal:</span><span className="font-medium">{formatCurrency(previewSubtotal)}</span></div>
-                    {previewItemDiscounts > 0 && <div className="flex justify-between"><span className="text-gray-500">Desc. Items:</span><span className="text-red-500">-{formatCurrency(previewItemDiscounts)}</span></div>}
-                    {previewGlobalDiscountAmt > 0 && <div className="flex justify-between"><span className="text-gray-500">Desc. Global:</span><span className="text-red-500">-{formatCurrency(previewGlobalDiscountAmt)}</span></div>}
-                    {previewTax > 0 && <div className="flex justify-between"><span className="text-gray-500">ITBIS (18%):</span><span>{formatCurrency(previewTax)}</span></div>}
-                    <div className="flex justify-between border-t-2 border-gray-900 pt-2 mt-2"><span className="font-black text-lg">TOTAL:</span><span className="font-black text-lg">{formatCurrency(previewTotal)}</span></div>
-                    {previewTotalPaid > 0 && (
+                  <div className="w-72 bg-white rounded-xl p-4 border border-gray-200 space-y-2 text-sm">
+                    {totalDiscounts > 0 && (
                       <>
-                        <div className="flex justify-between text-green-600"><span>Pagado:</span><span>{formatCurrency(previewTotalPaid)}</span></div>
-                        <div className="flex justify-between font-bold"><span>Balance:</span><span className={previewBalanceDue > 0 ? 'text-red-600' : 'text-green-600'}>{formatCurrency(previewBalanceDue)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Bruto:</span><span>{formatCurrency(rawSubtotal).replace('DOP', '$')}</span></div>
+                        <div className="flex justify-between text-red-500"><span>Descuentos:</span><span>-{formatCurrency(totalDiscounts).replace('DOP', '$')}</span></div>
+                      </>
+                    )}
+                    <div className="flex justify-between"><span className="text-gray-400">Subtotal:</span><span>{formatCurrency(subtotal).replace('DOP', '$')}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-400">ITBIS (18%):</span><span>{formatCurrency(itbis).replace('DOP', '$')}</span></div>
+                    <div className="flex justify-between border-t-2 border-gray-900 pt-3 mt-2">
+                      <span className="font-black text-xl">TOTAL</span>
+                      <span className="font-black text-xl text-raynold-red">{formatCurrency(total).replace('DOP', '$')}</span>
+                    </div>
+                    {totalPaid > 0 && (
+                      <>
+                        <div className="flex justify-between text-green-600"><span>Pagado:</span><span>-{formatCurrency(totalPaid).replace('DOP', '$')}</span></div>
+                        <div className="flex justify-between font-bold border-t pt-2"><span>Balance:</span><span className="text-red-600">{formatCurrency(balanceDue).replace('DOP', '$')}</span></div>
                       </>
                     )}
                   </div>
                 </div>
 
-                {/* Notes & Terms */}
-                <div className="border-t border-gray-200 pt-8 text-xs text-gray-500 grid grid-cols-2 gap-8 mt-8">
-                  {currentInvoice.notes && (
-                    <div>
-                      <p className="font-bold text-gray-900 mb-1">Notas</p>
-                      <p className="whitespace-pre-wrap">{currentInvoice.notes}</p>
-                    </div>
-                  )}
-                  {currentInvoice.paymentTerms && (
-                    <div>
-                      <p className="font-bold text-gray-900 mb-1">Términos</p>
-                      <p className="whitespace-pre-wrap">{currentInvoice.paymentTerms}</p>
-                    </div>
-                  )}
+                <div className="border-t border-gray-200 pt-8 text-xs text-gray-500 grid grid-cols-2 gap-8 mt-8 print:break-inside-avoid">
+                  {currentInvoice.notes && (<div><p className="font-bold text-gray-900 mb-1">Notas</p><p className="whitespace-pre-wrap">{currentInvoice.notes}</p></div>)}
+                  {currentInvoice.paymentTerms && (<div><p className="font-bold text-gray-900 mb-1">Términos</p><p className="whitespace-pre-wrap">{currentInvoice.paymentTerms}</p></div>)}
                 </div>
               </div>
             )}
@@ -1111,12 +1260,12 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                 <table className="w-full mb-6 text-sm">
                   <thead><tr className="border-b-2 border-black text-xs uppercase"><th className="py-2 text-left">Descripción</th><th className="py-2 text-center">Cant.</th><th className="py-2 text-right">Precio</th><th className="py-2 text-right">Total</th></tr></thead>
                   <tbody>
-                    {currentInvoice.items.map((item: InvoiceItem) => (
-                      <tr key={item.id} className="border-b border-gray-200"><td className="py-2">{item.description}</td><td className="py-2 text-center">{item.quantity}</td><td className="py-2 text-right">{formatCurrency(item.price)}</td><td className="py-2 text-right font-bold">{formatCurrency(item.quantity * item.price)}</td></tr>
+                    {currentInvoice.items.map((item) => (
+                      <tr key={item.id} className="border-b border-gray-200"><td className="py-2">{item.description}</td><td className="py-2 text-center">{item.quantity}</td><td className="py-2 text-right">{formatCurrency(item.unitPrice).replace('DOP', '$')}</td><td className="py-2 text-right font-bold">{formatCurrency(getItemTotal(item)).replace('DOP', '$')}</td></tr>
                     ))}
                   </tbody>
                 </table>
-                <div className="flex justify-end"><div className="text-right"><p className="text-2xl font-black">{formatCurrency(previewTotal)}</p></div></div>
+                <div className="flex justify-end"><div className="text-right"><p className="text-2xl font-black">{formatCurrency(total).replace('DOP', '$')}</p></div></div>
               </div>
             )}
           </div>
