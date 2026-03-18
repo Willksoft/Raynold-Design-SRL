@@ -11,7 +11,7 @@ interface PaymentPage {
 interface PaymentMethod {
   id: string; type: string; bank_name: string; account_type: string;
   account_number: string; account_holder: string; currency: string;
-  logo_url: string; payment_url: string; sort_order: number;
+  logo_url: string; payment_url: string; sort_order: number; rnc: string;
 }
 
 const THEMES: Record<string, { bg: string; card: string; text: string }> = {
@@ -214,11 +214,11 @@ const PublicPaymentPage: React.FC = () => {
                                 <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.currency}</p>
                               </div>
                             </div>
-                            {/* RNC if exists */}
-                            {page.rnc && (
-                              <button onClick={() => copy(page.rnc, `rnc-${m.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', padding: '6px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}15`, cursor: 'pointer', width: '100%' }}>
+                            {/* RNC if exists (method-level or page-level) */}
+                            {(m.rnc || page.rnc) && (
+                              <button onClick={() => copy(m.rnc || page.rnc, `rnc-${m.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', padding: '6px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}15`, cursor: 'pointer', width: '100%' }}>
                                 <span style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4 }}>RNC:</span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: theme.text, fontFamily: 'monospace', flex: 1, textAlign: 'left' }}>{page.rnc}</span>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: theme.text, fontFamily: 'monospace', flex: 1, textAlign: 'left' }}>{m.rnc || page.rnc}</span>
                                 {copied === `rnc-${m.id}` ? <Check size={10} style={{ color: '#10b981' }} /> : <Copy size={10} style={{ color: page.accent_color, opacity: 0.4 }} />}
                               </button>
                             )}

@@ -23,7 +23,7 @@ interface PaymentMethod {
   id: string; page_id: string; type: string; bank_name: string;
   account_type: string; account_number: string; account_holder: string;
   currency: string; logo_url: string; payment_url: string;
-  sort_order: number; is_active: boolean;
+  sort_order: number; is_active: boolean; rnc: string;
 }
 
 const THEMES = [
@@ -561,6 +561,7 @@ const AdminPaymentLinks: React.FC = () => {
               </div>
               <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Titular</label><input type="text" value={editMethod.account_holder} onChange={e => setEditMethod({ ...editMethod, account_holder: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" /></div>
               <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Número de Cuenta / ID</label><input type="text" value={editMethod.account_number} onChange={e => setEditMethod({ ...editMethod, account_number: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm font-mono" placeholder="830-123456-7" /></div>
+              <div><label className="text-[10px] text-gray-500 uppercase block mb-1">RNC / Cédula <span className="text-gray-600 normal-case">(opcional)</span></label><input type="text" value={editMethod.rnc || ''} onChange={e => setEditMethod({ ...editMethod, rnc: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm font-mono" placeholder="130-00000-0 o 001-0000000-0" /></div>
               {editMethod.type !== 'bank' && (
                 <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Link de Pago (opcional)</label><input type="text" value={editMethod.payment_url} onChange={e => setEditMethod({ ...editMethod, payment_url: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" placeholder="https://paypal.me/..." /></div>
               )}
@@ -989,10 +990,10 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
                               <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.currency}</p>
                             </div>
                           </div>
-                          {page.rnc && (
+                          {(m.rnc || page.rnc) && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', padding: '5px 8px', borderRadius: '6px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}12` }}>
                               <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>RNC:</span>
-                              <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{page.rnc}</span>
+                              <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.rnc || page.rnc}</span>
                               <Copy size={8} style={{ opacity: 0.3 }} />
                             </div>
                           )}
