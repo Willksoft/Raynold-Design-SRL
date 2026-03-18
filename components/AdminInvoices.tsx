@@ -365,10 +365,20 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     if (!currentInvoice) return;
     const invoiceToSave = { ...currentInvoice, status };
 
+    // Fix: ensure ID is a valid UUID (migrate old short IDs)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!invoiceToSave.id || !uuidRegex.test(invoiceToSave.id)) {
+      invoiceToSave.id = generateUUID();
+    }
+
     // Auto-generate NCF for invoices when emitting
     if (status === 'EMITIDA' && invoiceToSave.type === 'FACTURA' && !invoiceToSave.ncf) {
       invoiceToSave.ncf = generateNCF(invoiceToSave.ncfType);
     }
+
+    // Ensure FK fields are null, not empty strings (Supabase uuid columns)
+    const clientId = invoiceToSave.clientId && uuidRegex.test(invoiceToSave.clientId) ? invoiceToSave.clientId : null;
+    const sellerId = invoiceToSave.sellerId && uuidRegex.test(invoiceToSave.sellerId) ? invoiceToSave.sellerId : null;
 
     // Persist to Supabase FIRST
     const { error } = await supabase.from('invoices').upsert({
@@ -380,12 +390,12 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
       ncf: invoiceToSave.ncf,
       date: invoiceToSave.date,
       number: invoiceToSave.number,
-      client_id: invoiceToSave.clientId || null,
+      client_id: clientId,
       client_name: invoiceToSave.clientName,
       company_name: invoiceToSave.companyName,
       client_rnc: invoiceToSave.clientRnc,
       client_phone: invoiceToSave.clientPhone,
-      seller_id: invoiceToSave.sellerId || null,
+      seller_id: sellerId,
       seller_name: invoiceToSave.sellerName,
       items: invoiceToSave.items,
       notes: invoiceToSave.notes,
