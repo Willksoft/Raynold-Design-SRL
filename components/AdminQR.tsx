@@ -544,11 +544,11 @@ const AdminQR: React.FC = () => {
               </h3>
               <div className="grid grid-cols-4 gap-2">
                 {([
-                  ['classic','Clásico','□'],['modern','Moderno','▢'],['card','Tarjeta','▣'],['banner','Banner','▬'],
-                  ['badge','Badge','◇'],['sticker','Sticker','◉'],['phone','Teléfono','📱'],['minimal','Mínimal','◻'],
-                ] as [QRStyle, string, string][]).map(([v,l,ico]) => (
+                  ['classic','Clásico','svgexport-2'],['modern','Moderno','svgexport-10'],['card','Tarjeta','svgexport-1'],['banner','Banner','svgexport-6'],
+                  ['badge','Badge','svgexport-3'],['sticker','Sticker','svgexport-12'],['phone','Teléfono','svgexport-5'],['minimal','Mínimal','svgexport-8'],
+                ] as [QRStyle, string, string][]).map(([v,l,svg]) => (
                   <button key={v} onClick={() => setConfig({ ...config, style: v })} className={`py-2.5 px-2 rounded-xl border text-center transition-all ${config.style === v ? 'bg-raynold-red/20 border-raynold-red/50 text-white shadow-[0_0_10px_rgba(230,0,0,0.15)]' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/20'}`}>
-                    <div className="text-lg mb-0.5">{ico}</div>
+                    <img src={`/qr-frames/${svg}.svg`} alt={l} className="w-8 h-8 mx-auto mb-1 opacity-70" style={{ filter: config.style === v ? 'brightness(1.3) invert(0.1)' : 'invert(0.7)' }} />
                     <div className="text-[9px] font-bold">{l}</div>
                   </button>
                 ))}

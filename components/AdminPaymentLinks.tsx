@@ -644,11 +644,11 @@ const AdminPaymentLinks: React.FC = () => {
                   <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Estilo de Diseño</label>
                   <div className="grid grid-cols-4 gap-1.5">
                     {([
-                      ['classic','Clásico','□'],['modern','Moderno','▢'],['card','Tarjeta','▣'],['banner','Banner','▬'],
-                      ['badge','Badge','◇'],['sticker','Sticker','◉'],['phone','Teléfono','📱'],['minimal','Mínimal','◻'],
-                    ] as [typeof qrStyle, string, string][]).map(([v,l,ico]) => (
+                      ['classic','Clásico','svgexport-2'],['modern','Moderno','svgexport-10'],['card','Tarjeta','svgexport-1'],['banner','Banner','svgexport-6'],
+                      ['badge','Badge','svgexport-3'],['sticker','Sticker','svgexport-12'],['phone','Teléfono','svgexport-5'],['minimal','Mínimal','svgexport-8'],
+                    ] as [typeof qrStyle, string, string][]).map(([v,l,svg]) => (
                       <button key={v} onClick={() => setQrStyle(v)} className={`py-2 px-1 rounded-lg border text-center transition-all ${qrStyle === v ? 'bg-raynold-red/20 border-raynold-red/50 text-white' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}>
-                        <div className="text-sm">{ico}</div>
+                        <img src={`/qr-frames/${svg}.svg`} alt={l} className="w-7 h-7 mx-auto mb-0.5 opacity-70" style={{ filter: qrStyle === v ? 'brightness(1.3) invert(0.1)' : 'invert(0.7)' }} />
                         <div className="text-[8px] font-bold">{l}</div>
                       </button>
                     ))}
