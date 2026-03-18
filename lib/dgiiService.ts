@@ -74,3 +74,22 @@ export async function buscarContribuyentes(filtros: {
         return { error: 'No se pudo conectar con la DGII' };
     }
 }
+
+/**
+ * Autocomplete rápido de la DGII.
+ * @param q - Texto de búsqueda (mínimo 2 caracteres)
+ */
+export async function autocompleteDGII(q: string): Promise<DGIIResult[]> {
+    try {
+        const trimmed = q.trim();
+        if (trimmed.length < 2) return [];
+        const response = await fetch(`${DGII_API_URL}/autocomplete?q=${encodeURIComponent(trimmed)}`, {
+            headers: { 'x-api-key': DGII_API_KEY },
+        });
+        if (!response.ok) return [];
+        const data = await response.json();
+        return Array.isArray(data) ? data : (data?.data || []);
+    } catch {
+        return [];
+    }
+}
