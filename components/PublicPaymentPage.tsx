@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { ChevronDown, Copy, Check, ExternalLink, Globe, User, Loader2, AlertCircle, Share2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Copy, Check, ExternalLink, Globe, User, Loader2, AlertCircle, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 interface PaymentPage {
@@ -43,6 +43,33 @@ const PublicPaymentPage: React.FC = () => {
     };
     fetch();
   }, [slug]);
+
+  // Dynamic metadata
+  useEffect(() => {
+    if (!page) return;
+    const pageUrl = window.location.href;
+    document.title = `${page.name} — Datos de Pago`;
+
+    const setMeta = (name: string, content: string, property?: boolean) => {
+      const attr = property ? 'property' : 'name';
+      let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement;
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.content = content;
+    };
+
+    setMeta('description', `Datos bancarios y métodos de pago de ${page.name}. Copia los números de cuenta fácilmente.`);
+    setMeta('theme-color', page.accent_color);
+    setMeta('og:title', `${page.name} — Datos de Pago`, true);
+    setMeta('og:description', `Realiza pagos y transferencias a ${page.name}. Verifica los datos antes de transferir.`, true);
+    setMeta('og:url', pageUrl, true);
+    setMeta('og:type', 'website', true);
+    if (page.avatar_url) setMeta('og:image', page.avatar_url, true);
+    setMeta('twitter:card', 'summary');
+    setMeta('twitter:title', `${page.name} — Datos de Pago`);
+    setMeta('twitter:description', `Datos de pago de ${page.name}`);
+
+    return () => { document.title = 'Raynold Design SRL'; };
+  }, [page]);
 
   const copy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -161,7 +188,7 @@ const PublicPaymentPage: React.FC = () => {
                           {accounts.length} cuenta{accounts.length > 1 ? 's' : ''} · {accounts.map(a => a.currency).filter((v,i,a)=>a.indexOf(v)===i).join(' / ')}
                         </p>
                       </div>
-                      <ChevronDown size={18} style={{ color: theme.text, opacity: 0.25, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s' }} />
+                      <ChevronRight size={18} style={{ color: theme.text, opacity: 0.25, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s' }} />
                     </button>
 
                     {/* Sub-accounts - fully expanded when bank is open */}

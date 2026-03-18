@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  Plus, Edit2, Trash2, X, Save, Eye, Copy, Check, ChevronDown, ChevronUp,
+  Plus, Edit2, Trash2, X, Save, Eye, Copy, Check, ChevronDown, ChevronUp, ChevronRight,
   Loader2, CreditCard, Landmark, Link2, Bitcoin, ExternalLink,
   Globe, User, Sparkles, Smartphone, Upload, Camera, QrCode, Download, FileText
 } from 'lucide-react';
@@ -968,7 +968,7 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
                       <p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>{bankName}</p>
                       <p style={{ fontSize: '9px', opacity: 0.4, margin: 0 }}>{accounts.length} cuenta{accounts.length > 1 ? 's' : ''} · {accounts.map(a => a.currency).filter((v,i,a)=>a.indexOf(v)===i).join(' / ')}</p>
                     </div>
-                    <ChevronDown size={14} style={{ opacity: 0.25, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s' }} />
+                    <ChevronRight size={14} style={{ opacity: 0.25, transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.25s' }} />
                   </button>
                   {/* Sub-accounts - fully expanded when bank is open */}
                   {isOpen && (
