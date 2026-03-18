@@ -26,6 +26,26 @@ export interface DGIISearchResponse {
 }
 
 /**
+ * Normaliza un resultado de la API de la DGII al formato DGIIResult.
+ * La API usa campos como 'categoria', 'regimen', 'estatus' en vez de
+ * 'nombre_comercial', 'actividad_economica', 'estado'.
+ */
+function normalizeDGIIResult(raw: any): DGIIResult {
+    return {
+        rnc: raw.rnc || raw.id || raw.value || '',
+        nombre: raw.nombre || '',
+        nombre_comercial: raw.categoria || raw.nombre_comercial || '',
+        actividad_economica: raw.regimen || raw.actividad_economica || '',
+        estado: raw.estatus || raw.estado || '',
+        regimen_pagos: raw.regimen_pagos || '',
+        direccion: raw.direccion || '',
+        telefono: raw.telefono || '',
+        fecha_constitucion: raw.fecha_constitucion || '',
+        tipo: raw.tipo || '',
+    };
+}
+
+/**
  * Consultar un RNC o Cédula específica en la DGII.
  * @param rnc - RNC (9 dígitos) o Cédula (11 dígitos), con o sin guiones
  */
@@ -40,7 +60,8 @@ export async function consultarRNC(rnc: string): Promise<DGIIResult | null> {
 
         if (!response.ok) return null;
         const data = await response.json();
-        return data || null;
+        if (!data || !data.rnc) return null;
+        return normalizeDGIIResult(data);
     } catch {
         return null;
     }
@@ -69,7 +90,10 @@ export async function buscarContribuyentes(filtros: {
         });
 
         if (!response.ok) return { error: 'Error en consulta DGII' };
-        return await response.json();
+        const raw = await response.json();
+        // Normalize each result in the data array
+        const data = (raw?.data || []).map(normalizeDGIIResult);
+        return { data, total: raw?.total || data.length };
     } catch {
         return { error: 'No se pudo conectar con la DGII' };
     }
@@ -88,7 +112,9 @@ export async function autocompleteDGII(q: string): Promise<DGIIResult[]> {
         });
         if (!response.ok) return [];
         const data = await response.json();
-        return Array.isArray(data) ? data : (data?.data || []);
+        // API returns { suggestions: [{ id, nombre, value, categoria, regimen, estatus, ... }] }
+        const suggestions = data?.suggestions || data?.data || (Array.isArray(data) ? data : []);
+        return suggestions.map(normalizeDGIIResult);
     } catch {
         return [];
     }
