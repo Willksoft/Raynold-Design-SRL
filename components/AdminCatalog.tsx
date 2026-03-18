@@ -71,16 +71,29 @@ const AdminCatalog: React.FC = () => {
   });
 
   const generatePages = useCallback(() => {
-    const pages: { type: 'cover' | 'toc' | 'products' | 'category-divider' | 'back'; products?: ProductItem[]; layout: PageLayout; categoryHeader?: string }[] = [];
+    const pages: { type: 'cover' | 'toc' | 'products' | 'back'; products?: ProductItem[]; layout: PageLayout; categoryHeader?: string }[] = [];
     pages.push({ type: 'cover', layout: config.pageLayout });
     if (config.showTOC && catalogProducts.length > 0) pages.push({ type: 'toc', layout: config.pageLayout });
     const ppp = getProductsPerPage(config.pageLayout);
+    // When showing category headers inline, the header takes space so fit fewer products on that page
+    const pppWithHeader = Math.max(1, ppp - (config.pageLayout === 'list' ? 1 : (config.pageLayout.startsWith('grid-3') ? 3 : (config.pageLayout === 'full' || config.pageLayout === 'magazine' ? 0 : 2))));
     if (config.sortMode === 'category') {
       const grouped: Record<string, ProductItem[]> = {};
       catalogProducts.forEach(p => { if (!grouped[p.category]) grouped[p.category] = []; grouped[p.category].push(p); });
       Object.entries(grouped).forEach(([cat, prods]) => {
-        if (config.showCategoryHeaders) pages.push({ type: 'category-divider', layout: config.pageLayout, categoryHeader: cat });
-        for (let i = 0; i < prods.length; i += ppp) pages.push({ type: 'products', products: prods.slice(i, i + ppp), layout: config.pageLayout, categoryHeader: !config.showCategoryHeaders && i === 0 ? cat : undefined });
+        if (config.showCategoryHeaders) {
+          // First page has category header + fewer products
+          const firstBatch = prods.slice(0, pppWithHeader);
+          pages.push({ type: 'products', products: firstBatch, layout: config.pageLayout, categoryHeader: cat });
+          // Remaining products in full pages
+          for (let i = pppWithHeader; i < prods.length; i += ppp) {
+            pages.push({ type: 'products', products: prods.slice(i, i + ppp), layout: config.pageLayout });
+          }
+        } else {
+          for (let i = 0; i < prods.length; i += ppp) {
+            pages.push({ type: 'products', products: prods.slice(i, i + ppp), layout: config.pageLayout });
+          }
+        }
       });
     } else {
       for (let i = 0; i < catalogProducts.length; i += ppp) pages.push({ type: 'products', products: catalogProducts.slice(i, i + ppp), layout: config.pageLayout });
@@ -283,13 +296,17 @@ const AdminCatalog: React.FC = () => {
     const grouped: Record<string, number> = {};
     let pg = config.showTOC ? 3 : 2;
     const ppp = getProductsPerPage(config.pageLayout);
+    const pppWithHeader = Math.max(1, ppp - (config.pageLayout === 'list' ? 1 : (config.pageLayout.startsWith('grid-3') ? 3 : (config.pageLayout === 'full' || config.pageLayout === 'magazine' ? 0 : 2))));
     if (config.sortMode === 'category') {
       const cats: Record<string, ProductItem[]> = {};
       catalogProducts.forEach(p => { if (!cats[p.category]) cats[p.category] = []; cats[p.category].push(p); });
       Object.entries(cats).forEach(([cat, prods]) => {
         grouped[cat] = pg;
-        if (config.showCategoryHeaders) pg++;
-        pg += Math.ceil(prods.length / ppp);
+        if (config.showCategoryHeaders) {
+          pg += 1 + Math.ceil(Math.max(0, prods.length - pppWithHeader) / ppp);
+        } else {
+          pg += Math.ceil(prods.length / ppp);
+        }
       });
     }
     return (
@@ -310,57 +327,73 @@ const AdminCatalog: React.FC = () => {
     );
   };
 
-  const renderCategoryDivider = (idx: number, cat: string) => (
-    <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '2in' }}>
-      <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '0 auto 25px', borderRadius: '2px' }} />
-      <p style={{ fontSize: '10px', fontWeight: 800, color: config.accentColor, letterSpacing: '4px', textTransform: 'uppercase', margin: '0 0 8px' }}>CATEGORÍA</p>
-      <h2 style={{ fontSize: '36px', fontWeight: 900, color: '#fff', letterSpacing: '2px', margin: 0 }}>{cat}</h2>
-      <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '25px auto 0', borderRadius: '2px' }} />
-    </div>
-  );
+
 
   const renderProductPage = (idx: number, prods: ProductItem[], catHeader?: string) => {
     const layout = config.pageLayout;
     const gridMap: Record<PageLayout, React.CSSProperties> = {
-      'grid-2x2': { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gridTemplateRows: 'repeat(2,1fr)', gap: '14px' },
-      'grid-2x3': { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gridTemplateRows: 'repeat(3,1fr)', gap: '10px' },
-      'grid-3x3': { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gridTemplateRows: 'repeat(3,1fr)', gap: '8px' },
+      'grid-2x2': { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gridTemplateRows: `repeat(2,1fr)`, gap: '14px' },
+      'grid-2x3': { display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gridTemplateRows: `repeat(3,1fr)`, gap: '10px' },
+      'grid-3x3': { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gridTemplateRows: `repeat(3,1fr)`, gap: '8px' },
       'list': { display: 'flex', flexDirection: 'column' as const },
       'full': { display: 'flex', flexDirection: 'column' as const, justifyContent: 'center' as const },
       'magazine': { display: 'grid', gridTemplateColumns: '1fr', gap: '14px' },
       'sidebar': { display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gridTemplateRows: '1fr 1fr', gap: '10px' },
     };
     const hdrStyle: Record<string, React.CSSProperties> = {
-      bar: { backgroundColor: config.accentColor, color: '#fff', padding: '6px 12px', borderRadius: '4px', fontSize: '13px', fontWeight: 800, margin: '0 0 10px' },
-      line: { borderBottom: `2px solid ${config.accentColor}`, paddingBottom: '4px', fontSize: '14px', fontWeight: 800, color: config.textColor, margin: '0 0 10px' },
-      block: { borderLeft: `4px solid ${config.accentColor}`, paddingLeft: '10px', fontSize: '14px', fontWeight: 800, color: config.textColor, margin: '0 0 10px' },
-      minimal: { fontSize: '12px', fontWeight: 800, color: config.accentColor, textTransform: 'uppercase' as const, letterSpacing: '2px', margin: '0 0 10px' },
+      bar: { backgroundColor: config.accentColor, color: '#fff', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 800, margin: '0 0 12px', letterSpacing: '1px' },
+      line: { borderBottom: `2px solid ${config.accentColor}`, paddingBottom: '6px', fontSize: '14px', fontWeight: 800, color: config.textColor, margin: '0 0 12px' },
+      block: { borderLeft: `4px solid ${config.accentColor}`, paddingLeft: '12px', fontSize: '14px', fontWeight: 800, color: config.textColor, margin: '0 0 12px' },
+      minimal: { fontSize: '12px', fontWeight: 800, color: config.accentColor, textTransform: 'uppercase' as const, letterSpacing: '2px', margin: '0 0 12px' },
     };
     return (
-      <div key={idx} style={{ ...PAGE, padding: '0.6in 0.65in', display: 'flex', flexDirection: 'column' }}>
-        {catHeader && <p style={hdrStyle[config.headerStyle]}>{catHeader}</p>}
-        <div style={{ flex: 1, ...gridMap[layout] }}>
+      <div key={idx} style={{ ...PAGE, padding: '0.5in 0.6in', display: 'flex', flexDirection: 'column' }}>
+        {catHeader && (
+          <div style={{ marginBottom: '6px', flexShrink: 0 }}>
+            <p style={hdrStyle[config.headerStyle]}>{catHeader}</p>
+          </div>
+        )}
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', ...gridMap[layout] }}>
           {prods.map(p => renderCard(p, layout))}
         </div>
-        {config.showPageNumbers && <div style={{ textAlign: 'center', paddingTop: '6px', borderTop: `1px solid ${config.textColor}10` }}><span style={{ fontSize: '8px', fontWeight: 700, color: config.accentColor, fontFamily: 'monospace' }}>{idx + 1}</span></div>}
+        {config.showPageNumbers && <div style={{ textAlign: 'center', paddingTop: '6px', borderTop: `1px solid ${config.textColor}10`, flexShrink: 0 }}><span style={{ fontSize: '8px', fontWeight: 700, color: config.accentColor, fontFamily: 'monospace' }}>{idx + 1}</span></div>}
       </div>
     );
   };
 
   const renderBack = (idx: number) => (
-    <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '2in' }}>
+    <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1.2in', position: 'relative' }}>
       {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '50px', marginBottom: '30px', objectFit: 'contain' }} />}
       <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '0 auto 30px', borderRadius: '2px' }} />
       <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginBottom: '25px', letterSpacing: '2px' }}>{config.subtitle}</h2>
       {config.backCoverText.split('\n').map((l, i) => <p key={i} style={{ fontSize: '11px', color: '#aaa', margin: '3px 0', lineHeight: 1.5 }}>{l}</p>)}
-      <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '30px auto 0', borderRadius: '2px' }} />
+      {/* Social Icons */}
+      <div style={{ display: 'flex', gap: '18px', marginTop: '40px', alignItems: 'center' }}>
+        {/* Instagram */}
+        <a href="https://instagram.com/raynolddesignsrl" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
+        {/* Facebook */}
+        <a href="https://facebook.com/raynolddesignsrl" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+        {/* WhatsApp */}
+        <a href="https://wa.me/18295807411" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </a>
+        {/* Website */}
+        <a href="https://raynolddesignssrl.com" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', borderRadius: '50%', border: `2px solid ${config.accentColor}40`, textDecoration: 'none', transition: 'all 0.2s' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={config.accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </a>
+      </div>
+      <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '35px auto 0', borderRadius: '2px' }} />
+      <p style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', marginTop: '20px' }}>© {new Date().getFullYear()} {config.subtitle}. Todos los derechos reservados.</p>
     </div>
   );
 
   const renderPage = (page: typeof pages[0], idx: number) => {
     if (page.type === 'cover') return renderCover(idx);
     if (page.type === 'toc') return renderTOC(idx);
-    if (page.type === 'category-divider') return renderCategoryDivider(idx, page.categoryHeader || '');
     if (page.type === 'back') return renderBack(idx);
     return renderProductPage(idx, page.products || [], page.categoryHeader);
   };
