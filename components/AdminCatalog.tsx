@@ -4,7 +4,7 @@ import {
   Check, X, ChevronRight, ChevronLeft, Plus, Minus, Image as ImageIcon,
   Hash, Columns, Rows, Square, Printer, Filter, Search,
   ToggleLeft, ToggleRight, Loader2, Sparkles, ArrowUpDown, Save, FolderOpen,
-  Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, ClipboardList
+  Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, ClipboardList, Edit2
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -33,6 +33,7 @@ const AdminCatalog: React.FC = () => {
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingCatalogId, setEditingCatalogId] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -144,23 +145,46 @@ const AdminCatalog: React.FC = () => {
   const handleSave = async () => {
     if (!saveName.trim()) return;
     setSaving(true);
-    const { data, error } = await supabase.from('saved_catalogs').insert([{
-      name: saveName.trim(), config, selected_product_ids: [...selectedProducts],
-    }]).select();
-    if (!error && data) setSavedCatalogs([data[0] as SavedCatalog, ...savedCatalogs]);
+    const row = { name: saveName.trim(), config, selected_product_ids: [...selectedProducts] };
+    if (editingCatalogId) {
+      // Update existing
+      const { error } = await supabase.from('saved_catalogs').update(row).eq('id', editingCatalogId);
+      if (!error) {
+        setSavedCatalogs(savedCatalogs.map(c => c.id === editingCatalogId ? { ...c, ...row } as SavedCatalog : c));
+      }
+    } else {
+      // Create new
+      const { data, error } = await supabase.from('saved_catalogs').insert([row]).select();
+      if (!error && data) {
+        const newCat = data[0] as SavedCatalog;
+        setSavedCatalogs([newCat, ...savedCatalogs]);
+        setEditingCatalogId(newCat.id);
+      }
+    }
     setSaving(false); setSaveModalOpen(false); setSaveName('');
   };
 
   const loadCatalog = (cat: SavedCatalog) => {
     setConfig({ ...DEFAULT_CONFIG, ...cat.config });
     setSelectedProducts(new Set(cat.selected_product_ids));
-    setActiveTab('preview');
+    setEditingCatalogId(cat.id);
+    setSaveName(cat.name);
+    setActiveTab('design');
+  };
+
+  const createNewCatalog = () => {
+    setConfig({ ...DEFAULT_CONFIG });
+    setSelectedProducts(new Set(products.map(p => p.id)));
+    setEditingCatalogId(null);
+    setSaveName('');
+    setActiveTab('templates');
   };
 
   const deleteCatalog = async (id: string) => {
     if (!window.confirm('¿Eliminar este catálogo guardado?')) return;
     await supabase.from('saved_catalogs').delete().eq('id', id);
     setSavedCatalogs(savedCatalogs.filter(c => c.id !== id));
+    if (editingCatalogId === id) { setEditingCatalogId(null); setSaveName(''); }
   };
 
   const [downloading, setDownloading] = useState(false);
@@ -427,13 +451,16 @@ const AdminCatalog: React.FC = () => {
             <BookOpen className="text-raynold-red" size={26} />
             <div>
               <h1 className="text-xl font-futuristic font-black text-white">CREADOR DE <span className="animate-gradient-text">CATÁLOGOS</span></h1>
-              <p className="text-[10px] text-gray-500">{selectedProducts.size} productos · {pages.length} páginas</p>
+              <p className="text-[10px] text-gray-500">
+                {editingCatalogId ? <><span className="text-raynold-green">Editando:</span> {savedCatalogs.find(c => c.id === editingCatalogId)?.name || saveName}</> : 'Nuevo catálogo'}
+                {' · '}{selectedProducts.size} productos · {pages.length} páginas
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex bg-black border border-white/10 rounded-lg p-0.5">
               {([
-                { key: 'templates' as const, label: 'Plantillas', icon: <Sparkles size={13} /> },
+                { key: 'templates' as const, label: 'Catálogos', icon: <FolderOpen size={13} /> },
                 { key: 'select' as const, label: 'Productos', icon: <Filter size={13} /> },
                 { key: 'design' as const, label: 'Diseño', icon: <Palette size={13} /> },
                 { key: 'preview' as const, label: 'Vista Previa', icon: <Eye size={13} /> },
@@ -444,7 +471,7 @@ const AdminCatalog: React.FC = () => {
                 </button>
               ))}
             </div>
-            <button onClick={() => setSaveModalOpen(true)} className="px-3 py-1.5 bg-green-500/20 text-green-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-green-500/30"><Save size={14} /> Guardar</button>
+            <button onClick={() => { setSaveModalOpen(true); if (editingCatalogId) { const c = savedCatalogs.find(s => s.id === editingCatalogId); if (c) setSaveName(c.name); } }} className="px-3 py-1.5 bg-green-500/20 text-green-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-green-500/30"><Save size={14} /> {editingCatalogId ? 'Guardar' : 'Guardar Nuevo'}</button>
             <button onClick={handleDownloadPdf} disabled={downloading} className="px-3 py-1.5 bg-rose-500/20 text-rose-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-rose-500/30 disabled:opacity-50">
               {downloading ? <><Loader2 size={14} className="animate-spin" /> Generando...</> : <><FileText size={14} /> PDF</>}
             </button>
@@ -458,13 +485,67 @@ const AdminCatalog: React.FC = () => {
         {activeTab === 'templates' && (
           <div className="w-full p-6 overflow-y-auto scrollbar-modern">
             <div className="max-w-5xl mx-auto">
-              <h2 className="text-lg font-bold text-white mb-1">Elige una Plantilla</h2>
-              <p className="text-xs text-gray-500 mb-6">Selecciona un diseño base y personalízalo a tu gusto</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+              {/* Saved Catalogs List - Primary */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2"><FolderOpen size={18} className="text-raynold-red" /> Mis Catálogos ({savedCatalogs.length})</h2>
+                  <p className="text-xs text-gray-500">Selecciona un catálogo para editarlo o crea uno nuevo</p>
+                </div>
+                <button onClick={createNewCatalog} className="px-4 py-2 bg-raynold-red hover:bg-red-700 text-white font-bold rounded-lg text-sm flex items-center gap-2 transition-colors">
+                  <Plus size={16} /> Nuevo Catálogo
+                </button>
+              </div>
+
+              {savedCatalogs.length > 0 ? (
+                <div className="space-y-2 mb-10">
+                  {savedCatalogs.map(sc => (
+                    <div key={sc.id} className={`flex items-center gap-4 bg-[#0A0A0A] border rounded-xl p-4 transition-all cursor-pointer hover:border-raynold-red/40 group ${
+                      editingCatalogId === sc.id ? 'border-raynold-red shadow-[0_0_15px_rgba(230,0,0,0.15)]' : 'border-white/10'
+                    }`} onClick={() => loadCatalog(sc)}>
+                      {/* Mini cover preview */}
+                      <div className="w-14 h-18 rounded-lg overflow-hidden border border-white/10 shrink-0" style={{ background: (sc.config as CatalogConfig).coverGradient }}>
+                        <div className="w-full h-full flex items-center justify-center">
+                          {(sc.config as CatalogConfig).logoUrl ? 
+                            <img src={(sc.config as CatalogConfig).logoUrl} alt="" className="w-8 h-8 object-contain" /> :
+                            <BookOpen size={16} className="text-white/40" />
+                          }
+                        </div>
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-white truncate">{sc.name}</h3>
+                          {editingCatalogId === sc.id && <span className="px-1.5 py-0.5 bg-raynold-green/20 text-raynold-green text-[8px] font-bold rounded">EDITANDO</span>}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-[10px] text-gray-500 flex items-center gap-1"><Clock size={9} /> {new Date(sc.created_at).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                          <span className="text-[10px] text-gray-500">{(sc.selected_product_ids || []).length} productos</span>
+                          <span className="text-[10px] text-gray-500 capitalize">{(sc.config as CatalogConfig).templateId?.replace(/-/g, ' ')}</span>
+                        </div>
+                      </div>
+                      {/* Actions */}
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => loadCatalog(sc)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-[10px] font-bold hover:bg-blue-500/30 flex items-center gap-1"><Edit2 size={11} /> Editar</button>
+                        <button onClick={() => deleteCatalog(sc.id)} className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"><Trash2 size={13} /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-[#0A0A0A] border border-white/10 rounded-xl mb-10">
+                  <BookOpen size={40} className="text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No hay catálogos guardados aún.</p>
+                  <p className="text-gray-600 text-xs mt-1">Crea tu primer catálogo con el botón de arriba.</p>
+                </div>
+              )}
+
+              {/* Templates */}
+              <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles size={18} className="text-raynold-red" /> Plantillas de Diseño</h2>
+              <p className="text-xs text-gray-500 mb-4">Aplica un estilo base al catálogo actual</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {TEMPLATES.map(tpl => (
                   <button key={tpl.id} onClick={() => applyTemplate(tpl)}
                     className={`text-left rounded-xl border-2 overflow-hidden transition-all group hover:border-raynold-red/50 ${config.templateId === tpl.id ? 'border-raynold-red shadow-[0_0_15px_rgba(230,0,0,0.2)]' : 'border-white/10'}`}>
-                    {/* Mini Preview */}
                     <div className="h-36 relative overflow-hidden" style={{ background: tpl.defaults.coverGradient }}>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                         <div style={{ width: '25px', height: '2px', backgroundColor: tpl.defaults.accentColor, marginBottom: '8px', borderRadius: '1px' }} />
@@ -480,31 +561,6 @@ const AdminCatalog: React.FC = () => {
                   </button>
                 ))}
               </div>
-
-              {/* Saved Catalogs */}
-              <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><FolderOpen size={18} className="text-raynold-red" /> Catálogos Guardados ({savedCatalogs.length})</h2>
-              <p className="text-xs text-gray-500 mb-4">Carga un catálogo guardado previamente</p>
-              {savedCatalogs.length === 0 ? (
-                <p className="text-gray-500 text-sm text-center py-8 bg-[#0A0A0A] border border-white/10 rounded-xl">No hay catálogos guardados aún.</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {savedCatalogs.map(sc => (
-                    <div key={sc.id} className="bg-[#0A0A0A] border border-white/10 rounded-xl overflow-hidden hover:border-raynold-red/30 transition-colors group">
-                      <div className="h-20 flex items-center justify-center" style={{ background: (sc.config as CatalogConfig).coverGradient }}>
-                        <BookOpen size={24} className="text-white/50" />
-                      </div>
-                      <div className="p-3">
-                        <p className="text-xs font-bold text-white truncate">{sc.name}</p>
-                        <p className="text-[9px] text-gray-500 flex items-center gap-1 mt-1"><Clock size={9} />{new Date(sc.created_at).toLocaleDateString('es-DO', { day: '2-digit', month: 'short' })}</p>
-                        <div className="flex gap-1 mt-2">
-                          <button onClick={() => loadCatalog(sc)} className="flex-1 py-1 bg-blue-500/20 text-blue-400 rounded text-[9px] font-bold hover:bg-blue-500/30">Cargar</button>
-                          <button onClick={() => deleteCatalog(sc.id)} className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30"><Trash2 size={11} /></button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -773,11 +829,11 @@ const AdminCatalog: React.FC = () => {
       {saveModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><Save size={20} className="text-raynold-green" /> Guardar Catálogo</h3>
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><Save size={20} className="text-raynold-green" /> {editingCatalogId ? 'Actualizar Catálogo' : 'Guardar Nuevo Catálogo'}</h3>
             <input type="text" value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="Nombre del catálogo..." className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white mb-4" autoFocus onKeyDown={e => e.key === 'Enter' && handleSave()} />
             <div className="flex gap-3">
               <button onClick={() => { setSaveModalOpen(false); setSaveName(''); }} className="flex-1 py-2.5 rounded-lg font-bold text-gray-400 hover:text-white">Cancelar</button>
-              <button onClick={handleSave} disabled={saving || !saveName.trim()} className="flex-1 py-2.5 bg-raynold-green text-black font-bold rounded-lg disabled:opacity-50 flex items-center justify-center gap-2">{saving ? 'Guardando...' : <><Save size={16} /> Guardar</>}</button>
+              <button onClick={handleSave} disabled={saving || !saveName.trim()} className="flex-1 py-2.5 bg-raynold-green text-black font-bold rounded-lg disabled:opacity-50 flex items-center justify-center gap-2">{saving ? 'Guardando...' : <><Save size={16} /> {editingCatalogId ? 'Actualizar' : 'Guardar'}</>}</button>
             </div>
           </div>
         </div>
