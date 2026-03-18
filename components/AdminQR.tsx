@@ -199,10 +199,12 @@ const AdminQR: React.FC = () => {
     const fname = `QR-${saveName.replace(/\s+/g, '-')}-${Date.now()}`;
 
     if (format === 'svg') {
-      const svgEl = container.querySelector('svg');
-      if (!svgEl) return;
-      const svgData = new XMLSerializer().serializeToString(svgEl);
-      const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const canvas = await html2canvas(container, { scale: 3, useCORS: true, allowTaint: true, backgroundColor: null, logging: false });
+      const imgData = canvas.toDataURL('image/png');
+      const w = canvas.width;
+      const h = canvas.height;
+      const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><image href="${imgData}" width="${w}" height="${h}"/></svg>`;
+      const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = `${fname}.svg`; a.click();
