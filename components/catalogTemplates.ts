@@ -2,6 +2,8 @@
 export type PageLayout = 'grid-2x2' | 'grid-2x3' | 'grid-3x3' | 'list' | 'full' | 'magazine' | 'sidebar';
 export type SortMode = 'category' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc';
 export type FontFamily = 'Inter' | 'Montserrat' | 'Playfair Display' | 'Roboto' | 'Outfit';
+export type CoverStyle = 'centered' | 'left-block' | 'split-diagonal' | 'photo-circle' | 'bold-bottom' | 'minimal-frame' | 'landscape-wave' | 'landscape-corporate';
+export type PageOrientation = 'portrait' | 'landscape';
 
 export interface CatalogConfig {
   title: string;
@@ -33,14 +35,18 @@ export interface CatalogConfig {
   fontFamily: FontFamily;
   fontSize: 'sm' | 'md' | 'lg';
   coverGradient: string;
+  coverStyle: CoverStyle;
+  orientation: PageOrientation;
   headerStyle: 'bar' | 'line' | 'block' | 'minimal';
   productCardStyle: 'clean' | 'bordered' | 'shadow' | 'accent';
+  isDraft: boolean;
 }
 
 export interface CatalogTemplate {
   id: string;
   name: string;
   description: string;
+  orientation: PageOrientation;
   coverPreview: { bg: string; accent: string; text: string; style: string };
   defaults: Partial<CatalogConfig>;
 }
@@ -60,67 +66,108 @@ export const TEMPLATES: CatalogTemplate[] = [
   {
     id: 'classic-bw',
     name: 'Clásico B/N',
-    description: 'Elegante blanco y negro con detalles minimalistas',
+    description: 'Elegante blanco y negro con círculo decorativo y layout minimalista',
+    orientation: 'portrait',
     coverPreview: { bg: '#0A0A0A', accent: '#ffffff', text: '#ffffff', style: 'dark' },
     defaults: {
       pageColor: '#ffffff', textColor: '#111111', accentColor: '#000000', secondaryColor: '#666666',
-      coverGradient: 'linear-gradient(180deg, #0A0A0A 0%, #1a1a1a 100%)',
+      coverGradient: 'linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)',
+      coverStyle: 'photo-circle', orientation: 'portrait',
       fontFamily: 'Inter', headerStyle: 'line', productCardStyle: 'clean',
     },
   },
   {
     id: 'corporate-red',
     name: 'Corporativo Rojo',
-    description: 'Profesional con acentos rojos tipo Raynold',
+    description: 'Profesional con bloque inferior rojo tipo Raynold',
+    orientation: 'portrait',
     coverPreview: { bg: '#E60000', accent: '#0A0A0A', text: '#ffffff', style: 'red' },
     defaults: {
       pageColor: '#ffffff', textColor: '#111111', accentColor: '#E60000', secondaryColor: '#333333',
       coverGradient: 'linear-gradient(135deg, #0A0A0A 0%, #1a0000 50%, #E60000 100%)',
+      coverStyle: 'bold-bottom', orientation: 'portrait',
       fontFamily: 'Montserrat', headerStyle: 'block', productCardStyle: 'accent',
     },
   },
   {
     id: 'modern-diagonal',
     name: 'Moderno Diagonal',
-    description: 'Diseño con formas diagonales y colores vibrantes',
+    description: 'Bloques diagonales con diseño geométrico y dividido',
+    orientation: 'portrait',
     coverPreview: { bg: '#1a1a2e', accent: '#E60000', text: '#ffffff', style: 'diagonal' },
     defaults: {
       pageColor: '#ffffff', textColor: '#111111', accentColor: '#E60000', secondaryColor: '#1a1a2e',
       coverGradient: 'linear-gradient(135deg, #ffffff 60%, #E60000 60%, #E60000 100%)',
+      coverStyle: 'split-diagonal', orientation: 'portrait',
       fontFamily: 'Outfit', headerStyle: 'bar', productCardStyle: 'bordered',
     },
   },
   {
     id: 'luxury-gold',
     name: 'Lujo Dorado',
-    description: 'Premium con detalles dorados sobre fondo oscuro',
+    description: 'Premium con marco decorativo y detalles dorados',
+    orientation: 'portrait',
     coverPreview: { bg: '#0A0A0A', accent: '#D4A017', text: '#ffffff', style: 'gold' },
     defaults: {
       pageColor: '#fafaf8', textColor: '#1a1a1a', accentColor: '#D4A017', secondaryColor: '#0A0A0A',
       coverGradient: 'linear-gradient(135deg, #0A0A0A 0%, #1a1500 50%, #D4A017 100%)',
+      coverStyle: 'minimal-frame', orientation: 'portrait',
       fontFamily: 'Playfair Display', headerStyle: 'line', productCardStyle: 'shadow',
     },
   },
   {
-    id: 'fresh-wave',
-    name: 'Onda Fresca',
-    description: 'Curvas suaves con colores vivos y modernos',
-    coverPreview: { bg: '#f59e0b', accent: '#0A0A0A', text: '#0A0A0A', style: 'wave' },
+    id: 'bold-catalog',
+    name: 'Catálogo Bold',
+    description: 'Fondo oscuro con título grande y bloques de color llamativos',
+    orientation: 'portrait',
+    coverPreview: { bg: '#1a1a1a', accent: '#f59e0b', text: '#ffffff', style: 'wave' },
     defaults: {
-      pageColor: '#ffffff', textColor: '#0A0A0A', accentColor: '#f59e0b', secondaryColor: '#0A0A0A',
-      coverGradient: 'linear-gradient(180deg, #0A0A0A 55%, #f59e0b 55%)',
-      fontFamily: 'Roboto', headerStyle: 'block', productCardStyle: 'clean',
+      pageColor: '#ffffff', textColor: '#0A0A0A', accentColor: '#f59e0b', secondaryColor: '#1a1a1a',
+      coverGradient: 'linear-gradient(180deg, #1a1a1a 60%, #f59e0b 60%)',
+      coverStyle: 'left-block', orientation: 'portrait',
+      fontFamily: 'Roboto', headerStyle: 'block', productCardStyle: 'accent',
     },
   },
   {
     id: 'minimal-clean',
     name: 'Minimal Limpio',
-    description: 'Ultra minimalista con mucho espacio blanco',
+    description: 'Ultra minimalista con mucho espacio blanco y texto centrado',
+    orientation: 'portrait',
     coverPreview: { bg: '#ffffff', accent: '#111111', text: '#111111', style: 'light' },
     defaults: {
       pageColor: '#ffffff', textColor: '#111111', accentColor: '#111111', secondaryColor: '#999999',
       coverGradient: 'linear-gradient(180deg, #ffffff 0%, #f5f5f5 100%)',
+      coverStyle: 'centered', orientation: 'portrait',
       fontFamily: 'Inter', headerStyle: 'minimal', productCardStyle: 'clean',
+    },
+  },
+  // --- LANDSCAPE TEMPLATES ---
+  {
+    id: 'landscape-pink',
+    name: 'Paisaje Rosa',
+    description: 'Horizontal con bloque lateral de color y diseño tipo brochure',
+    orientation: 'landscape',
+    coverPreview: { bg: '#c2185b', accent: '#ffffff', text: '#ffffff', style: 'landscape' },
+    defaults: {
+      pageColor: '#ffffff', textColor: '#111111', accentColor: '#c2185b', secondaryColor: '#555',
+      coverGradient: 'linear-gradient(90deg, #f5f5f5 55%, #c2185b 55%)',
+      coverStyle: 'landscape-corporate', orientation: 'landscape',
+      fontFamily: 'Montserrat', headerStyle: 'bar', productCardStyle: 'bordered',
+      pageLayout: 'grid-3x3',
+    },
+  },
+  {
+    id: 'landscape-wave',
+    name: 'Paisaje Curvas',
+    description: 'Horizontal con formas curvadas y estilo empresarial moderno',
+    orientation: 'landscape',
+    coverPreview: { bg: '#333', accent: '#D4A017', text: '#ffffff', style: 'landscape' },
+    defaults: {
+      pageColor: '#ffffff', textColor: '#111111', accentColor: '#D4A017', secondaryColor: '#333333',
+      coverGradient: 'linear-gradient(135deg, #ffffff 50%, #333 50%)',
+      coverStyle: 'landscape-wave', orientation: 'landscape',
+      fontFamily: 'Roboto', headerStyle: 'line', productCardStyle: 'shadow',
+      pageLayout: 'grid-2x3',
     },
   },
 ];
@@ -155,8 +202,11 @@ export const DEFAULT_CONFIG: CatalogConfig = {
   fontFamily: 'Montserrat',
   fontSize: 'md',
   coverGradient: 'linear-gradient(135deg, #0A0A0A 0%, #1a0000 50%, #E60000 100%)',
+  coverStyle: 'bold-bottom',
+  orientation: 'portrait',
   headerStyle: 'block',
   productCardStyle: 'accent',
+  isDraft: false,
 };
 
 export const LAYOUT_OPTIONS = [

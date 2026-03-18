@@ -11,7 +11,7 @@ import { jsPDF } from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
 import { ProductItem } from '../types';
 import {
-  CatalogConfig, PageLayout, DEFAULT_CONFIG, TEMPLATES, GRADIENT_PRESETS,
+  CatalogConfig, PageLayout, CoverStyle, PageOrientation, DEFAULT_CONFIG, TEMPLATES, GRADIENT_PRESETS,
   LAYOUT_OPTIONS, FONTS, getProductsPerPage
 } from './catalogTemplates';
 
@@ -34,6 +34,7 @@ const AdminCatalog: React.FC = () => {
   const [saveName, setSaveName] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingCatalogId, setEditingCatalogId] = useState<string | null>(null);
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -184,11 +185,26 @@ const AdminCatalog: React.FC = () => {
   };
 
   const createNewCatalog = () => {
-    setConfig({ ...DEFAULT_CONFIG });
+    setTemplatePickerOpen(true);
+  };
+
+  const selectTemplateAndCreate = (tpl: typeof TEMPLATES[0]) => {
+    const newConfig = { ...DEFAULT_CONFIG, ...tpl.defaults, templateId: tpl.id };
+    setConfig(newConfig);
     setSelectedProducts(new Set(products.map(p => p.id)));
     setEditingCatalogId(null);
     setSaveName('');
-    setActiveTab('templates');
+    setTemplatePickerOpen(false);
+    setActiveTab('select');
+  };
+
+  const toggleDraft = async () => {
+    const newDraft = !config.isDraft;
+    setConfig({ ...config, isDraft: newDraft });
+    if (editingCatalogId) {
+      await supabase.from('saved_catalogs').update({ config: { ...config, isDraft: newDraft } }).eq('id', editingCatalogId);
+      setSavedCatalogs(savedCatalogs.map(c => c.id === editingCatalogId ? { ...c, config: { ...c.config, isDraft: newDraft } } as SavedCatalog : c));
+    }
   };
 
   const deleteCatalog = async (id: string) => {
@@ -254,7 +270,8 @@ const AdminCatalog: React.FC = () => {
       }
 
       // 8.5x11 inches at 96dpi = 816x1056px, scale 2x for quality
-      const pdf = new jsPDF({ orientation: 'p', unit: 'in', format: 'letter' });
+      const isLand = config.orientation === 'landscape';
+      const pdf = new jsPDF({ orientation: isLand ? 'l' : 'p', unit: 'in', format: 'letter' });
 
       for (let i = 0; i < pageElements.length; i++) {
         const el = pageElements[i] as HTMLElement;
@@ -290,7 +307,8 @@ const AdminCatalog: React.FC = () => {
   };
 
   const fs = { sm: { t: '10px', b: '8px', h: '14px' }, md: { t: '12px', b: '9px', h: '16px' }, lg: { t: '14px', b: '11px', h: '18px' } }[config.fontSize];
-  const PAGE: React.CSSProperties = { width: '8.5in', height: '11in', backgroundColor: config.pageColor, fontFamily: `'${config.fontFamily}',sans-serif`, position: 'relative', overflow: 'hidden', flexShrink: 0, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', pageBreakAfter: 'always' };
+  const isLandscape = config.orientation === 'landscape';
+  const PAGE: React.CSSProperties = { width: isLandscape ? '11in' : '8.5in', height: isLandscape ? '8.5in' : '11in', backgroundColor: config.pageColor, fontFamily: `'${config.fontFamily}',sans-serif`, position: 'relative', overflow: 'hidden', flexShrink: 0, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', pageBreakAfter: 'always' };
 
   const renderCard = (p: ProductItem, layout: PageLayout) => {
     const isList = layout === 'list';
@@ -326,19 +344,151 @@ const AdminCatalog: React.FC = () => {
     );
   };
 
-  const renderCover = (idx: number) => (
-    <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1in', position: 'relative' }}>
-      {config.coverImage && <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 }} />}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {config.logoUrl && <img src={config.logoUrl} alt="Logo" style={{ height: '60px', marginBottom: '40px', objectFit: 'contain' }} />}
-        <div style={{ width: '60px', height: '3px', backgroundColor: config.accentColor, margin: '0 auto 30px', borderRadius: '2px' }} />
-        <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#fff', letterSpacing: '3px', lineHeight: 1.1, margin: '0 0 12px' }}>{config.title}</h1>
-        <p style={{ fontSize: '14px', fontWeight: 300, color: config.accentColor, letterSpacing: '5px', textTransform: 'uppercase' }}>{config.subtitle}</p>
-        <div style={{ width: '60px', height: '3px', backgroundColor: config.accentColor, margin: '30px auto 0', borderRadius: '2px' }} />
-        <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '50px' }}>{new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long' })}</p>
+  const coverDate = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long' });
+  const renderCover = (idx: number) => {
+    const cs = config.coverStyle || 'centered';
+    const bgImg = config.coverImage ? { position: 'absolute' as const, inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 } : undefined;
+
+    if (cs === 'centered') return (
+      <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1in' }}>
+        {bgImg && <div style={bgImg} />}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '60px', marginBottom: '40px', objectFit: 'contain' }} />}
+          <div style={{ width: '60px', height: '3px', backgroundColor: config.accentColor, margin: '0 auto 30px' }} />
+          <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#fff', letterSpacing: '3px', lineHeight: 1.1, margin: '0 0 12px' }}>{config.title}</h1>
+          <p style={{ fontSize: '14px', fontWeight: 300, color: config.accentColor, letterSpacing: '5px', textTransform: 'uppercase' }}>{config.subtitle}</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+
+    if (cs === 'left-block') return (
+      <div key={idx} style={{ ...PAGE, background: config.secondaryColor, display: 'flex', position: 'relative' }}>
+        {bgImg && <div style={bgImg} />}
+        <div style={{ width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '1in 0.8in', position: 'relative', zIndex: 1 }}>
+          <div>{config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '40px', objectFit: 'contain', marginBottom: '20px' }} />}</div>
+          <div>
+            <p style={{ fontSize: '11px', color: config.accentColor, textTransform: 'uppercase', letterSpacing: '3px', marginBottom: '8px' }}>{config.subtitle}</p>
+            <h1 style={{ fontSize: '48px', fontWeight: 900, color: '#fff', lineHeight: 1, margin: '0 0 20px' }}>CATALOG</h1>
+            <div style={{ width: '50px', height: '4px', backgroundColor: config.accentColor }} />
+            <p style={{ fontSize: '9px', color: '#fff8', marginTop: '30px' }}>{coverDate}</p>
+          </div>
+          <div />
+        </div>
+        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative' }}>
+          {config.coverImage && <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', mixBlendMode: 'multiply', opacity: 0.6 }} />}
+        </div>
+      </div>
+    );
+
+    if (cs === 'split-diagonal') return (
+      <div key={idx} style={{ ...PAGE, background: '#fff', position: 'relative', overflow: 'hidden' }}>
+        {/* Diagonal block */}
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '55%', height: '100%', backgroundColor: config.accentColor, clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0 100%)' }} />
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', backgroundColor: config.secondaryColor, clipPath: 'polygon(20% 0, 100% 0, 100% 100%, 5% 100%)' }} />
+        <div style={{ position: 'relative', zIndex: 1, padding: '1in', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>{config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '35px', objectFit: 'contain' }} />}
+            <p style={{ fontSize: '9px', color: '#888', marginTop: '8px' }}>{coverDate}</p>
+          </div>
+          <div style={{ maxWidth: '45%' }}>
+            <h1 style={{ fontSize: '36px', fontWeight: 900, color: config.textColor, lineHeight: 1.1, margin: '0 0 15px' }}>Product<br /><span style={{ color: config.accentColor }}>Catalog</span></h1>
+            <div style={{ width: '40px', height: '3px', backgroundColor: config.accentColor, marginBottom: '15px' }} />
+            <p style={{ fontSize: '10px', color: '#666', lineHeight: 1.5 }}>{config.subtitle}</p>
+          </div>
+          <div />
+        </div>
+      </div>
+    );
+
+    if (cs === 'photo-circle') return (
+      <div key={idx} style={{ ...PAGE, background: '#fff', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '45%', backgroundColor: config.secondaryColor }} />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0.8in 1in', height: '100%' }}>
+          <div style={{ alignSelf: 'flex-start', marginBottom: '10px' }}>
+            <p style={{ fontSize: '10px', fontWeight: 900, color: config.accentColor, letterSpacing: '2px', textTransform: 'uppercase' }}>PRODUCT</p>
+            <h1 style={{ fontSize: '42px', fontWeight: 900, color: '#fff', lineHeight: 1, margin: 0 }}>CATALOG</h1>
+          </div>
+          <div style={{ width: '280px', height: '280px', borderRadius: '50%', backgroundColor: '#e0e0e0', marginTop: 'auto', marginBottom: 'auto', overflow: 'hidden', border: '6px solid #fff', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
+            {config.coverImage ? <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', backgroundColor: '#d0d0d0' }} />}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 'auto' }}>
+            {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain', marginBottom: '10px' }} />}
+            <p style={{ fontSize: '10px', color: '#666', fontWeight: 700 }}>{config.subtitle}</p>
+            <p style={{ fontSize: '9px', color: '#999' }}>{coverDate}</p>
+          </div>
+        </div>
+      </div>
+    );
+
+    if (cs === 'bold-bottom') return (
+      <div key={idx} style={{ ...PAGE, background: '#fff', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ flex: 1, position: 'relative', padding: '0.8in 1in' }}>
+          {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain' }} />}
+          <div style={{ width: '60%', height: '1px', backgroundColor: config.accentColor, margin: '15px 0' }} />
+          {config.coverImage && <div style={{ position: 'absolute', top: '1.2in', right: '0.8in', width: '55%', height: '60%', borderRadius: '8px', overflow: 'hidden', border: `3px solid ${config.accentColor}20` }}>
+            <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>}
+        </div>
+        <div style={{ backgroundColor: config.accentColor, padding: '0.8in 1in 0.6in', position: 'relative' }}>
+          <h1 style={{ fontSize: '38px', fontWeight: 900, color: '#fff', lineHeight: 1.1, margin: '0 0 8px' }}>{config.title.replace('CATÁLOGO DE ', '').replace('PRODUCTOS', '')}</h1>
+          <h2 style={{ fontSize: '34px', fontWeight: 900, color: '#fff', lineHeight: 1.1, margin: 0 }}>CATALOG</h2>
+          <p style={{ fontSize: '10px', color: '#fff9', marginTop: '15px' }}>{config.subtitle}</p>
+          <p style={{ fontSize: '9px', color: '#fff6', position: 'absolute', bottom: '20px', right: '1in' }}>{coverDate}</p>
+        </div>
+      </div>
+    );
+
+    if (cs === 'minimal-frame') return (
+      <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1in' }}>
+        {bgImg && <div style={bgImg} />}
+        <div style={{ position: 'relative', zIndex: 1, border: `2px solid ${config.accentColor}50`, padding: '60px 50px', textAlign: 'center', width: '80%' }}>
+          {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '50px', objectFit: 'contain', marginBottom: '30px' }} />}
+          <div style={{ width: '40px', height: '2px', backgroundColor: config.accentColor, margin: '0 auto 25px' }} />
+          <h1 style={{ fontSize: '28px', fontWeight: 300, color: '#fff', letterSpacing: '6px', textTransform: 'uppercase', margin: '0 0 8px' }}>Product</h1>
+          <h2 style={{ fontSize: '40px', fontWeight: 900, color: config.accentColor, letterSpacing: '4px', margin: '0 0 25px' }}>CATALOG</h2>
+          <div style={{ width: '40px', height: '2px', backgroundColor: config.accentColor, margin: '0 auto 15px' }} />
+          <p style={{ fontSize: '10px', color: '#fff8', letterSpacing: '3px' }}>{config.subtitle}</p>
+          <p style={{ fontSize: '9px', color: '#fff5', marginTop: '25px' }}>{coverDate}</p>
+        </div>
+      </div>
+    );
+
+    if (cs === 'landscape-corporate') return (
+      <div key={idx} style={{ ...PAGE, background: '#f5f5f5', display: 'flex', position: 'relative' }}>
+        <div style={{ width: '55%', padding: '0.8in', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>{config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '35px', objectFit: 'contain' }} />}</div>
+          <div>
+            <p style={{ fontSize: '10px', color: '#999', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '8px' }}>{config.subtitle}</p>
+            <h1 style={{ fontSize: '42px', fontWeight: 900, color: config.textColor, lineHeight: 1.1, margin: 0 }}>PRODUCT<br /><span style={{ color: config.accentColor }}>CATALOG</span></h1>
+            <div style={{ width: '50px', height: '3px', backgroundColor: config.accentColor, margin: '15px 0' }} />
+            <p style={{ fontSize: '9px', color: '#999' }}>{coverDate}</p>
+          </div>
+          <div />
+        </div>
+        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative' }}>
+          {config.coverImage ? <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} /> : null}
+        </div>
+      </div>
+    );
+
+    // landscape-wave
+    return (
+      <div key={idx} style={{ ...PAGE, background: '#fff', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', backgroundColor: config.secondaryColor, clipPath: 'ellipse(70% 80% at 70% 50%)' }} />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', height: '100%' }}>
+          <div style={{ width: '50%', padding: '0.8in', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '35px', objectFit: 'contain', alignSelf: 'flex-start', marginBottom: '25px' }} />}
+            <p style={{ fontSize: '10px', color: config.accentColor, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '6px' }}>{config.subtitle}</p>
+            <h1 style={{ fontSize: '36px', fontWeight: 900, color: config.textColor, lineHeight: 1.1, margin: '0 0 15px' }}>Business<br />Brochure</h1>
+            <div style={{ width: '40px', height: '3px', backgroundColor: config.accentColor, marginBottom: '15px' }} />
+            <p style={{ fontSize: '9px', color: '#888', lineHeight: 1.5, maxWidth: '80%' }}>{config.title}</p>
+          </div>
+          <div style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {config.coverImage && <div style={{ width: '70%', aspectRatio: '4/3', borderRadius: '12px', overflow: 'hidden' }}><img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderTOC = (idx: number) => {
     const grouped: Record<string, number> = {};
@@ -477,7 +627,9 @@ const AdminCatalog: React.FC = () => {
               <h1 className="text-xl font-futuristic font-black text-white">CREADOR DE <span className="animate-gradient-text">CATÁLOGOS</span></h1>
               <p className="text-[10px] text-gray-500">
                 {editingCatalogId ? <><span className="text-raynold-green">Editando:</span> {savedCatalogs.find(c => c.id === editingCatalogId)?.name || saveName}</> : 'Nuevo catálogo'}
+                {config.isDraft && <span className="ml-2 px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[8px] font-bold rounded">BORRADOR</span>}
                 {' · '}{selectedProducts.size} productos · {pages.length} páginas
+                {config.orientation === 'landscape' && <span className="ml-1 text-blue-400"> · Horizontal</span>}
               </p>
             </div>
           </div>
@@ -495,6 +647,7 @@ const AdminCatalog: React.FC = () => {
                 </button>
               ))}
             </div>
+            <button onClick={toggleDraft} className={`px-3 py-1.5 font-bold rounded-lg text-[11px] flex items-center gap-1.5 transition-all ${config.isDraft ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30'}`}>{config.isDraft ? <ToggleRight size={14} /> : <ToggleLeft size={14} />} Borrador</button>
             <button onClick={() => { setSaveModalOpen(true); if (editingCatalogId) { const c = savedCatalogs.find(s => s.id === editingCatalogId); if (c) setSaveName(c.name); } }} className="px-3 py-1.5 bg-green-500/20 text-green-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-green-500/30"><Save size={14} /> {editingCatalogId ? 'Guardar' : 'Guardar Nuevo'}</button>
             {editingCatalogId && <button onClick={() => { setEditingCatalogId(null); setSaveName(''); setSaveModalOpen(true); }} className="px-3 py-1.5 bg-purple-500/20 text-purple-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-purple-500/30"><Copy size={14} /> Guardar como Nuevo</button>}
             <button onClick={handleDownloadPdf} disabled={downloading} className="px-3 py-1.5 bg-rose-500/20 text-rose-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-rose-500/30 disabled:opacity-50">
@@ -541,6 +694,8 @@ const AdminCatalog: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-bold text-white truncate">{sc.name}</h3>
                           {editingCatalogId === sc.id && <span className="px-1.5 py-0.5 bg-raynold-green/20 text-raynold-green text-[8px] font-bold rounded">EDITANDO</span>}
+                          {(sc.config as CatalogConfig).isDraft && <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[8px] font-bold rounded">BORRADOR</span>}
+                          {(sc.config as CatalogConfig).orientation === 'landscape' && <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[8px] font-bold rounded">HORIZONTAL</span>}
                         </div>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-[10px] text-gray-500 flex items-center gap-1"><Clock size={9} /> {new Date(sc.created_at).toLocaleDateString('es-DO', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
@@ -568,24 +723,101 @@ const AdminCatalog: React.FC = () => {
               {/* Templates */}
               <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2"><Sparkles size={18} className="text-raynold-red" /> Plantillas de Diseño</h2>
               <p className="text-xs text-gray-500 mb-4">Aplica un estilo base al catálogo actual</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {TEMPLATES.map(tpl => (
-                  <button key={tpl.id} onClick={() => applyTemplate(tpl)}
-                    className={`text-left rounded-xl border-2 overflow-hidden transition-all group hover:border-raynold-red/50 ${config.templateId === tpl.id ? 'border-raynold-red shadow-[0_0_15px_rgba(230,0,0,0.2)]' : 'border-white/10'}`}>
-                    <div className="h-36 relative overflow-hidden" style={{ background: tpl.defaults.coverGradient }}>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-                        <div style={{ width: '25px', height: '2px', backgroundColor: tpl.defaults.accentColor, marginBottom: '8px', borderRadius: '1px' }} />
-                        <p style={{ fontSize: '10px', fontWeight: 900, color: '#fff', letterSpacing: '1px' }}>PRODUCT CATALOG</p>
-                        <p style={{ fontSize: '7px', color: tpl.defaults.accentColor, letterSpacing: '2px', marginTop: '3px' }}>COMPANY</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {TEMPLATES.map(tpl => {
+                  const isLand = tpl.orientation === 'landscape';
+                  const accent = tpl.defaults.accentColor || '#E60000';
+                  const secondary = tpl.defaults.secondaryColor || '#333';
+                  const cs = tpl.defaults.coverStyle || 'centered';
+                  return (
+                    <button key={tpl.id} onClick={() => applyTemplate(tpl)}
+                      className={`text-left rounded-xl border-2 overflow-hidden transition-all group hover:border-raynold-red/50 ${config.templateId === tpl.id ? 'border-raynold-red shadow-[0_0_15px_rgba(230,0,0,0.2)]' : 'border-white/10'}`}>
+                      <div className={`relative overflow-hidden ${isLand ? 'h-24' : 'h-36'}`} style={{ background: tpl.defaults.coverGradient }}>
+                        {/* Distinct layouts per style */}
+                        {cs === 'centered' && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                            <div style={{ width: '25px', height: '2px', backgroundColor: accent, marginBottom: '6px' }} />
+                            <p style={{ fontSize: '10px', fontWeight: 900, color: '#fff', letterSpacing: '1px' }}>CATALOG</p>
+                            <p style={{ fontSize: '7px', color: accent, letterSpacing: '2px', marginTop: '3px' }}>COMPANY</p>
+                          </div>
+                        )}
+                        {cs === 'left-block' && (
+                          <div className="absolute inset-0 flex">
+                            <div style={{ width: '55%', padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                              <p style={{ fontSize: '6px', color: accent, textTransform: 'uppercase', letterSpacing: '1px' }}>COMPANY</p>
+                              <p style={{ fontSize: '12px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>CATALOG</p>
+                              <div style={{ width: '20px', height: '2px', backgroundColor: accent, marginTop: '4px' }} />
+                            </div>
+                            <div style={{ width: '45%', backgroundColor: accent }} />
+                          </div>
+                        )}
+                        {cs === 'split-diagonal' && (
+                          <div className="absolute inset-0">
+                            <div style={{ position: 'absolute', top: 0, right: 0, width: '55%', height: '100%', backgroundColor: accent, clipPath: 'polygon(15% 0, 100% 0, 100% 100%, 0 100%)' }} />
+                            <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', backgroundColor: secondary, clipPath: 'polygon(20% 0, 100% 0, 100% 100%, 5% 100%)' }} />
+                            <div style={{ position: 'relative', padding: '12px', zIndex: 1 }}>
+                              <p style={{ fontSize: '10px', fontWeight: 900, color: '#333', lineHeight: 1.1 }}>Product<br /><span style={{ color: accent }}>Catalog</span></p>
+                            </div>
+                          </div>
+                        )}
+                        {cs === 'photo-circle' && (
+                          <div className="absolute inset-0">
+                            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '45%', backgroundColor: secondary }} />
+                            <div style={{ position: 'relative', padding: '10px', zIndex: 1 }}>
+                              <p style={{ fontSize: '6px', fontWeight: 900, color: accent, letterSpacing: '1px' }}>PRODUCT</p>
+                              <p style={{ fontSize: '10px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>CATALOG</p>
+                            </div>
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '50px', height: '50px', borderRadius: '50%', backgroundColor: '#d0d0d0', border: '2px solid #fff' }} />
+                          </div>
+                        )}
+                        {cs === 'bold-bottom' && (
+                          <div className="absolute inset-0 flex flex-col" style={{ background: '#fff' }}>
+                            <div style={{ flex: 1, padding: '10px' }}>
+                              <div style={{ width: '40%', height: '2px', backgroundColor: accent }} />
+                            </div>
+                            <div style={{ backgroundColor: accent, padding: '10px' }}>
+                              <p style={{ fontSize: '10px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>PRODUCT</p>
+                              <p style={{ fontSize: '8px', fontWeight: 900, color: '#fff', lineHeight: 1, marginTop: '2px' }}>CATALOG</p>
+                            </div>
+                          </div>
+                        )}
+                        {cs === 'minimal-frame' && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div style={{ border: `1px solid ${accent}50`, padding: '12px 16px', textAlign: 'center' }}>
+                              <p style={{ fontSize: '8px', fontWeight: 300, color: '#fff', letterSpacing: '3px' }}>Product</p>
+                              <p style={{ fontSize: '12px', fontWeight: 900, color: accent, letterSpacing: '2px' }}>CATALOG</p>
+                            </div>
+                          </div>
+                        )}
+                        {cs === 'landscape-corporate' && (
+                          <div className="absolute inset-0 flex" style={{ background: '#f5f5f5' }}>
+                            <div style={{ width: '55%', padding: '10px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                              <p style={{ fontSize: '10px', fontWeight: 900, color: '#333', lineHeight: 1 }}>PRODUCT<br /><span style={{ color: accent }}>CATALOG</span></p>
+                              <div style={{ width: '20px', height: '2px', backgroundColor: accent, marginTop: '4px' }} />
+                            </div>
+                            <div style={{ width: '45%', backgroundColor: accent }} />
+                          </div>
+                        )}
+                        {cs === 'landscape-wave' && (
+                          <div className="absolute inset-0" style={{ background: '#fff' }}>
+                            <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', backgroundColor: secondary, clipPath: 'ellipse(70% 80% at 70% 50%)' }} />
+                            <div style={{ position: 'relative', padding: '10px', zIndex: 1 }}>
+                              <p style={{ fontSize: '6px', color: accent, letterSpacing: '1px' }}>COMPANY</p>
+                              <p style={{ fontSize: '10px', fontWeight: 900, color: '#333', lineHeight: 1 }}>Business<br />Brochure</p>
+                              <div style={{ width: '16px', height: '2px', backgroundColor: accent, marginTop: '3px' }} />
+                            </div>
+                          </div>
+                        )}
+                        {config.templateId === tpl.id && <div className="absolute top-2 right-2 w-6 h-6 bg-raynold-red rounded-full flex items-center justify-center"><Check size={12} className="text-white" /></div>}
+                        {isLand && <div className="absolute bottom-1 left-2 px-1 py-0.5 bg-blue-500/80 text-white text-[7px] font-bold rounded">HORIZONTAL</div>}
                       </div>
-                      {config.templateId === tpl.id && <div className="absolute top-2 right-2 w-6 h-6 bg-raynold-red rounded-full flex items-center justify-center"><Check size={12} className="text-white" /></div>}
-                    </div>
-                    <div className="p-3 bg-[#0A0A0A]">
-                      <p className="text-sm font-bold text-white">{tpl.name}</p>
-                      <p className="text-[10px] text-gray-500">{tpl.description}</p>
-                    </div>
-                  </button>
-                ))}
+                      <div className="p-3 bg-[#0A0A0A]">
+                        <p className="text-sm font-bold text-white">{tpl.name}</p>
+                        <p className="text-[10px] text-gray-500">{tpl.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -863,6 +1095,72 @@ const AdminCatalog: React.FC = () => {
                 <button onClick={handleSaveAsNew} disabled={saving || !saveName.trim()} className="flex-1 py-2.5 bg-purple-600 text-white font-bold rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 text-sm"><Copy size={14} /> Como Nuevo</button>
               )}
               <button onClick={handleSave} disabled={saving || !saveName.trim()} className="flex-1 py-2.5 bg-raynold-green text-black font-bold rounded-lg disabled:opacity-50 flex items-center justify-center gap-2">{saving ? 'Guardando...' : <><Save size={16} /> {editingCatalogId ? 'Actualizar' : 'Guardar'}</>}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Picker Modal */}
+      {templatePickerOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+          <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-white/10 flex items-center justify-between shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2"><Sparkles size={20} className="text-raynold-red" /> Nuevo Catálogo - Elige un Diseño</h3>
+                <p className="text-xs text-gray-500 mt-1">Selecciona la plantilla base para tu nuevo catálogo</p>
+              </div>
+              <button onClick={() => setTemplatePickerOpen(false)} className="p-2 hover:bg-white/10 rounded-lg"><X size={18} className="text-gray-400" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-modern">
+              {/* Portrait */}
+              <h4 className="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2"><Square size={14} /> Vertical (Carta 8.5×11)</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                {TEMPLATES.filter(t => t.orientation === 'portrait').map(tpl => {
+                  const accent = tpl.defaults.accentColor || '#E60000';
+                  const secondary = tpl.defaults.secondaryColor || '#333';
+                  const cs = tpl.defaults.coverStyle || 'centered';
+                  return (
+                    <button key={tpl.id} onClick={() => selectTemplateAndCreate(tpl)}
+                      className="text-left rounded-xl border-2 border-white/10 overflow-hidden transition-all hover:border-raynold-red/50 hover:shadow-[0_0_20px_rgba(230,0,0,0.15)] group">
+                      <div className="h-44 relative overflow-hidden" style={{ background: tpl.defaults.coverGradient }}>
+                        {cs === 'centered' && <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4"><div style={{width:30,height:2,backgroundColor:accent,marginBottom:8}}/><p style={{fontSize:12,fontWeight:900,color:'#fff',letterSpacing:1}}>CATALOG</p><p style={{fontSize:8,color:accent,letterSpacing:2,marginTop:4}}>COMPANY</p></div>}
+                        {cs === 'left-block' && <div className="absolute inset-0 flex"><div style={{width:'55%',padding:16,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}><p style={{fontSize:7,color:accent,textTransform:'uppercase',letterSpacing:1}}>COMPANY</p><p style={{fontSize:16,fontWeight:900,color:'#fff',lineHeight:1}}>CATALOG</p><div style={{width:25,height:2,backgroundColor:accent,marginTop:5}}/></div><div style={{width:'45%',backgroundColor:accent}}/></div>}
+                        {cs === 'split-diagonal' && <div className="absolute inset-0"><div style={{position:'absolute',top:0,right:0,width:'55%',height:'100%',backgroundColor:accent,clipPath:'polygon(15% 0,100% 0,100% 100%,0 100%)'}}/><div style={{position:'absolute',top:0,right:0,width:'50%',height:'100%',backgroundColor:secondary,clipPath:'polygon(20% 0,100% 0,100% 100%,5% 100%)'}}/><div style={{position:'relative',padding:16,zIndex:1}}><p style={{fontSize:14,fontWeight:900,color:'#333',lineHeight:1.1}}>Product<br/><span style={{color:accent}}>Catalog</span></p></div></div>}
+                        {cs === 'photo-circle' && <div className="absolute inset-0"><div style={{position:'absolute',top:0,left:0,width:'100%',height:'45%',backgroundColor:secondary}}/><div style={{position:'relative',padding:12,zIndex:1}}><p style={{fontSize:7,fontWeight:900,color:accent,letterSpacing:1}}>PRODUCT</p><p style={{fontSize:14,fontWeight:900,color:'#fff',lineHeight:1}}>CATALOG</p></div><div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:65,height:65,borderRadius:'50%',backgroundColor:'#d0d0d0',border:'3px solid #fff'}}/></div>}
+                        {cs === 'bold-bottom' && <div className="absolute inset-0 flex flex-col" style={{background:'#fff'}}><div style={{flex:1,padding:12}}><div style={{width:'40%',height:2,backgroundColor:accent}}/></div><div style={{backgroundColor:accent,padding:14}}><p style={{fontSize:14,fontWeight:900,color:'#fff',lineHeight:1}}>PRODUCT</p><p style={{fontSize:12,fontWeight:900,color:'#fff',lineHeight:1,marginTop:3}}>CATALOG</p></div></div>}
+                        {cs === 'minimal-frame' && <div className="absolute inset-0 flex items-center justify-center"><div style={{border:`1px solid ${accent}50`,padding:'16px 20px',textAlign:'center'}}><p style={{fontSize:10,fontWeight:300,color:'#fff',letterSpacing:4}}>Product</p><p style={{fontSize:16,fontWeight:900,color:accent,letterSpacing:2}}>CATALOG</p></div></div>}
+                      </div>
+                      <div className="p-3 bg-[#0A0A0A] group-hover:bg-[#111]">
+                        <p className="text-sm font-bold text-white">{tpl.name}</p>
+                        <p className="text-[10px] text-gray-500 line-clamp-2">{tpl.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* Landscape */}
+              <h4 className="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2"><Rows size={14} /> Horizontal (Carta 11×8.5)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {TEMPLATES.filter(t => t.orientation === 'landscape').map(tpl => {
+                  const accent = tpl.defaults.accentColor || '#E60000';
+                  const secondary = tpl.defaults.secondaryColor || '#333';
+                  const cs = tpl.defaults.coverStyle || 'centered';
+                  return (
+                    <button key={tpl.id} onClick={() => selectTemplateAndCreate(tpl)}
+                      className="text-left rounded-xl border-2 border-white/10 overflow-hidden transition-all hover:border-raynold-red/50 hover:shadow-[0_0_20px_rgba(230,0,0,0.15)] group">
+                      <div className="h-32 relative overflow-hidden" style={{ background: tpl.defaults.coverGradient }}>
+                        {cs === 'landscape-corporate' && <div className="absolute inset-0 flex" style={{background:'#f5f5f5'}}><div style={{width:'55%',padding:14,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}><p style={{fontSize:14,fontWeight:900,color:'#333',lineHeight:1}}>PRODUCT<br/><span style={{color:accent}}>CATALOG</span></p><div style={{width:25,height:2,backgroundColor:accent,marginTop:5}}/></div><div style={{width:'45%',backgroundColor:accent}}/></div>}
+                        {cs === 'landscape-wave' && <div className="absolute inset-0" style={{background:'#fff'}}><div style={{position:'absolute',top:0,right:0,width:'50%',height:'100%',backgroundColor:secondary,clipPath:'ellipse(70% 80% at 70% 50%)'}}/><div style={{position:'relative',padding:14,zIndex:1}}><p style={{fontSize:7,color:accent,letterSpacing:1}}>COMPANY</p><p style={{fontSize:14,fontWeight:900,color:'#333',lineHeight:1}}>Business<br/>Brochure</p><div style={{width:20,height:2,backgroundColor:accent,marginTop:4}}/></div></div>}
+                        <div className="absolute bottom-1 left-2 px-1.5 py-0.5 bg-blue-500/80 text-white text-[8px] font-bold rounded">HORIZONTAL</div>
+                      </div>
+                      <div className="p-3 bg-[#0A0A0A] group-hover:bg-[#111]">
+                        <p className="text-sm font-bold text-white">{tpl.name}</p>
+                        <p className="text-[10px] text-gray-500">{tpl.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
