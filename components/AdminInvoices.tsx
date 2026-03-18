@@ -1985,10 +1985,17 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                         </button>
                         <button
                           onClick={() => handleEdit(invoice)}
-                          className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"
-                          title="Editar / Ver"
+                          className="p-2 bg-cyan-500/20 text-cyan-400 rounded hover:bg-cyan-500/40 transition-colors"
+                          title="Ver"
                         >
-                          <FileText size={16} />
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(invoice)}
+                          className="p-2 bg-yellow-500/20 text-yellow-400 rounded hover:bg-yellow-500/40 transition-colors"
+                          title="Editar"
+                        >
+                          <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(invoice.id)}
