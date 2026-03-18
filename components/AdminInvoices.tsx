@@ -227,6 +227,14 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const [newProductData, setNewProductData] = useState({ title: '', price: '', reference: '' });
   const [savingProduct, setSavingProduct] = useState(false);
 
+  // Searchable dropdown states
+  const [clientSearch, setClientSearch] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState('');
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+
   // Load data
   useEffect(() => {
     // Load invoices from Supabase first, fall back to localStorage
@@ -319,6 +327,20 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges, view]);
+
+  // Close searchable dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.searchable-dropdown')) {
+        setShowClientDropdown(false);
+        setShowProductDropdown(false);
+        setShowServiceDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Save invoices to localStorage as backup
   useEffect(() => {
@@ -1085,16 +1107,55 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Seleccionar Cliente</label>
-                <select
-                  value={currentInvoice.clientId}
-                  onChange={(e) => handleClientSelect(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red mb-3"
-                >
-                  <option value="">-- Seleccionar de la lista --</option>
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.company || c.name}</option>
-                  ))}
-                </select>
+                <div className="relative searchable-dropdown">
+                  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:border-raynold-red mb-1">
+                    <Search size={14} className="ml-2 text-gray-400 shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Buscar cliente por nombre, empresa o RNC..."
+                      value={clientSearch ?? ''}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      onFocus={() => setShowClientDropdown(true)}
+                      className="w-full p-2 outline-none text-sm"
+                    />
+                    {currentInvoice.clientId && (
+                      <button onClick={() => { handleClientSelect(''); setClientSearch(''); }} className="mr-2 text-gray-400 hover:text-red-500">
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                  {showClientDropdown && (
+                    <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <button
+                        onClick={() => { handleClientSelect(''); setClientSearch(''); setShowClientDropdown(false); }}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:bg-gray-50 border-b border-gray-100"
+                      >
+                        -- Sin cliente --
+                      </button>
+                      {clients
+                        .filter(c => {
+                          const q = (clientSearch || '').toLowerCase();
+                          if (!q) return true;
+                          return (c.name || '').toLowerCase().includes(q) || (c.company || '').toLowerCase().includes(q) || (c.rnc || '').toLowerCase().includes(q);
+                        })
+                        .map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => { handleClientSelect(c.id); setClientSearch(c.company || c.name); setShowClientDropdown(false); }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors ${currentInvoice.clientId === c.id ? 'bg-blue-50 font-bold text-blue-700' : 'text-gray-700'}`}
+                          >
+                            <div className="font-medium">{c.company || c.name}</div>
+                            {c.company && c.name && <div className="text-xs text-gray-400">{c.name}</div>}
+                            {c.rnc && <div className="text-xs text-gray-400">RNC: {c.rnc}</div>}
+                          </button>
+                        ))
+                      }
+                      {clients.filter(c => { const q = (clientSearch || '').toLowerCase(); if (!q) return true; return (c.name || '').toLowerCase().includes(q) || (c.company || '').toLowerCase().includes(q) || (c.rnc || '').toLowerCase().includes(q); }).length === 0 && (
+                        <div className="px-3 py-3 text-xs text-gray-400 text-center">No se encontraron clientes</div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <input type="text" placeholder="Nombre" value={currentInvoice.clientName} onChange={(e) => updateCurrentInvoice('clientName', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
@@ -1730,29 +1791,84 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="searchable-dropdown">
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Catálogo de Productos</label>
-                    <select
-                      onChange={(e) => handleProductSelect(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
-                    >
-                      <option value="">-- Seleccionar producto --</option>
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>{p.title} ({p.price})</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:border-raynold-red">
+                        <Search size={14} className="ml-2 text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Buscar producto..."
+                          value={productSearch}
+                          onChange={(e) => setProductSearch(e.target.value)}
+                          onFocus={() => setShowProductDropdown(true)}
+                          className="w-full p-2 outline-none text-sm"
+                        />
+                      </div>
+                      {showProductDropdown && (
+                        <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto mt-1">
+                          {products
+                            .filter(p => {
+                              const q = productSearch.toLowerCase();
+                              if (!q) return true;
+                              return (p.title || '').toLowerCase().includes(q) || (p.price || '').toString().includes(q) || (p.reference || '').toLowerCase().includes(q);
+                            })
+                            .map(p => (
+                              <button
+                                key={p.id}
+                                onClick={() => { handleProductSelect(p.id); setProductSearch(p.title); setShowProductDropdown(false); }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors text-gray-700"
+                              >
+                                <div className="font-medium">{p.title}</div>
+                                <div className="text-xs text-gray-400">${p.price} {p.reference ? `• Ref: ${p.reference}` : ''}</div>
+                              </button>
+                            ))
+                          }
+                          {products.filter(p => { const q = productSearch.toLowerCase(); if (!q) return true; return (p.title || '').toLowerCase().includes(q) || (p.price || '').toString().includes(q); }).length === 0 && (
+                            <div className="px-3 py-3 text-xs text-gray-400 text-center">No se encontraron productos</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
+                  <div className="searchable-dropdown">
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Catálogo de Servicios</label>
-                    <select
-                      onChange={(e) => handleServiceSelect(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
-                    >
-                      <option value="">-- Seleccionar servicio --</option>
-                      {services.map(s => (
-                        <option key={s.id} value={s.id}>{s.title}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:border-raynold-red">
+                        <Search size={14} className="ml-2 text-gray-400 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Buscar servicio..."
+                          value={serviceSearch}
+                          onChange={(e) => setServiceSearch(e.target.value)}
+                          onFocus={() => setShowServiceDropdown(true)}
+                          className="w-full p-2 outline-none text-sm"
+                        />
+                      </div>
+                      {showServiceDropdown && (
+                        <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto mt-1">
+                          {services
+                            .filter(s => {
+                              const q = serviceSearch.toLowerCase();
+                              if (!q) return true;
+                              return (s.title || '').toLowerCase().includes(q);
+                            })
+                            .map(s => (
+                              <button
+                                key={s.id}
+                                onClick={() => { handleServiceSelect(s.id); setServiceSearch(s.title); setShowServiceDropdown(false); }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors text-gray-700"
+                              >
+                                <div className="font-medium">{s.title}</div>
+                              </button>
+                            ))
+                          }
+                          {services.filter(s => { const q = serviceSearch.toLowerCase(); if (!q) return true; return (s.title || '').toLowerCase().includes(q); }).length === 0 && (
+                            <div className="px-3 py-3 text-xs text-gray-400 text-center">No se encontraron servicios</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
