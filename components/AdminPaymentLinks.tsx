@@ -641,15 +641,17 @@ const AdminPaymentLinks: React.FC = () => {
                 </div>
                 {/* Style Tabs */}
                 <div className="bg-white/5 rounded-xl p-3">
-                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Estilo de Diseño</label>
-                  <div className="grid grid-cols-4 gap-1.5">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Estilo de Diseno</label>
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-modern">
                     {([
-                      ['classic','Clásico','svgexport-2'],['modern','Moderno','svgexport-10'],['card','Tarjeta','svgexport-1'],['banner','Banner','svgexport-6'],
-                      ['badge','Badge','svgexport-3'],['sticker','Sticker','svgexport-12'],['phone','Teléfono','svgexport-5'],['minimal','Mínimal','svgexport-8'],
+                      ['classic','Clasico','svgexport-2'],['modern','Moderno','svgexport-10'],['card','Tarjeta','svgexport-1'],['banner','Banner','svgexport-6'],
+                      ['badge','Badge','svgexport-3'],['sticker','Sticker','svgexport-12'],['phone','Telefono','svgexport-5'],['minimal','Minimal','svgexport-8'],
                     ] as [typeof qrStyle, string, string][]).map(([v,l,svg]) => (
-                      <button key={v} onClick={() => setQrStyle(v)} className={`py-2 px-1 rounded-lg border text-center transition-all ${qrStyle === v ? 'bg-raynold-red/20 border-raynold-red/50 text-white' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}>
-                        <img src={`/qr-frames/${svg}.svg`} alt={l} className="w-7 h-7 mx-auto mb-0.5 opacity-70" style={{ filter: qrStyle === v ? 'brightness(1.3) invert(0.1)' : 'invert(0.7)' }} />
-                        <div className="text-[8px] font-bold">{l}</div>
+                      <button key={v} onClick={() => setQrStyle(v)} className={`shrink-0 p-1.5 rounded-xl border-2 text-center transition-all ${qrStyle === v ? 'border-raynold-red bg-white/5' : 'border-transparent hover:border-white/10'}`}>
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${qrStyle === v ? 'bg-white' : 'bg-white/90'}`}>
+                          <img src={`/qr-frames/${svg}.svg`} alt={l} className="w-10 h-10 object-contain" />
+                        </div>
+                        <div className={`text-[8px] font-bold mt-1 ${qrStyle === v ? 'text-raynold-red' : 'text-gray-400'}`}>{l}</div>
                       </button>
                     ))}
                   </div>

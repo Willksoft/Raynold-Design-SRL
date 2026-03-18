@@ -542,16 +542,18 @@ const AdminQR: React.FC = () => {
             {/* Style Tabs */}
             <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Sparkles size={14} className="text-raynold-red" /> Estilo de Diseño
+                <Sparkles size={14} className="text-raynold-red" /> Estilo de Diseno
               </h3>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-modern">
                 {([
-                  ['classic','Clásico','svgexport-2'],['modern','Moderno','svgexport-10'],['card','Tarjeta','svgexport-1'],['banner','Banner','svgexport-6'],
-                  ['badge','Badge','svgexport-3'],['sticker','Sticker','svgexport-12'],['phone','Teléfono','svgexport-5'],['minimal','Mínimal','svgexport-8'],
+                  ['classic','Clasico','svgexport-2'],['modern','Moderno','svgexport-10'],['card','Tarjeta','svgexport-1'],['banner','Banner','svgexport-6'],
+                  ['badge','Badge','svgexport-3'],['sticker','Sticker','svgexport-12'],['phone','Telefono','svgexport-5'],['minimal','Minimal','svgexport-8'],
                 ] as [QRStyle, string, string][]).map(([v,l,svg]) => (
-                  <button key={v} onClick={() => setConfig({ ...config, style: v })} className={`py-2.5 px-2 rounded-xl border text-center transition-all ${config.style === v ? 'bg-raynold-red/20 border-raynold-red/50 text-white shadow-[0_0_10px_rgba(230,0,0,0.15)]' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/20'}`}>
-                    <img src={`/qr-frames/${svg}.svg`} alt={l} className="w-8 h-8 mx-auto mb-1 opacity-70" style={{ filter: config.style === v ? 'brightness(1.3) invert(0.1)' : 'invert(0.7)' }} />
-                    <div className="text-[9px] font-bold">{l}</div>
+                  <button key={v} onClick={() => setConfig({ ...config, style: v })} className={`shrink-0 p-2 rounded-xl border-2 text-center transition-all ${config.style === v ? 'border-raynold-red bg-white/5 shadow-[0_0_12px_rgba(230,0,0,0.2)]' : 'border-white/10 hover:border-white/20'}`}>
+                    <div className={`w-14 h-14 rounded-lg flex items-center justify-center ${config.style === v ? 'bg-white' : 'bg-white/90'}`}>
+                      <img src={`/qr-frames/${svg}.svg`} alt={l} className="w-12 h-12 object-contain" />
+                    </div>
+                    <div className={`text-[9px] font-bold mt-1.5 ${config.style === v ? 'text-raynold-red' : 'text-gray-400'}`}>{l}</div>
                   </button>
                 ))}
               </div>
