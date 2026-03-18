@@ -194,48 +194,55 @@ const PublicPaymentPage: React.FC = () => {
                     </button>
 
                     {/* Sub-accounts - fully expanded when bank is open */}
-                    {isOpen && (
-                      <div style={{ borderTop: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}` }}>
-                        {accounts.map((m, idx) => (
-                          <div key={m.id} style={{ borderTop: idx > 0 ? `1px solid ${isLight ? '#f1f5f9' : 'rgba(255,255,255,0.04)'}` : 'none', padding: '12px 16px', backgroundColor: `${page.accent_color}03` }}>
-                            {/* Info grid - always visible */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                              <div style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10` }}>
-                                <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Tipo</p>
-                                <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.account_type}</p>
-                              </div>
-                              <button onClick={() => copy(m.account_holder, `holder-${m.id}`)} style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10`, border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                                <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Titular</p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0, flex: 1 }}>{m.account_holder}</p>
-                                  {copied === `holder-${m.id}` ? <Check size={10} style={{ color: '#10b981' }} /> : <Copy size={10} style={{ color: page.accent_color, opacity: 0.5 }} />}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateRows: isOpen ? '1fr' : '0fr',
+                      opacity: isOpen ? 1 : 0,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ borderTop: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}` }}>
+                          {accounts.map((m, idx) => (
+                            <div key={m.id} style={{ borderTop: idx > 0 ? `1px solid ${isLight ? '#f1f5f9' : 'rgba(255,255,255,0.04)'}` : 'none', padding: '12px 16px', backgroundColor: `${page.accent_color}03` }}>
+                              {/* Info grid - always visible */}
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                                <div style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10` }}>
+                                  <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Tipo</p>
+                                  <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.account_type}</p>
                                 </div>
-                              </button>
-                              <div style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10` }}>
-                                <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Moneda</p>
-                                <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.currency}</p>
+                                <button onClick={() => copy(m.account_holder, `holder-${m.id}`)} style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10`, border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                                  <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Titular</p>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0, flex: 1 }}>{m.account_holder}</p>
+                                    {copied === `holder-${m.id}` ? <Check size={10} style={{ color: '#10b981' }} /> : <Copy size={10} style={{ color: page.accent_color, opacity: 0.5 }} />}
+                                  </div>
+                                </button>
+                                <div style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10` }}>
+                                  <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Moneda</p>
+                                  <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.currency}</p>
+                                </div>
+                              </div>
+                              {/* RNC if exists (method-level or page-level) */}
+                              {(m.rnc || page.rnc) && (
+                                <button onClick={() => copy(m.rnc || page.rnc, `rnc-${m.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', padding: '6px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}15`, cursor: 'pointer', width: '100%' }}>
+                                  <span style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4 }}>RNC:</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: theme.text, fontFamily: 'monospace', flex: 1, textAlign: 'left' }}>{m.rnc || page.rnc}</span>
+                                  {copied === `rnc-${m.id}` ? <Check size={10} style={{ color: '#10b981' }} /> : <Copy size={10} style={{ color: page.accent_color, opacity: 0.4 }} />}
+                                </button>
+                              )}
+                              {/* Account number - always visible */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '12px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
+                                <p style={{ flex: 1, fontSize: '15px', fontWeight: 800, fontFamily: 'monospace', color: theme.text, margin: 0, letterSpacing: '1px' }}>{m.account_number}</p>
+                                <button onClick={() => copy(m.account_number, m.id)}
+                                  style={{ padding: '7px 14px', borderRadius: '10px', backgroundColor: page.accent_color, color: '#fff', fontSize: '11px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                                  {copied === m.id ? <><Check size={12} /> ¡Copiado!</> : <><Copy size={12} /> Copiar</>}
+                                </button>
                               </div>
                             </div>
-                            {/* RNC if exists (method-level or page-level) */}
-                            {(m.rnc || page.rnc) && (
-                              <button onClick={() => copy(m.rnc || page.rnc, `rnc-${m.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', padding: '6px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}15`, cursor: 'pointer', width: '100%' }}>
-                                <span style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4 }}>RNC:</span>
-                                <span style={{ fontSize: '12px', fontWeight: 700, color: theme.text, fontFamily: 'monospace', flex: 1, textAlign: 'left' }}>{m.rnc || page.rnc}</span>
-                                {copied === `rnc-${m.id}` ? <Check size={10} style={{ color: '#10b981' }} /> : <Copy size={10} style={{ color: page.accent_color, opacity: 0.4 }} />}
-                              </button>
-                            )}
-                            {/* Account number - always visible */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '12px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
-                              <p style={{ flex: 1, fontSize: '15px', fontWeight: 800, fontFamily: 'monospace', color: theme.text, margin: 0, letterSpacing: '1px' }}>{m.account_number}</p>
-                              <button onClick={() => copy(m.account_number, m.id)}
-                                style={{ padding: '7px 14px', borderRadius: '10px', backgroundColor: page.accent_color, color: '#fff', fontSize: '11px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                                {copied === m.id ? <><Check size={12} /> ¡Copiado!</> : <><Copy size={12} /> Copiar</>}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
@@ -266,23 +273,30 @@ const PublicPaymentPage: React.FC = () => {
                       </div>
                       <ChevronDown size={18} style={{ color: theme.text, opacity: 0.25, transform: expanded === m.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s' }} />
                     </button>
-                    {expanded === m.id && (
-                      <div style={{ padding: '16px', backgroundColor: `${page.accent_color}08`, border: `2px solid ${page.accent_color}30`, borderTop: 'none', borderRadius: '0 0 16px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '12px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
-                          <p style={{ flex: 1, fontSize: '15px', fontWeight: 800, fontFamily: 'monospace', color: theme.text, margin: 0, letterSpacing: '1px' }}>{m.account_number || m.payment_url}</p>
-                          <button onClick={() => copy(m.account_number || m.payment_url, m.id)}
-                            style={{ padding: '7px 14px', borderRadius: '10px', backgroundColor: page.accent_color, color: '#fff', fontSize: '11px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                            {copied === m.id ? <><Check size={12} /> ¡Copiado!</> : <><Copy size={12} /> Copiar</>}
-                          </button>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateRows: expanded === m.id ? '1fr' : '0fr',
+                      opacity: expanded === m.id ? 1 : 0,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ padding: '16px', backgroundColor: `${page.accent_color}08`, border: `2px solid ${page.accent_color}30`, borderTop: 'none', borderRadius: '0 0 16px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '12px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
+                            <p style={{ flex: 1, fontSize: '15px', fontWeight: 800, fontFamily: 'monospace', color: theme.text, margin: 0, letterSpacing: '1px' }}>{m.account_number || m.payment_url}</p>
+                            <button onClick={() => copy(m.account_number || m.payment_url, m.id)}
+                              style={{ padding: '7px 14px', borderRadius: '10px', backgroundColor: page.accent_color, color: '#fff', fontSize: '11px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                              {copied === m.id ? <><Check size={12} /> ¡Copiado!</> : <><Copy size={12} /> Copiar</>}
+                            </button>
+                          </div>
+                          {m.payment_url && (
+                            <a href={m.payment_url} target="_blank" rel="noopener noreferrer"
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px', padding: '10px', borderRadius: '12px', backgroundColor: page.accent_color, color: '#fff', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                              <ExternalLink size={15} /> Ir al Link de Pago
+                            </a>
+                          )}
                         </div>
-                        {m.payment_url && (
-                          <a href={m.payment_url} target="_blank" rel="noopener noreferrer"
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px', padding: '10px', borderRadius: '12px', backgroundColor: page.accent_color, color: '#fff', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
-                            <ExternalLink size={15} /> Ir al Link de Pago
-                          </a>
-                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>
