@@ -4,7 +4,7 @@ import {
   Check, X, ChevronRight, ChevronLeft, Plus, Minus, Image as ImageIcon,
   Hash, Columns, Rows, Square, Printer, Filter, Search,
   ToggleLeft, ToggleRight, Loader2, Sparkles, ArrowUpDown, Save, FolderOpen,
-  Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, ClipboardList, Edit2
+  Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, ClipboardList, Edit2, Copy
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -147,19 +147,30 @@ const AdminCatalog: React.FC = () => {
     setSaving(true);
     const row = { name: saveName.trim(), config, selected_product_ids: [...selectedProducts] };
     if (editingCatalogId) {
-      // Update existing
       const { error } = await supabase.from('saved_catalogs').update(row).eq('id', editingCatalogId);
       if (!error) {
         setSavedCatalogs(savedCatalogs.map(c => c.id === editingCatalogId ? { ...c, ...row } as SavedCatalog : c));
       }
     } else {
-      // Create new
       const { data, error } = await supabase.from('saved_catalogs').insert([row]).select();
       if (!error && data) {
         const newCat = data[0] as SavedCatalog;
         setSavedCatalogs([newCat, ...savedCatalogs]);
         setEditingCatalogId(newCat.id);
       }
+    }
+    setSaving(false); setSaveModalOpen(false); setSaveName('');
+  };
+
+  const handleSaveAsNew = async () => {
+    if (!saveName.trim()) return;
+    setSaving(true);
+    const row = { name: saveName.trim(), config, selected_product_ids: [...selectedProducts] };
+    const { data, error } = await supabase.from('saved_catalogs').insert([row]).select();
+    if (!error && data) {
+      const newCat = data[0] as SavedCatalog;
+      setSavedCatalogs([newCat, ...savedCatalogs]);
+      setEditingCatalogId(newCat.id);
     }
     setSaving(false); setSaveModalOpen(false); setSaveName('');
   };
@@ -185,6 +196,19 @@ const AdminCatalog: React.FC = () => {
     await supabase.from('saved_catalogs').delete().eq('id', id);
     setSavedCatalogs(savedCatalogs.filter(c => c.id !== id));
     if (editingCatalogId === id) { setEditingCatalogId(null); setSaveName(''); }
+  };
+
+  const duplicateCatalog = async (cat: SavedCatalog) => {
+    const row = {
+      name: `${cat.name} (Copia)`,
+      config: cat.config,
+      selected_product_ids: cat.selected_product_ids,
+    };
+    const { data, error } = await supabase.from('saved_catalogs').insert([row]).select();
+    if (!error && data) {
+      const newCat = data[0] as SavedCatalog;
+      setSavedCatalogs([newCat, ...savedCatalogs]);
+    }
   };
 
   const [downloading, setDownloading] = useState(false);
@@ -472,6 +496,7 @@ const AdminCatalog: React.FC = () => {
               ))}
             </div>
             <button onClick={() => { setSaveModalOpen(true); if (editingCatalogId) { const c = savedCatalogs.find(s => s.id === editingCatalogId); if (c) setSaveName(c.name); } }} className="px-3 py-1.5 bg-green-500/20 text-green-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-green-500/30"><Save size={14} /> {editingCatalogId ? 'Guardar' : 'Guardar Nuevo'}</button>
+            {editingCatalogId && <button onClick={() => { setEditingCatalogId(null); setSaveName(''); setSaveModalOpen(true); }} className="px-3 py-1.5 bg-purple-500/20 text-purple-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-purple-500/30"><Copy size={14} /> Guardar como Nuevo</button>}
             <button onClick={handleDownloadPdf} disabled={downloading} className="px-3 py-1.5 bg-rose-500/20 text-rose-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-rose-500/30 disabled:opacity-50">
               {downloading ? <><Loader2 size={14} className="animate-spin" /> Generando...</> : <><FileText size={14} /> PDF</>}
             </button>
@@ -526,7 +551,8 @@ const AdminCatalog: React.FC = () => {
                       {/* Actions */}
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
                         <button onClick={() => loadCatalog(sc)} className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg text-[10px] font-bold hover:bg-blue-500/30 flex items-center gap-1"><Edit2 size={11} /> Editar</button>
-                        <button onClick={() => deleteCatalog(sc.id)} className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"><Trash2 size={13} /></button>
+                        <button onClick={() => duplicateCatalog(sc)} className="p-1.5 bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30" title="Duplicar"><Copy size={13} /></button>
+                        <button onClick={() => deleteCatalog(sc.id)} className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30" title="Eliminar"><Trash2 size={13} /></button>
                       </div>
                     </div>
                   ))}
@@ -829,10 +855,13 @@ const AdminCatalog: React.FC = () => {
       {saveModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><Save size={20} className="text-raynold-green" /> {editingCatalogId ? 'Actualizar Catálogo' : 'Guardar Nuevo Catálogo'}</h3>
+            <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2"><Save size={20} className="text-raynold-green" /> {editingCatalogId ? 'Guardar Catálogo' : 'Guardar Nuevo Catálogo'}</h3>
             <input type="text" value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="Nombre del catálogo..." className="w-full bg-black border border-white/20 rounded-lg px-4 py-3 text-white mb-4" autoFocus onKeyDown={e => e.key === 'Enter' && handleSave()} />
             <div className="flex gap-3">
               <button onClick={() => { setSaveModalOpen(false); setSaveName(''); }} className="flex-1 py-2.5 rounded-lg font-bold text-gray-400 hover:text-white">Cancelar</button>
+              {editingCatalogId && (
+                <button onClick={handleSaveAsNew} disabled={saving || !saveName.trim()} className="flex-1 py-2.5 bg-purple-600 text-white font-bold rounded-lg disabled:opacity-50 flex items-center justify-center gap-2 text-sm"><Copy size={14} /> Como Nuevo</button>
+              )}
               <button onClick={handleSave} disabled={saving || !saveName.trim()} className="flex-1 py-2.5 bg-raynold-green text-black font-bold rounded-lg disabled:opacity-50 flex items-center justify-center gap-2">{saving ? 'Guardando...' : <><Save size={16} /> {editingCatalogId ? 'Actualizar' : 'Guardar'}</>}</button>
             </div>
           </div>
