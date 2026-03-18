@@ -179,7 +179,11 @@ const PublicPaymentPage: React.FC = () => {
                           {/* Account details */}
                           {expanded === m.id && (
                             <div style={{ padding: '12px 16px 16px', backgroundColor: `${page.accent_color}05` }}>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                                <div style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10` }}>
+                                  <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Tipo</p>
+                                  <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.account_type}</p>
+                                </div>
                                 <button onClick={() => copy(m.account_holder, `holder-${m.id}`)} style={{ padding: '8px 10px', borderRadius: '10px', backgroundColor: `${page.accent_color}10`, border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                                   <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4, margin: '0 0 2px' }}>Titular</p>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -192,6 +196,14 @@ const PublicPaymentPage: React.FC = () => {
                                   <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.currency}</p>
                                 </div>
                               </div>
+                              {/* RNC if exists */}
+                              {page.rnc && (
+                                <button onClick={() => copy(page.rnc, `rnc-${m.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px', padding: '6px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}15`, cursor: 'pointer', width: '100%' }}>
+                                  <span style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', color: theme.text, opacity: 0.4 }}>RNC:</span>
+                                  <span style={{ fontSize: '12px', fontWeight: 700, color: theme.text, fontFamily: 'monospace', flex: 1, textAlign: 'left' }}>{page.rnc}</span>
+                                  {copied === `rnc-${m.id}` ? <Check size={10} style={{ color: '#10b981' }} /> : <Copy size={10} style={{ color: page.accent_color, opacity: 0.4 }} />}
+                                </button>
+                              )}
                               {/* Account number */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '12px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
                                 <p style={{ flex: 1, fontSize: '15px', fontWeight: 800, fontFamily: 'monospace', color: theme.text, margin: 0, letterSpacing: '1px' }}>{m.account_number}</p>

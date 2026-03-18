@@ -888,11 +888,12 @@ const PaymentPagePreviewMini: React.FC<{ page: PaymentPage }> = ({ page }) => {
   );
 };
 
-/* ────────── FULL PREVIEW COMPONENT ────────── */
+/* ────────── FULL PREVIEW COMPONENT (matches PublicPaymentPage) ────────── */
 const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[] }> = ({ page, methods }) => {
   const [expanded, setExpanded] = useState<string>('');
   const [copied, setCopied] = useState('');
   const theme = THEMES.find(t => t.id === page.theme) || THEMES[0];
+  const isLight = page.theme === 'light';
 
   const copy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -900,16 +901,22 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
     setTimeout(() => setCopied(''), 2000);
   };
 
-  const grouped = {
-    bank: methods.filter(m => m.type === 'bank'),
-    app: methods.filter(m => m.type === 'app'),
-    link: methods.filter(m => m.type === 'link'),
-    crypto: methods.filter(m => m.type === 'crypto'),
-  };
+  // Group banks
+  const bankGroups: Record<string, PaymentMethod[]> = {};
+  const otherMethods: PaymentMethod[] = [];
+  methods.forEach(m => {
+    if (m.type === 'bank') {
+      if (!bankGroups[m.bank_name]) bankGroups[m.bank_name] = [];
+      bankGroups[m.bank_name].push(m);
+    } else {
+      otherMethods.push(m);
+    }
+  });
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", backgroundColor: theme.bg, padding: '24px 14px', minHeight: '500px', color: theme.text }}>
-      <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+      {/* Profile */}
+      <div style={{ textAlign: 'center', marginBottom: '14px' }}>
         {page.avatar_url ? (
           <img src={page.avatar_url} alt="" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 10px', border: `3px solid ${page.accent_color}`, boxShadow: `0 0 15px ${page.accent_color}30` }} />
         ) : (
@@ -917,51 +924,132 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
             <User size={24} style={{ color: page.accent_color }} />
           </div>
         )}
-        <h2 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 3px' }}>{page.name}</h2>
-        <p style={{ fontSize: '11px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>@{page.username} <VerifiedBadge size={14} /></p>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>{page.name}</h2>
+          <Copy size={10} style={{ opacity: 0.2 }} />
+        </div>
+        <p style={{ fontSize: '11px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>@{page.username} <VerifiedBadge size={14} /></p>
         {page.bio && <p style={{ fontSize: '10px', opacity: 0.5, marginTop: '5px' }}>{page.bio}</p>}
       </div>
 
-      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+      {/* RNC */}
+      {page.rnc && (
+        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 12px', borderRadius: '10px', backgroundColor: `${page.accent_color}10`, border: `1px solid ${page.accent_color}15` }}>
+            <span style={{ fontSize: '8px', fontWeight: 700, opacity: 0.4, textTransform: 'uppercase' }}>RNC:</span>
+            <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'monospace' }}>{page.rnc}</span>
+            <Copy size={8} style={{ opacity: 0.3 }} />
+          </div>
+        </div>
+      )}
+
+      {/* URL pill */}
+      <div style={{ textAlign: 'center', marginBottom: '18px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 12px', borderRadius: '16px', border: `1px solid ${page.accent_color}35`, fontSize: '9px', fontWeight: 700, color: page.accent_color }}>
           <Globe size={9} /> /pagar/{page.slug}
         </div>
       </div>
 
-      {Object.entries(grouped).map(([type, items]) => {
-        if (!items.length) return null;
-        return (
-          <div key={type} style={{ marginBottom: '14px' }}>
-            <p style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.4, marginBottom: '6px', paddingLeft: '4px' }}>
-              {TYPE_LABELS[type]}s
-            </p>
+      {/* BANKS - Grouped */}
+      {Object.keys(bankGroups).length > 0 && (
+        <div style={{ marginBottom: '14px' }}>
+          <p style={{ fontSize: '8px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.35, marginBottom: '6px', paddingLeft: '4px' }}>Cuentas Bancarias</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {Object.entries(bankGroups).map(([bankName, accounts]) => {
+              const first = accounts[0];
+              return (
+                <div key={bankName} style={{ borderRadius: '12px', overflow: 'hidden', border: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}` }}>
+                  {/* Bank Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: theme.card }}>
+                    <img src={first.logo_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover', backgroundColor: '#fff' }} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>{bankName}</p>
+                      <p style={{ fontSize: '9px', opacity: 0.4, margin: 0 }}>{accounts.length} cuenta{accounts.length > 1 ? 's' : ''} · {accounts.map(a => a.currency).filter((v,i,a)=>a.indexOf(v)===i).join(' / ')}</p>
+                    </div>
+                  </div>
+                  {/* Sub-accounts - always visible */}
+                  <div style={{ borderTop: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}` }}>
+                    {accounts.map((m, idx) => (
+                      <div key={m.id} style={{ borderTop: idx > 0 ? `1px solid ${isLight ? '#f1f5f9' : 'rgba(255,255,255,0.04)'}` : 'none' }}>
+                        <button onClick={() => setExpanded(expanded === m.id ? '' : m.id)}
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', backgroundColor: expanded === m.id ? `${page.accent_color}06` : 'transparent', cursor: 'pointer', textAlign: 'left', border: 'none', transition: 'background 0.2s', color: theme.text }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: page.accent_color, opacity: expanded === m.id ? 1 : 0.3 }} />
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: '11px', fontWeight: 600, margin: 0 }}>{m.account_type}</p>
+                            <p style={{ fontSize: '9px', opacity: 0.35, margin: 0 }}>{m.currency} · {m.account_holder}</p>
+                          </div>
+                          <ChevronDown size={12} style={{ opacity: 0.2, transform: expanded === m.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                        </button>
+                        {expanded === m.id && (
+                          <div style={{ padding: '8px 12px 12px', backgroundColor: `${page.accent_color}05` }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+                              <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                                <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Tipo</p>
+                                <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_type}</p>
+                              </div>
+                              <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                                <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Titular</p>
+                                <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_holder}</p>
+                              </div>
+                              <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                                <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Moneda</p>
+                                <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.currency}</p>
+                              </div>
+                            </div>
+                            {page.rnc && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', padding: '5px 8px', borderRadius: '6px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}12` }}>
+                                <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>RNC:</span>
+                                <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{page.rnc}</span>
+                                <Copy size={8} style={{ opacity: 0.3 }} />
+                              </div>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
+                              <p style={{ flex: 1, fontSize: '12px', fontWeight: 800, fontFamily: 'monospace', margin: 0, letterSpacing: '0.5px' }}>{m.account_number}</p>
+                              <button onClick={() => copy(m.account_number, m.id)}
+                                style={{ padding: '5px 10px', borderRadius: '6px', backgroundColor: page.accent_color, color: '#fff', fontSize: '9px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
+                                {copied === m.id ? <><Check size={10} /> ¡Copiado!</> : <><Copy size={10} /> Copiar</>}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Other methods */}
+      {otherMethods.length > 0 && (() => {
+        const otherGrouped: Record<string, PaymentMethod[]> = {};
+        otherMethods.forEach(m => {
+          const label = m.type === 'app' ? 'Apps de Pago' : m.type === 'link' ? 'Links de Pago' : 'Cripto';
+          if (!otherGrouped[label]) otherGrouped[label] = [];
+          otherGrouped[label].push(m);
+        });
+        return Object.entries(otherGrouped).map(([label, items]) => (
+          <div key={label} style={{ marginBottom: '14px' }}>
+            <p style={{ fontSize: '8px', fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', opacity: 0.35, marginBottom: '6px', paddingLeft: '4px' }}>{label}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               {items.map(m => (
                 <div key={m.id}>
                   <button onClick={() => setExpanded(expanded === m.id ? '' : m.id)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '12px', backgroundColor: theme.card, border: expanded === m.id ? `2px solid ${page.accent_color}` : '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}>
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '12px', backgroundColor: theme.card, border: expanded === m.id ? `2px solid ${page.accent_color}30` : `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}`, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', color: theme.text }}>
                     <img src={m.logo_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover', backgroundColor: '#fff' }} />
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '12px', fontWeight: 700, color: theme.text, margin: 0 }}>{m.bank_name}</p>
+                      <p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>{m.bank_name}</p>
                       <p style={{ fontSize: '9px', opacity: 0.4, margin: 0 }}>{m.account_type} · {m.currency}</p>
                     </div>
                     <ChevronDown size={14} style={{ opacity: 0.25, transform: expanded === m.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                   </button>
                   {expanded === m.id && (
                     <div style={{ padding: '10px 12px', marginTop: '3px', borderRadius: '10px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}18` }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
-                        <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
-                          <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Titular</p>
-                          <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_holder}</p>
-                        </div>
-                        <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
-                          <p style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Moneda</p>
-                          <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.currency}</p>
-                        </div>
-                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}12` }}>
-                        <p style={{ flex: 1, fontSize: '12px', fontWeight: 800, fontFamily: 'monospace', margin: 0, letterSpacing: '0.5px' }}>{m.account_number}</p>
-                        <button onClick={() => copy(m.account_number, m.id)}
+                        <p style={{ flex: 1, fontSize: '12px', fontWeight: 800, fontFamily: 'monospace', margin: 0, letterSpacing: '0.5px' }}>{m.account_number || m.payment_url}</p>
+                        <button onClick={() => copy(m.account_number || m.payment_url, m.id)}
                           style={{ padding: '5px 10px', borderRadius: '6px', backgroundColor: page.accent_color, color: '#fff', fontSize: '9px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
                           {copied === m.id ? <><Check size={10} /> ¡Copiado!</> : <><Copy size={10} /> Copiar</>}
                         </button>
@@ -978,8 +1066,8 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
               ))}
             </div>
           </div>
-        );
-      })}
+        ));
+      })()}
 
       {methods.length === 0 && (
         <div style={{ textAlign: 'center', padding: '30px 0', opacity: 0.3 }}>
