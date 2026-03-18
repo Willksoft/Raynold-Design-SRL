@@ -392,7 +392,13 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     clientPhone: inv.client_phone || inv.clientPhone || '',
     sellerId: inv.seller_id || inv.sellerId || '',
     sellerName: inv.seller_name || inv.sellerName || '',
-    items: Array.isArray(inv.items) ? inv.items : [],
+    items: Array.isArray(inv.items) ? inv.items.map((item: any) => ({
+      ...item,
+      unitPrice: item.unitPrice ?? item.price ?? 0,
+      price: item.price ?? item.unitPrice ?? 0,
+      discount: item.discount ?? 0,
+      discountType: item.discountType || 'percent',
+    })) : [],
     notes: inv.notes || '',
     paymentTerms: inv.payment_terms || inv.paymentTerms || '',
     templateId: inv.template_id || inv.templateId || 'classic',
@@ -616,7 +622,10 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         reference: '',
         description: '',
         quantity: 1,
-        unitPrice: 0
+        unitPrice: 0,
+        price: 0,
+        discount: 0,
+        discountType: 'percent'
       });
     }
     setIsItemModalOpen(true);
@@ -658,6 +667,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         reference: product.reference || product.id.substring(0, 6),
         description: product.title,
         unitPrice: numericPrice,
+        price: numericPrice,
         discount: product.discount || 0,
         discountType: product.discountType || 'percent'
       });
@@ -671,7 +681,8 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         ...editingItem,
         reference: `SRV-${service.id.substring(0, 4)}`,
         description: service.title,
-        unitPrice: service.price || 0
+        unitPrice: service.price || 0,
+        price: service.price || 0
       });
     }
   };
@@ -691,7 +702,8 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         ...editingItem,
         reference: data.reference || data.id.substring(0, 6),
         description: data.title,
-        unitPrice: price
+        unitPrice: price,
+        price: price
       });
       setShowNewProductForm(false);
       setNewProductData({ title: '', price: '', reference: '' });
@@ -2344,7 +2356,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                     <input
                       type="number"
                       value={editingItem.unitPrice}
-                      onChange={(e) => setEditingItem({ ...editingItem, unitPrice: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => { const v = parseFloat(e.target.value) || 0; setEditingItem({ ...editingItem, unitPrice: v, price: v }); }}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-right"
                     />
                   </div>
