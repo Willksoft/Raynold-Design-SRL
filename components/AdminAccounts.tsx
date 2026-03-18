@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Building2, ArrowRightLeft, LayoutGrid, List as ListIcon, ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building2, ArrowRightLeft, LayoutGrid, List as ListIcon, ArrowDownRight, ArrowUpRight, Wallet, CreditCard, HelpCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { BANK_OPTIONS } from './bankOptions';
 
 export type AccountType = 'BANK' | 'CASH' | 'CARD_PROCESSOR' | 'OTHER';
 
@@ -109,6 +110,23 @@ const AdminAccounts = () => {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(amount);
 
+  const getBankLogo = (bankName?: string) => {
+    if (!bankName) return null;
+    const match = BANK_OPTIONS.find(b => b.name.toLowerCase() === bankName.toLowerCase());
+    return match ? match.logo : null;
+  };
+
+  const getAccountIcon = (account: Account) => {
+    const logo = getBankLogo(account.bankName);
+    if (logo) return <img src={logo} alt={account.bankName} className="w-8 h-8 rounded-lg object-cover border border-white/10" />;
+    switch (account.type) {
+      case 'BANK': return <Building2 size={20} className="text-blue-400" />;
+      case 'CASH': return <Wallet size={20} className="text-green-400" />;
+      case 'CARD_PROCESSOR': return <CreditCard size={20} className="text-purple-400" />;
+      default: return <HelpCircle size={20} className="text-gray-400" />;
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -136,13 +154,18 @@ const AdminAccounts = () => {
           {accounts.map(account => (
             <div key={account.id} className="bg-[#141414] border border-white/10 rounded-xl p-6 relative group">
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold text-white">{account.name}</h3>
-                    <span className="text-[10px] px-2 py-0.5 bg-white/5 text-gray-400 rounded uppercase tracking-wider border border-white/10">{account.type}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                    {getAccountIcon(account)}
                   </div>
-                  {account.bankName && <p className="text-sm text-gray-400">{account.bankName} - {account.accountSubType}</p>}
-                  {account.accountNumber && <p className="text-xs font-mono text-gray-500 mt-1">{account.accountNumber}</p>}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-white">{account.name}</h3>
+                      <span className="text-[10px] px-2 py-0.5 bg-white/5 text-gray-400 rounded uppercase tracking-wider border border-white/10">{account.type}</span>
+                    </div>
+                    {account.bankName && <p className="text-sm text-gray-400">{account.bankName}{account.accountSubType ? ` - ${account.accountSubType}` : ''}</p>}
+                    {account.accountNumber && <p className="text-xs font-mono text-gray-500 mt-0.5">{account.accountNumber}</p>}
+                  </div>
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => { setEditingAccount(account); setAccountForm(account); setIsAccountModalOpen(true); }} className="text-blue-400 hover:text-blue-300"><Edit2 size={16} /></button>
@@ -183,8 +206,12 @@ const AdminAccounts = () => {
                   </td>
                   <td className="px-6 py-4 text-sm">
                     {tx.type === 'TRANSFER' ? (
-                      <><span className="text-red-400">{accounts.find(a => a.id === tx.accountId)?.name}</span>{' → '}<span className="text-green-400">{accounts.find(a => a.id === tx.toAccountId)?.name}</span></>
-                    ) : accounts.find(a => a.id === tx.accountId)?.name}
+                      <div className="flex items-center gap-1">
+                        {(() => { const fromAcc = accounts.find(a => a.id === tx.accountId); return fromAcc ? <><span className="flex items-center gap-1.5">{getBankLogo(fromAcc.bankName) && <img src={getBankLogo(fromAcc.bankName)!} alt="" className="w-5 h-5 rounded object-cover" />}<span className="text-red-400">{fromAcc.name}</span></span></> : null; })()}
+                        <span className="text-gray-500 mx-1">→</span>
+                        {(() => { const toAcc = accounts.find(a => a.id === tx.toAccountId); return toAcc ? <><span className="flex items-center gap-1.5">{getBankLogo(toAcc.bankName) && <img src={getBankLogo(toAcc.bankName)!} alt="" className="w-5 h-5 rounded object-cover" />}<span className="text-green-400">{toAcc.name}</span></span></> : null; })()}
+                      </div>
+                    ) : (() => { const acc = accounts.find(a => a.id === tx.accountId); return acc ? <span className="flex items-center gap-1.5">{getBankLogo(acc.bankName) && <img src={getBankLogo(acc.bankName)!} alt="" className="w-5 h-5 rounded object-cover" />}{acc.name}</span> : null; })()}
                   </td>
                   <td className="px-6 py-4 text-sm">{tx.description}</td>
                   <td className={`px-6 py-4 text-right font-bold ${tx.type === 'EXPENSE' ? 'text-red-400' : 'text-green-400'}`}>
@@ -224,8 +251,17 @@ const AdminAccounts = () => {
               {accountForm.type === 'BANK' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Nombre del Banco</label>
-                    <input type="text" value={accountForm.bankName} onChange={e => setAccountForm({ ...accountForm, bankName: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none" />
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Banco</label>
+                    <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
+                      {BANK_OPTIONS.filter(b => b.type === 'bank').map(bank => (
+                        <button key={bank.name} type="button"
+                          onClick={() => setAccountForm({ ...accountForm, bankName: bank.name })}
+                          className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${accountForm.bankName === bank.name ? 'border-raynold-red bg-raynold-red/10' : 'border-white/10 hover:border-white/30 bg-black'}`}>
+                          <img src={bank.logo} alt={bank.name} className="w-8 h-8 rounded-md object-cover" />
+                          <span className="text-[8px] text-gray-400 text-center leading-tight truncate w-full">{bank.name}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -268,14 +304,17 @@ const AdminAccounts = () => {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Cuenta de Origen</label>
                 <select required value={transferForm.fromAccountId} onChange={e => setTransferForm({ ...transferForm, fromAccountId: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
                   <option value="">Seleccionar cuenta...</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>)}
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.bankName ? `${a.bankName} - ` : ''}{a.name} ({formatCurrency(a.balance)})</option>)}
                 </select>
+              </div>
+              <div className="flex items-center justify-center">
+                <ArrowRightLeft size={24} className="text-blue-400" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Cuenta de Destino</label>
                 <select required value={transferForm.toAccountId} onChange={e => setTransferForm({ ...transferForm, toAccountId: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
                   <option value="">Seleccionar cuenta...</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  {accounts.map(a => <option key={a.id} value={a.id}>{a.bankName ? `${a.bankName} - ` : ''}{a.name}</option>)}
                 </select>
               </div>
               <div>
