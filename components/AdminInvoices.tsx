@@ -335,18 +335,47 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     setView('editor');
   };
 
+  // Normalize invoice data from any source (Supabase snake_case or localStorage camelCase)
+  const normalizeInvoice = (inv: any): Invoice => ({
+    id: inv.id || '',
+    type: inv.type || 'COTIZACION',
+    paymentType: inv.payment_type || inv.paymentType || 'CONTADO',
+    status: inv.status || 'BORRADOR',
+    ncfType: inv.ncf_type || inv.ncfType || '01',
+    ncf: inv.ncf || '',
+    date: inv.date || '',
+    number: inv.number || inv.invoice_number || '',
+    clientId: inv.client_id || inv.clientId || '',
+    clientName: inv.client_name || inv.clientName || '',
+    companyName: inv.company_name || inv.companyName || '',
+    clientRnc: inv.client_rnc || inv.clientRnc || '',
+    clientPhone: inv.client_phone || inv.clientPhone || '',
+    sellerId: inv.seller_id || inv.sellerId || '',
+    sellerName: inv.seller_name || inv.sellerName || '',
+    items: Array.isArray(inv.items) ? inv.items : [],
+    notes: inv.notes || '',
+    paymentTerms: inv.payment_terms || inv.paymentTerms || '',
+    templateId: inv.template_id || inv.templateId || 'classic',
+    payments: Array.isArray(inv.payments) ? inv.payments : [],
+    paymentStatus: inv.payment_status || inv.paymentStatus || 'PENDIENTE',
+    applyTax: inv.apply_tax ?? inv.applyTax ?? true,
+    globalDiscount: inv.global_discount ?? inv.globalDiscount ?? 0,
+    globalDiscountType: inv.global_discount_type || inv.globalDiscountType || 'percent',
+  });
+
   const handleEdit = (invoice: Invoice) => {
-    setCurrentInvoice(invoice);
+    setCurrentInvoice(normalizeInvoice(invoice));
     setView('editor');
   };
 
   const handleDuplicate = (invoice: Invoice) => {
+    const normalized = normalizeInvoice(invoice);
     const duplicated = {
-      ...invoice,
+      ...normalized,
       id: generateUUID(),
       number: generateNextNumber(),
       date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      ncf: invoice.type === 'FACTURA' ? generateNCF(invoice.ncfType) : ''
+      ncf: normalized.type === 'FACTURA' ? generateNCF(normalized.ncfType) : ''
     };
     setInvoices([...invoices, duplicated]);
   };
@@ -453,12 +482,13 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   };
 
   const handleConvertToInvoice = (quotation: Invoice) => {
+    const normalized = normalizeInvoice(quotation);
     const converted: Invoice = {
-      ...quotation,
+      ...normalized,
       id: generateUUID(),
       type: 'FACTURA',
       number: generateNextNumber(),
-      ncf: generateNCF(quotation.ncfType || '02'),
+      ncf: generateNCF(normalized.ncfType || '02'),
       status: 'BORRADOR',
       date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' })
     };
@@ -472,7 +502,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   };
 
   const handlePrintFromList = (invoice: Invoice) => {
-    setCurrentInvoice(invoice);
+    setCurrentInvoice(normalizeInvoice(invoice));
     setView('editor');
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
