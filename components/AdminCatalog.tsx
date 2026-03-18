@@ -4,8 +4,10 @@ import {
   Check, X, ChevronRight, ChevronLeft, Plus, Minus, Image as ImageIcon,
   Hash, Columns, Rows, Square, Printer, Filter, Search,
   ToggleLeft, ToggleRight, Loader2, Sparkles, ArrowUpDown, Save, FolderOpen,
-  Trash2, Clock, Upload, Globe
+  Trash2, Clock, Upload, Globe, FileText
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
 import { ProductItem } from '../types';
 import {
@@ -146,6 +148,84 @@ const AdminCatalog: React.FC = () => {
     if (!window.confirm('¿Eliminar este catálogo guardado?')) return;
     await supabase.from('saved_catalogs').delete().eq('id', id);
     setSavedCatalogs(savedCatalogs.filter(c => c.id !== id));
+  };
+
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    setDownloading(true);
+    try {
+      // Render all pages in an offscreen container
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '8.5in';
+      container.style.zIndex = '-1';
+      document.body.appendChild(container);
+
+      // Temporarily render all pages into the container
+      const tempRoot = document.createElement('div');
+      container.appendChild(tempRoot);
+
+      // Use the printRef pages already rendered
+      const printArea = printRef.current;
+      if (!printArea) { setDownloading(false); return; }
+
+      // Force show printRef
+      printArea.style.display = 'block';
+      printArea.style.position = 'fixed';
+      printArea.style.left = '-9999px';
+      printArea.style.top = '0';
+      printArea.style.width = '8.5in';
+      printArea.style.zIndex = '-1';
+
+      const pageElements = printArea.querySelectorAll('[data-catalog-page]');
+      if (pageElements.length === 0) {
+        printArea.style.display = '';
+        printArea.style.position = '';
+        printArea.style.left = '';
+        printArea.style.top = '';
+        printArea.style.width = '';
+        printArea.style.zIndex = '';
+        setDownloading(false);
+        return;
+      }
+
+      // 8.5x11 inches at 96dpi = 816x1056px, scale 2x for quality
+      const pdf = new jsPDF({ orientation: 'p', unit: 'in', format: 'letter' });
+
+      for (let i = 0; i < pageElements.length; i++) {
+        const el = pageElements[i] as HTMLElement;
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+          logging: false,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, 0, 8.5, 11);
+      }
+
+      pdf.save(`catalogo-${config.catalogTitle?.replace(/\s+/g, '-').toLowerCase() || 'raynold'}.pdf`);
+
+      // Restore printRef
+      printArea.style.display = '';
+      printArea.style.position = '';
+      printArea.style.left = '';
+      printArea.style.top = '';
+      printArea.style.width = '';
+      printArea.style.zIndex = '';
+
+      document.body.removeChild(container);
+    } catch (err) {
+      console.error('PDF generation error:', err);
+    }
+    setDownloading(false);
   };
 
   const fs = { sm: { t: '10px', b: '8px', h: '14px' }, md: { t: '12px', b: '9px', h: '16px' }, lg: { t: '14px', b: '11px', h: '18px' } }[config.fontSize];
@@ -313,7 +393,10 @@ const AdminCatalog: React.FC = () => {
               ))}
             </div>
             <button onClick={() => setSaveModalOpen(true)} className="px-3 py-1.5 bg-green-500/20 text-green-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-green-500/30"><Save size={14} /> Guardar</button>
-            <button onClick={() => window.print()} className="px-3 py-1.5 btn-animated font-bold rounded-lg text-[11px] flex items-center gap-1.5"><Printer size={14} /> PDF</button>
+            <button onClick={handleDownloadPdf} disabled={downloading} className="px-3 py-1.5 bg-rose-500/20 text-rose-400 font-bold rounded-lg text-[11px] flex items-center gap-1.5 hover:bg-rose-500/30 disabled:opacity-50">
+              {downloading ? <><Loader2 size={14} className="animate-spin" /> Generando...</> : <><FileText size={14} /> PDF</>}
+            </button>
+            <button onClick={() => window.print()} className="px-3 py-1.5 btn-animated font-bold rounded-lg text-[11px] flex items-center gap-1.5"><Printer size={14} /> Imprimir</button>
           </div>
         </div>
       </div>
@@ -600,10 +683,10 @@ const AdminCatalog: React.FC = () => {
         )}
       </div>
 
-      {/* Print Area */}
+      {/* Print Area - ALL PAGES */}
       <div ref={printRef} className="hidden print:block">
         <style>{`@media print { body * { visibility: hidden !important; } .print-cat, .print-cat * { visibility: visible !important; } .print-cat { position: absolute; left: 0; top: 0; width: 100%; } @page { size: 8.5in 11in; margin: 0; } }`}</style>
-        <div className="print-cat">{pages.map((p, i) => renderPage(p, i))}</div>
+        <div className="print-cat">{pages.map((p, i) => <div key={i} data-catalog-page>{renderPage(p, i)}</div>)}</div>
       </div>
 
       {/* Save Modal */}
