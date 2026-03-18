@@ -4,7 +4,7 @@ import {
   Check, X, ChevronRight, ChevronLeft, Plus, Minus, Image as ImageIcon,
   Hash, Columns, Rows, Square, Printer, Filter, Search,
   ToggleLeft, ToggleRight, Loader2, Sparkles, ArrowUpDown, Save, FolderOpen,
-  Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, MessageCircle, ClipboardList
+  Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, ClipboardList
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -385,7 +385,7 @@ const AdminCatalog: React.FC = () => {
       text: config.contactFacebook,
     });
     if (config.contactWhatsapp) contactItems.push({
-      icon: <svg {...iconProps}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>,
+      icon: <svg width={16} height={16} viewBox="0 0 24 24" fill={config.accentColor}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>,
       text: config.contactWhatsapp,
     });
     return (
@@ -640,14 +640,17 @@ const AdminCatalog: React.FC = () => {
               </div>
               {/* Colors & Fonts */}
               <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-2"><Palette size={14} className="text-raynold-red" /> Colores y Fuente</h3>
-                <div className="grid grid-cols-3 gap-2 mb-2">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Palette size={14} className="text-raynold-red" /> Colores y Fuente</h3>
+                <div className="grid grid-cols-3 gap-3 mb-3">
                   {[{ k: 'pageColor' as const, l: 'Fondo' }, { k: 'textColor' as const, l: 'Texto' }, { k: 'accentColor' as const, l: 'Acento' }].map(c => (
                     <div key={c.k}>
-                      <label className="text-[8px] text-gray-500 mb-0.5 block">{c.l}</label>
-                      <div className="flex gap-1 items-center">
-                        <input type="color" value={config[c.k]} onChange={e => setConfig({ ...config, [c.k]: e.target.value })} className="w-6 h-6 rounded cursor-pointer border border-white/10 bg-transparent" />
-                        <input type="text" value={config[c.k]} onChange={e => setConfig({ ...config, [c.k]: e.target.value })} className="flex-1 bg-black border border-white/20 rounded px-1.5 py-0.5 text-white font-mono text-[9px]" />
+                      <label className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1 block">{c.l}</label>
+                      <div className="relative">
+                        <input type="color" value={config[c.k]} onChange={e => setConfig({ ...config, [c.k]: e.target.value })} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                        <div className="flex items-center gap-2 bg-black border border-white/15 rounded-lg px-2.5 py-2 cursor-pointer hover:border-white/30 transition-all">
+                          <div className="w-5 h-5 rounded-md border border-white/20 shrink-0" style={{ backgroundColor: config[c.k] }} />
+                          <span className="font-mono text-[10px] text-white/80 uppercase">{config[c.k]}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -691,7 +694,7 @@ const AdminCatalog: React.FC = () => {
                       <input type="text" value={config.contactFacebook || ''} onChange={e => setConfig({ ...config, contactFacebook: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Facebook" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <MessageCircle size={13} className="text-gray-500 shrink-0" />
+                      <svg width={13} height={13} viewBox="0 0 24 24" fill="currentColor" className="text-gray-500 shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
                       <input type="text" value={config.contactWhatsapp || ''} onChange={e => setConfig({ ...config, contactWhatsapp: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="WhatsApp" />
                     </div>
                   </div>
