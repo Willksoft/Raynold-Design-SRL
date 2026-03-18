@@ -136,7 +136,7 @@ const defaultCompanySettings: CompanySettings = {
   address1: 'Calle Juan Pablo Duarte, Lotificacion Veron II',
   address2: '2300 Punta Cana, República Dominicana.',
   phone: '829-580-7411',
-  logoUrl: 'https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-negro.svg'
+  logoUrl: 'https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-negro-r.svg'
 };
 
 const defaultInvoice: Invoice = {
@@ -251,7 +251,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     if (savedCompanySettings) {
       const parsed = JSON.parse(savedCompanySettings);
       // Always use the official logo for PDFs
-      setCompanySettings({ ...parsed, logoUrl: 'https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-negro.svg' });
+      setCompanySettings({ ...parsed, logoUrl: 'https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-negro-r.svg' });
     }
 
     // Load accounts from Supabase
@@ -1020,14 +1020,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   <div className="flex justify-between items-start mb-8">
                     <div className="w-64">
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="flex gap-1">
-                          <div className="w-3 h-12 bg-teal-600 transform -skew-x-12"></div>
-                          <div className="w-3 h-12 bg-raynold-red transform -skew-x-12"></div>
-                          <div className="w-3 h-12 bg-black transform -skew-x-12"></div>
-                        </div>
                         <div className="flex flex-col">
                           {companySettings.logoUrl ? (
-                            <img src={companySettings.logoUrl} alt={companySettings.name} className="h-12 object-contain" />
+                            <img src={companySettings.logoUrl} alt={companySettings.name} className="h-14 object-contain" />
                           ) : (
                             <>
                               <span className="text-2xl font-black tracking-tighter leading-none">{companySettings.name}</span>
@@ -2033,12 +2028,12 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-grow space-y-4 text-gray-800">
+            <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-4 text-gray-800">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Logo de la Empresa</label>
-                <div className="flex items-center gap-4">
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Logo de la Empresa</label>
+                <div className="flex items-center gap-3 flex-wrap">
                   {companySettings.logoUrl && (
-                    <img src={companySettings.logoUrl} alt="Logo" className="h-16 object-contain border border-gray-200 rounded p-1 bg-white" />
+                    <img src={companySettings.logoUrl} alt="Logo" className="h-12 max-w-[160px] object-contain border border-gray-200 rounded p-1 bg-white shrink-0" />
                   )}
                   <input
                     type="file"
@@ -2053,14 +2048,14 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                         reader.readAsDataURL(file);
                       }
                     }}
-                    className="flex-1 border border-gray-300 rounded-lg p-2 text-sm"
+                    className="flex-1 min-w-0 border border-gray-300 rounded-lg p-2 text-sm text-gray-600"
                   />
                   {companySettings.logoUrl && (
                     <button
                       onClick={() => setCompanySettings({ ...companySettings, logoUrl: '' })}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded"
+                      className="p-2 text-red-500 hover:bg-red-50 rounded shrink-0"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   )}
                 </div>
