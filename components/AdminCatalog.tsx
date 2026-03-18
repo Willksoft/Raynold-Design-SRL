@@ -4,7 +4,7 @@ import {
   Check, X, ChevronRight, ChevronLeft, Plus, Minus, Image as ImageIcon,
   Hash, Columns, Rows, Square, Printer, Filter, Search,
   ToggleLeft, ToggleRight, Loader2, Sparkles, ArrowUpDown, Save, FolderOpen,
-  Trash2, Clock, Upload, Globe, FileText
+  Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, MessageCircle, ClipboardList
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -668,30 +668,30 @@ const AdminCatalog: React.FC = () => {
               </div>
               {config.showBackCover && (
                 <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4">
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">📋 Contraportada - Contacto</h3>
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5"><ClipboardList size={12} className="text-gray-500" /> Contraportada - Contacto</h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-[11px] w-5 text-center">📞</span>
+                      <Phone size={13} className="text-gray-500 shrink-0" />
                       <input type="text" value={config.contactPhone || ''} onChange={e => setConfig({ ...config, contactPhone: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Teléfono" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-[11px] w-5 text-center">✉️</span>
+                      <Mail size={13} className="text-gray-500 shrink-0" />
                       <input type="text" value={config.contactEmail || ''} onChange={e => setConfig({ ...config, contactEmail: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Email" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-[11px] w-5 text-center">🌐</span>
+                      <Globe size={13} className="text-gray-500 shrink-0" />
                       <input type="text" value={config.contactWebsite || ''} onChange={e => setConfig({ ...config, contactWebsite: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Sitio web" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-[11px] w-5 text-center">📸</span>
+                      <Instagram size={13} className="text-gray-500 shrink-0" />
                       <input type="text" value={config.contactInstagram || ''} onChange={e => setConfig({ ...config, contactInstagram: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="@usuario Instagram" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-[11px] w-5 text-center">📘</span>
+                      <Facebook size={13} className="text-gray-500 shrink-0" />
                       <input type="text" value={config.contactFacebook || ''} onChange={e => setConfig({ ...config, contactFacebook: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="Facebook" />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-500 text-[11px] w-5 text-center">💬</span>
+                      <MessageCircle size={13} className="text-gray-500 shrink-0" />
                       <input type="text" value={config.contactWhatsapp || ''} onChange={e => setConfig({ ...config, contactWhatsapp: e.target.value })} className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-1.5 text-white text-[11px]" placeholder="WhatsApp" />
                     </div>
                   </div>
