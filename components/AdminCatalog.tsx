@@ -152,7 +152,7 @@ const AdminCatalog: React.FC = () => {
   };
 
   const loadCatalog = (cat: SavedCatalog) => {
-    setConfig(cat.config);
+    setConfig({ ...DEFAULT_CONFIG, ...cat.config });
     setSelectedProducts(new Set(cat.selected_product_ids));
     setActiveTab('preview');
   };
