@@ -346,11 +346,14 @@ const AdminCatalog: React.FC = () => {
 
   const coverDate = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long' });
   const coverPos = `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%`;
-  const coverScale = (config.coverImageScale ?? 100) / 100;
-  const coverImgStyle: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover', objectPosition: coverPos, transform: `scale(${coverScale})`, transformOrigin: coverPos };
+  const coverScalePct = `${config.coverImageScale ?? 100}%`;
+  // Helper: renders a div that fills its parent with the cover image using background-image for reliable crop
+  const coverBg = (extraStyle?: React.CSSProperties) => config.coverImage ? (
+    <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: coverScalePct === '100%' ? 'cover' : coverScalePct, backgroundPosition: coverPos, backgroundRepeat: 'no-repeat', ...extraStyle }} />
+  ) : null;
   const renderCover = (idx: number) => {
     const cs = config.coverStyle || 'centered';
-    const bgImg = config.coverImage ? { position: 'absolute' as const, inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: `${config.coverImageScale ?? 100}%`, backgroundPosition: coverPos, opacity: 0.2 } : undefined;
+    const bgImg = config.coverImage ? { position: 'absolute' as const, inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: coverScalePct === '100%' ? 'cover' : coverScalePct, backgroundPosition: coverPos, backgroundRepeat: 'no-repeat' as const, opacity: 0.2 } : undefined;
 
     if (cs === 'centered') return (
       <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1in' }}>
@@ -377,8 +380,8 @@ const AdminCatalog: React.FC = () => {
           </div>
           <div />
         </div>
-        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative' }}>
-          {config.coverImage && <img src={config.coverImage} alt="" style={{ ...coverImgStyle, mixBlendMode: 'multiply', opacity: 0.6 }} />}
+        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative', overflow: 'hidden' }}>
+          {coverBg({ mixBlendMode: 'multiply', opacity: 0.6 })}
         </div>
       </div>
     );
@@ -410,8 +413,8 @@ const AdminCatalog: React.FC = () => {
             <p style={{ fontSize: '10px', fontWeight: 900, color: config.accentColor, letterSpacing: '2px', textTransform: 'uppercase' }}>PRODUCT</p>
             <h1 style={{ fontSize: '42px', fontWeight: 900, color: '#fff', lineHeight: 1, margin: 0 }}>CATALOG</h1>
           </div>
-          <div style={{ width: '280px', height: '280px', borderRadius: '50%', backgroundColor: '#e0e0e0', marginTop: 'auto', marginBottom: 'auto', overflow: 'hidden', border: '6px solid #fff', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
-            {config.coverImage ? <img src={config.coverImage} alt="" style={coverImgStyle} /> : <div style={{ width: '100%', height: '100%', backgroundColor: '#d0d0d0' }} />}
+          <div style={{ width: '280px', height: '280px', borderRadius: '50%', backgroundColor: '#e0e0e0', marginTop: 'auto', marginBottom: 'auto', overflow: 'hidden', border: '6px solid #fff', boxShadow: '0 10px 30px rgba(0,0,0,0.15)', position: 'relative' }}>
+            {config.coverImage ? coverBg() : <div style={{ width: '100%', height: '100%', backgroundColor: '#d0d0d0' }} />}
           </div>
           <div style={{ textAlign: 'center', marginTop: 'auto' }}>
             {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain', marginBottom: '10px' }} />}
@@ -428,7 +431,7 @@ const AdminCatalog: React.FC = () => {
           {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain' }} />}
           <div style={{ width: '60%', height: '1px', backgroundColor: config.accentColor, margin: '15px 0' }} />
           {config.coverImage && <div style={{ position: 'absolute', top: '1.2in', right: '0.8in', width: '55%', height: '60%', borderRadius: '8px', overflow: 'hidden', border: `3px solid ${config.accentColor}20` }}>
-            <img src={config.coverImage} alt="" style={coverImgStyle} />
+            {coverBg()}
           </div>}
         </div>
         <div style={{ backgroundColor: config.accentColor, padding: '0.8in 1in 0.6in', position: 'relative' }}>
@@ -467,8 +470,8 @@ const AdminCatalog: React.FC = () => {
           </div>
           <div />
         </div>
-        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative' }}>
-          {config.coverImage ? <img src={config.coverImage} alt="" style={{ ...coverImgStyle, opacity: 0.7 }} /> : null}
+        <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative', overflow: 'hidden' }}>
+          {coverBg({ opacity: 0.7 })}
         </div>
       </div>
     );
@@ -486,7 +489,7 @@ const AdminCatalog: React.FC = () => {
             <p style={{ fontSize: '9px', color: '#888', lineHeight: 1.5, maxWidth: '80%' }}>{config.title}</p>
           </div>
           <div style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {config.coverImage && <div style={{ width: '70%', aspectRatio: '4/3', borderRadius: '12px', overflow: 'hidden' }}><img src={config.coverImage} alt="" style={coverImgStyle} /></div>}
+            {config.coverImage && <div style={{ width: '70%', aspectRatio: '4/3', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>{coverBg()}</div>}
           </div>
         </div>
       </div>
@@ -913,7 +916,7 @@ const AdminCatalog: React.FC = () => {
                       </div>
                       {/* Preview */}
                       <div className="relative w-full h-28 rounded-lg overflow-hidden border border-white/10 bg-black">
-                        <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%`, transform: `scale(${(config.coverImageScale ?? 100) / 100})`, transformOrigin: `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%` }} />
+                        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: (config.coverImageScale ?? 100) === 100 ? 'cover' : `${config.coverImageScale}%`, backgroundPosition: `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%`, backgroundRepeat: 'no-repeat' }} />
                         <div className="absolute inset-0 border-2 border-dashed border-white/20 rounded-lg pointer-events-none" />
                         <div className="absolute top-1 left-1 px-1 py-0.5 bg-black/70 text-[7px] text-gray-400 rounded">Vista previa del recorte</div>
                       </div>
