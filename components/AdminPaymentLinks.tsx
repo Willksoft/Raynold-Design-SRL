@@ -364,26 +364,35 @@ const AdminPaymentLinks: React.FC = () => {
         </div>
 
         {/* Right: Always Visible Mobile Preview */}
-        {currentPage && (
-          <div className="w-[400px] border-l border-white/10 bg-[#0A0A0A] flex flex-col shrink-0">
-            <div className="flex items-center gap-2 p-3 border-b border-white/10">
+        {currentPage && (() => {
+          const previewTheme = THEMES.find(t => t.id === currentPage.theme) || THEMES[0];
+          return (
+          <div className="w-[400px] border-l border-white/10 flex flex-col shrink-0" style={{ backgroundColor: previewTheme.bg }}>
+            <div className="flex items-center gap-2 p-3 border-b border-white/10" style={{ backgroundColor: previewTheme.bg }}>
               <Smartphone size={14} className="text-raynold-red" />
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vista Previa Mobile</span>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 flex justify-center">
-              {/* Phone Frame */}
-              <div style={{ width: '320px', minHeight: '580px', borderRadius: '32px', border: '3px solid #333', backgroundColor: '#1a1a1a', padding: '8px', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
-                {/* Notch */}
-                <div style={{ width: '100px', height: '6px', backgroundColor: '#333', borderRadius: '10px', margin: '0 auto 6px' }} />
-                <div style={{ borderRadius: '24px', overflow: 'hidden', height: 'calc(100% - 12px)' }}>
-                  <div style={{ overflowY: 'auto', height: '100%' }}>
+            <div className="flex-1 overflow-y-auto p-4 flex justify-center items-start" style={{ backgroundColor: previewTheme.bg }}>
+              {/* iPhone 14 Pro Max Mockup */}
+              <div style={{ width: '300px', minHeight: '620px', borderRadius: '44px', border: '4px solid #2a2a2a', backgroundColor: '#000', padding: '3px', overflow: 'hidden', boxShadow: '0 10px 50px rgba(0,0,0,0.6), inset 0 0 0 2px #1a1a1a', position: 'relative' }}>
+                {/* Stainless steel inner frame */}
+                <div style={{ borderRadius: '40px', overflow: 'hidden', height: '100%', position: 'relative', backgroundColor: previewTheme.bg }}>
+                  {/* Dynamic Island */}
+                  <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'center', paddingTop: '10px', backgroundColor: previewTheme.bg }}>
+                    <div style={{ width: '120px', height: '28px', backgroundColor: '#000', borderRadius: '20px' }} />
+                  </div>
+                  {/* Content */}
+                  <div style={{ overflowY: 'auto', height: 'calc(100% - 38px)', paddingBottom: '16px' }}>
                     <PaymentPagePreview page={currentPage} methods={methods.filter(m => m.page_id === currentPage.id && m.is_active)} />
                   </div>
+                  {/* Home indicator */}
+                  <div style={{ position: 'absolute', bottom: '6px', left: '50%', transform: 'translateX(-50%)', width: '100px', height: '4px', backgroundColor: previewTheme.text, opacity: 0.2, borderRadius: '4px' }} />
                 </div>
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Page Modal with Templates */}
@@ -863,7 +872,7 @@ const PaymentPagePreviewMini: React.FC<{ page: PaymentPage }> = ({ page }) => {
           </div>
         )}
         <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 2px' }}>{page.name || 'Tu Nombre'}</h3>
-        <p style={{ fontSize: '10px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>@{page.username || 'usuario'} <VerifiedBadge size={12} /></p>
+        <p style={{ fontSize: '10px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>@{page.username || 'usuario'} <VerifiedBadge size={16} /></p>
         {page.bio && <p style={{ fontSize: '9px', opacity: 0.5, marginTop: '4px' }}>{page.bio}</p>}
       </div>
       <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -929,7 +938,7 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
           <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>{page.name}</h2>
           <Copy size={10} style={{ opacity: 0.2 }} />
         </div>
-        <p style={{ fontSize: '11px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>@{page.username} <VerifiedBadge size={14} /></p>
+        <p style={{ fontSize: '11px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>@{page.username} <VerifiedBadge size={18} /></p>
         {page.bio && <p style={{ fontSize: '10px', opacity: 0.5, marginTop: '5px' }}>{page.bio}</p>}
       </div>
 

@@ -34,7 +34,7 @@ const PublicPaymentPage: React.FC = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data: p } = await supabase.from('payment_pages').select('*').eq('slug', slug).eq('is_active', true).single();
+      const { data: p } = await supabase.from('payment_pages').select('*').eq('slug', slug?.toLowerCase()).eq('is_active', true).single();
       if (!p) { setNotFound(true); setLoading(false); return; }
       setPage(p);
       const { data: m } = await supabase.from('payment_methods').select('*').eq('page_id', p.id).eq('is_active', true).order('sort_order');
@@ -143,7 +143,7 @@ const PublicPaymentPage: React.FC = () => {
             <h1 style={{ fontSize: '22px', fontWeight: 800, color: theme.text, margin: 0 }}>{page.name}</h1>
             {copied === 'name' ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={12} style={{ color: theme.text, opacity: 0.25 }} />}
           </button>
-          <p style={{ fontSize: '13px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>@{page.username} <img src="/verified-badge.svg" alt="Verificado" style={{ width: '16px', height: '16px' }} /></p>
+          <p style={{ fontSize: '13px', color: page.accent_color, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '2px' }}>@{page.username} <img src="/verified-badge.svg" alt="Verificado" style={{ width: '20px', height: '20px' }} /></p>
           {page.bio && <p style={{ fontSize: '13px', color: theme.text, opacity: 0.5, marginTop: '8px', lineHeight: 1.4 }}>{page.bio}</p>}
         </div>
 
@@ -159,11 +159,13 @@ const PublicPaymentPage: React.FC = () => {
           </div>
         )}
 
-        {/* URL Pill */}
+        {/* URL Pill + Copy */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 16px', borderRadius: '20px', border: `1px solid ${page.accent_color}40`, fontSize: '11px', fontWeight: 700, color: page.accent_color, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            <Globe size={11} /> {window.location.host}/pagar/{page.slug}
-          </div>
+          <button onClick={() => copy(`${window.location.origin}/pagar/${page.slug}`, 'pagelink')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 16px', borderRadius: '20px', border: `1px solid ${page.accent_color}40`, fontSize: '11px', fontWeight: 700, color: page.accent_color, letterSpacing: '0.5px', backgroundColor: 'transparent', cursor: 'pointer', transition: 'background 0.2s' }}>
+            <Globe size={11} /> {window.location.host.toLowerCase()}/pagar/{page.slug.toLowerCase()}
+            {copied === 'pagelink' ? <Check size={12} style={{ color: '#10b981' }} /> : <Copy size={10} style={{ opacity: 0.5 }} />}
+          </button>
         </div>
 
         {/* BANKS - Grouped by bank_name */}
