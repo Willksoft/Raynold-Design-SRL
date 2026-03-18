@@ -218,10 +218,17 @@ export const AdminLayout = () => {
           </Link>
           <Link
             to="/admin/invoices"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/invoices') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname === '/admin/invoices' ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <Receipt size={18} />
+            <span className="font-bold text-sm">Facturas</span>
+          </Link>
+          <Link
+            to="/admin/quotations"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname === '/admin/quotations' ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
           >
             <FileText size={18} />
-            <span className="font-bold text-sm">Facturación</span>
+            <span className="font-bold text-sm">Cotizaciones</span>
           </Link>
           <Link
             to="/admin/clients"
@@ -583,7 +590,8 @@ export const AdminLayout = () => {
             <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/dashboard" element={<AdminDashboard />} />
             <Route path="/pos" element={<AdminPOS />} />
-            <Route path="/invoices" element={<AdminInvoices />} />
+            <Route path="/invoices" element={<AdminInvoices moduleType="FACTURA" />} />
+            <Route path="/quotations" element={<AdminInvoices moduleType="COTIZACION" />} />
             <Route path="/clients" element={<AdminClients />} />
             <Route path="/expenses" element={<AdminExpenses />} />
             <Route path="/hero" element={<AdminHero />} />

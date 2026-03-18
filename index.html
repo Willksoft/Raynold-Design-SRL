@@ -153,6 +153,7 @@
             'spin-slow': 'spin 8s linear infinite',
             'scroll': 'scroll 25s linear infinite',
             'gradient-text': 'textShine 3s linear infinite',
+            'slide-in-right': 'slideInRight 0.3s ease-out forwards',
           },
           keyframes: {
             scroll: {
@@ -162,6 +163,10 @@
             textShine: {
               '0%': { backgroundPosition: '0% 50%' },
               '100%': { backgroundPosition: '200% 50%' },
+            },
+            slideInRight: {
+              '0%': { transform: 'translateX(120%)', opacity: '0' },
+              '100%': { transform: 'translateX(0)', opacity: '1' },
             }
           }
         }

@@ -1,10 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
 import { Account } from './AdminAccounts';
 import { supabase } from '../lib/supabaseClient';
+
+// ─── Toast Notification System ──────────────────────────────────────
+interface ToastItem {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+}
+
+const ToastContainer: React.FC<{ toasts: ToastItem[]; onRemove: (id: string) => void }> = ({ toasts, onRemove }) => (
+  <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+    {toasts.map(t => (
+      <div
+        key={t.id}
+        className={`pointer-events-auto px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-md flex items-center gap-3 min-w-[280px] max-w-[420px] animate-slide-in-right ${
+          t.type === 'success' ? 'bg-green-900/90 border-green-500/30 text-green-100' :
+          t.type === 'error' ? 'bg-red-900/90 border-red-500/30 text-red-100' :
+          t.type === 'warning' ? 'bg-yellow-900/90 border-yellow-500/30 text-yellow-100' :
+          'bg-blue-900/90 border-blue-500/30 text-blue-100'
+        }`}
+        onClick={() => onRemove(t.id)}
+        style={{ cursor: 'pointer' }}
+      >
+        {t.type === 'success' && <CheckCircle2 size={18} className="text-green-400 shrink-0" />}
+        {t.type === 'error' && <AlertTriangle size={18} className="text-red-400 shrink-0" />}
+        {t.type === 'warning' && <AlertTriangle size={18} className="text-yellow-400 shrink-0" />}
+        {t.type === 'info' && <FileText size={18} className="text-blue-400 shrink-0" />}
+        <span className="text-sm font-medium">{t.message}</span>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── Confirm Dialog ─────────────────────────────────────────────────
+interface ConfirmDialogProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ isOpen, title, message, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-[#111] border border-white/10 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="p-6 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-500/20 rounded-xl"><AlertTriangle size={20} className="text-red-400" /></div>
+            <h3 className="font-bold text-white text-lg">{title}</h3>
+          </div>
+          <p className="text-gray-400 text-sm">{message}</p>
+        </div>
+        <div className="flex border-t border-white/10">
+          <button onClick={onCancel} className="flex-1 py-3 text-gray-400 hover:bg-white/5 font-bold text-sm transition-colors">Cancelar</button>
+          <button onClick={onConfirm} className="flex-1 py-3 text-red-400 hover:bg-red-500/10 font-bold text-sm transition-colors border-l border-white/10">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface InvoiceItem {
   id: string;
@@ -104,19 +164,35 @@ const defaultInvoice: Invoice = {
   globalDiscountType: 'percent'
 };
 
-const AdminInvoices = () => {
+const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }> = ({ moduleType = 'ALL' }) => {
   const { products } = useShop();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
-  const [view, setView] = useState<'list' | 'editor'>('list');
+  const [view, setView] = useState<'list' | 'editor' | 'saved'>('list');
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
+
+  // Toast system
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const addToast = useCallback((message: string, type: ToastItem['type'] = 'info') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
+  const removeToast = useCallback((id: string) => setToasts(prev => prev.filter(t => t.id !== id)), []);
+
+  // Confirm dialog
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
+  // Last saved invoice for success screen
+  const [savedInvoice, setSavedInvoice] = useState<Invoice | null>(null);
+  const [savedStatus, setSavedStatus] = useState<string>('');
 
   // Payment Modal State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -215,11 +291,14 @@ const AdminInvoices = () => {
     return `B${type}${String(count).padStart(8, '0')}`;
   };
 
-  const handleCreateNew = () => {
+  const handleCreateNew = (type?: 'COTIZACION' | 'FACTURA') => {
+    const docType = type || (moduleType === 'FACTURA' ? 'FACTURA' : moduleType === 'COTIZACION' ? 'COTIZACION' : 'COTIZACION');
     setCurrentInvoice({
       ...defaultInvoice,
       id: Math.random().toString(36).substr(2, 9),
-      number: generateNextNumber()
+      number: generateNextNumber(),
+      type: docType,
+      ncf: docType === 'FACTURA' ? generateNCF('02') : ''
     });
     setView('editor');
   };
@@ -240,17 +319,23 @@ const AdminInvoices = () => {
     setInvoices([...invoices, duplicated]);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de eliminar este documento?')) {
-      // First delete from Supabase
-      const { error } = await supabase.from('invoices').delete().eq('id', id);
-      if (error) {
-        console.error('Error deleting from supabase:', error);
-        alert('Error al eliminar el documento en la base de datos.');
-        return;
+  const handleDelete = (id: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Eliminar documento',
+      message: 'Esta accion es irreversible. El documento sera eliminado permanentemente.',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        const { error } = await supabase.from('invoices').delete().eq('id', id);
+        if (error) {
+          console.error('Error deleting from supabase:', error);
+          addToast('Error al eliminar el documento', 'error');
+          return;
+        }
+        setInvoices(prev => prev.filter(i => i.id !== id));
+        addToast('Documento eliminado correctamente', 'success');
       }
-      setInvoices(invoices.filter(i => i.id !== id));
-    }
+    });
   };
 
   const handleBack = () => {
@@ -268,15 +353,13 @@ const AdminInvoices = () => {
   const handleSave = async (status: 'BORRADOR' | 'EMITIDA' = 'EMITIDA') => {
     if (!currentInvoice) return;
     const invoiceToSave = { ...currentInvoice, status };
-    const exists = invoices.find(i => i.id === currentInvoice.id);
-    if (exists) {
-      setInvoices(invoices.map(i => i.id === currentInvoice.id ? invoiceToSave : i));
-    } else {
-      setInvoices([...invoices, invoiceToSave]);
-    }
-    setCurrentInvoice(invoiceToSave);
 
-    // Persist to Supabase
+    // Auto-generate NCF for invoices when emitting
+    if (status === 'EMITIDA' && invoiceToSave.type === 'FACTURA' && !invoiceToSave.ncf) {
+      invoiceToSave.ncf = generateNCF(invoiceToSave.ncfType);
+    }
+
+    // Persist to Supabase FIRST
     const { error } = await supabase.from('invoices').upsert({
       id: invoiceToSave.id,
       type: invoiceToSave.type,
@@ -303,8 +386,42 @@ const AdminInvoices = () => {
       global_discount: invoiceToSave.globalDiscount || 0,
       global_discount_type: invoiceToSave.globalDiscountType || 'percent',
     });
-    if (error) console.error('Supabase save error:', error.message);
-    alert(`Documento guardado como ${status}`);
+
+    if (error) {
+      console.error('Supabase save error:', error.message);
+      addToast('Error al guardar: ' + error.message, 'error');
+      return;
+    }
+
+    // Update local state AFTER successful save
+    const exists = invoices.find(i => i.id === currentInvoice.id);
+    if (exists) {
+      setInvoices(prev => prev.map(i => i.id === currentInvoice.id ? invoiceToSave : i));
+    } else {
+      setInvoices(prev => [...prev, invoiceToSave]);
+    }
+    setCurrentInvoice(invoiceToSave);
+
+    // Show success screen
+    setSavedInvoice(invoiceToSave);
+    setSavedStatus(status);
+    setView('saved');
+    addToast(`${invoiceToSave.type === 'FACTURA' ? 'Factura' : 'Cotizacion'} guardada correctamente`, 'success');
+  };
+
+  const handleConvertToInvoice = (quotation: Invoice) => {
+    const converted: Invoice = {
+      ...quotation,
+      id: Math.random().toString(36).substr(2, 9),
+      type: 'FACTURA',
+      number: generateNextNumber(),
+      ncf: generateNCF(quotation.ncfType || '02'),
+      status: 'BORRADOR',
+      date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    };
+    setCurrentInvoice(converted);
+    setView('editor');
+    addToast('Cotizacion convertida a factura. Revisa y guarda.', 'info');
   };
 
   const handlePrint = () => {
@@ -443,7 +560,7 @@ const AdminInvoices = () => {
       setShowNewProductForm(false);
       setNewProductData({ title: '', price: '', reference: '' });
     } else {
-      alert('Error al crear producto: ' + error?.message);
+      addToast('Error al crear producto: ' + error?.message, 'error');
     }
     setSavingProduct(false);
   };
@@ -559,9 +676,92 @@ const AdminInvoices = () => {
     });
   };
 
+  // Success screen after save
+  if (view === 'saved' && savedInvoice) {
+    const docLabel = savedInvoice.type === 'FACTURA' ? 'Factura' : 'Cotizacion';
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-gray-100 text-black p-8">
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 text-center border-b border-gray-100">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={36} className="text-green-600" />
+            </div>
+            <h2 className="text-2xl font-black text-gray-900">{docLabel} Guardada</h2>
+            <p className="text-gray-500 mt-2 text-sm">
+              <span className="font-bold">N. {savedInvoice.number}</span> - {savedStatus === 'EMITIDA' ? 'Emitida' : 'Borrador'}
+            </p>
+            {savedInvoice.clientName && (
+              <p className="text-gray-400 text-xs mt-1">Cliente: {savedInvoice.clientName}</p>
+            )}
+          </div>
+
+          <div className="p-6 space-y-3">
+            <button
+              onClick={() => {
+                setCurrentInvoice(savedInvoice);
+                setView('editor');
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+            >
+              <Eye size={18} className="text-blue-500" />
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Ver Documento</p>
+                <p className="text-xs text-gray-400">Abrir en el editor para revisar</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setCurrentInvoice(savedInvoice);
+                setView('editor');
+                setTimeout(() => window.print(), 300);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+            >
+              <Download size={18} className="text-purple-500" />
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Descargar / Imprimir PDF</p>
+                <p className="text-xs text-gray-400">Generar PDF o enviar a impresora</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                handleCreateNew(savedInvoice.type);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+            >
+              <Plus size={18} className="text-green-500" />
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Crear Nuevo {docLabel}</p>
+                <p className="text-xs text-gray-400">Empezar un nuevo documento</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setView('list');
+                setSavedInvoice(null);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-black text-white hover:bg-gray-800 transition-colors text-left"
+            >
+              <ArrowLeft size={18} />
+              <div>
+                <p className="font-bold text-sm">Volver a la Lista</p>
+                <p className="text-xs text-gray-400">Ver todos los documentos</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (view === 'editor' && currentInvoice) {
     return (
       <div className="flex flex-col h-full bg-gray-100 text-black overflow-hidden print:bg-white print:h-auto print:overflow-visible">
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
         <style dangerouslySetInnerHTML={{
           __html: `
           @media print {
@@ -1627,15 +1827,29 @@ const AdminInvoices = () => {
       (inv.companyName && String(inv.companyName).toLowerCase().includes(searchLower));
     const matchesStatus = filterStatus === 'ALL' || inv.status === filterStatus || inv.paymentStatus === filterStatus;
     const matchesType = filterType === 'ALL' || inv.type === filterType;
-    return matchesSearch && matchesStatus && matchesType;
+    const matchesModule = moduleType === 'ALL' || inv.type === moduleType;
+    return matchesSearch && matchesStatus && matchesType && matchesModule;
   });
+
+  const moduleTitle = moduleType === 'FACTURA' ? 'Facturas' : moduleType === 'COTIZACION' ? 'Cotizaciones' : 'Facturacion y Cotizaciones';
+  const moduleSubtitle = moduleType === 'FACTURA' ? 'Historial de facturas emitidas.' : moduleType === 'COTIZACION' ? 'Historial de cotizaciones.' : 'Historial de documentos emitidos.';
+  const createLabel = moduleType === 'FACTURA' ? 'Nueva Factura' : moduleType === 'COTIZACION' ? 'Nueva Cotizacion' : 'Nuevo Documento';
 
   return (
     <div className="p-6 md:p-10 relative">
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-futuristic font-bold text-white mb-2">Facturación y Cotizaciones</h1>
-          <p className="text-gray-400">Historial de documentos emitidos.</p>
+          <h1 className="text-3xl font-futuristic font-bold text-white mb-2">{moduleTitle}</h1>
+          <p className="text-gray-400">{moduleSubtitle}</p>
         </div>
         <div className="flex gap-4">
           <button
@@ -1646,11 +1860,11 @@ const AdminInvoices = () => {
             Empresa
           </button>
           <button
-            onClick={handleCreateNew}
+            onClick={() => handleCreateNew()}
             className="px-6 py-3 btn-animated font-bold rounded-lg flex items-center gap-2"
           >
             <Plus size={18} />
-            Nueva Factura / Cotización
+            {createLabel}
           </button>
         </div>
       </div>
@@ -1667,15 +1881,17 @@ const AdminInvoices = () => {
           />
         </div>
         <div className="flex gap-3">
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-raynold-red transition-colors cursor-pointer"
-          >
-            <option value="ALL">Todo Tipo</option>
-            <option value="FACTURA">Facturas</option>
-            <option value="COTIZACION">Cotizaciones</option>
-          </select>
+          {moduleType === 'ALL' && (
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-raynold-red transition-colors cursor-pointer"
+            >
+              <option value="ALL">Todo Tipo</option>
+              <option value="FACTURA">Facturas</option>
+              <option value="COTIZACION">Cotizaciones</option>
+            </select>
+          )}
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -1749,6 +1965,15 @@ const AdminInvoices = () => {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
+                        {invoice.type === 'COTIZACION' && (
+                          <button
+                            onClick={() => handleConvertToInvoice(invoice)}
+                            className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"
+                            title="Convertir a Factura"
+                          >
+                            <ArrowRight size={16} />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDuplicate(invoice)}
                           className="p-2 bg-green-500/20 text-green-400 rounded hover:bg-green-500/40 transition-colors"

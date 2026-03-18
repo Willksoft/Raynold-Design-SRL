@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Plus, Minus, Trash2, Search, CreditCard, User, FileText, Printer, X, DollarSign, Save, Percent } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { ShoppingCart, Plus, Minus, Trash2, Search, CreditCard, User, FileText, Printer, X, DollarSign, Save, Percent, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { Seller } from './AdminSellers';
@@ -36,6 +36,14 @@ const AdminPOS = () => {
   const [applyTax, setApplyTax] = useState(true);
   const [globalDiscount, setGlobalDiscount] = useState(0);
   const [globalDiscountType, setGlobalDiscountType] = useState<'percent' | 'fixed'>('percent');
+
+  // Toast system
+  const [posToasts, setPosToasts] = useState<{ id: string; message: string; type: 'success' | 'error' | 'info' }[]>([]);
+  const addPosToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setPosToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setPosToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
 
   // Payment state
   const [paymentMethod1, setPaymentMethod1] = useState<string>('');
@@ -326,7 +334,7 @@ const AdminPOS = () => {
   const saveAsDraft = () => {
     if (cart.length === 0) return;
     processSale(false, 'BORRADOR');
-    alert('Borrador guardado correctamente');
+    addPosToast('Borrador guardado correctamente', 'success');
   };
 
   const handlePreview = () => {
@@ -356,6 +364,26 @@ const AdminPOS = () => {
 
   return (
     <div className="flex h-full overflow-hidden bg-[#050505] print:bg-white">
+      {/* POS Toast Notifications */}
+      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+        {posToasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto px-5 py-3 rounded-xl shadow-2xl border backdrop-blur-md flex items-center gap-3 min-w-[280px] max-w-[420px] animate-slide-in-right ${
+              t.type === 'success' ? 'bg-green-900/90 border-green-500/30 text-green-100' :
+              t.type === 'error' ? 'bg-red-900/90 border-red-500/30 text-red-100' :
+              'bg-blue-900/90 border-blue-500/30 text-blue-100'
+            }`}
+            onClick={() => setPosToasts(prev => prev.filter(x => x.id !== t.id))}
+            style={{ cursor: 'pointer' }}
+          >
+            {t.type === 'success' && <CheckCircle2 size={18} className="text-green-400 shrink-0" />}
+            {t.type === 'error' && <AlertTriangle size={18} className="text-red-400 shrink-0" />}
+            {t.type === 'info' && <FileText size={18} className="text-blue-400 shrink-0" />}
+            <span className="text-sm font-medium">{t.message}</span>
+          </div>
+        ))}
+      </div>
       <style dangerouslySetInnerHTML={{
         __html: `
         @media print {
