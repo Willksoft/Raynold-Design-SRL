@@ -72,6 +72,7 @@ interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  price: number;
   discount?: number;
   discountType?: 'percent' | 'fixed';
 }
@@ -182,7 +183,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const [services, setServices] = useState<Service[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
-  const [view, setView] = useState<'list' | 'editor' | 'saved'>('list');
+  const [view, setView] = useState<'list' | 'editor' | 'saved' | 'preview'>('list');
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -406,6 +407,11 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     setCurrentInvoice(normalizeInvoice(invoice));
     setView('editor');
     setHasUnsavedChanges(false);
+  };
+
+  const handleView = (invoice: Invoice) => {
+    setCurrentInvoice(normalizeInvoice(invoice));
+    setView('preview');
   };
 
   const handleDuplicate = (invoice: Invoice) => {
@@ -828,10 +834,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
           <div className="p-6 space-y-3">
             <button
-              onClick={() => {
-                setCurrentInvoice(savedInvoice);
-                setView('editor');
-              }}
+              onClick={() => handleView(savedInvoice)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-left"
             >
               <Eye size={18} className="text-blue-500" />
@@ -894,6 +897,228 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                 <p className="text-xs text-gray-400">Ver todos los documentos</p>
               </div>
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'preview' && currentInvoice) {
+    const previewDocLabel = currentInvoice.type === 'FACTURA' ? 'Factura' : 'Cotizacion';
+    const previewSubtotal = currentInvoice.items.reduce((sum: number, item: InvoiceItem) => sum + item.quantity * item.price, 0);
+    const previewItemDiscounts = currentInvoice.items.reduce((sum: number, item: InvoiceItem) => {
+      const lineTotal = item.quantity * item.price;
+      return sum + (item.discountType === 'fixed' ? (item.discount || 0) : lineTotal * ((item.discount || 0) / 100));
+    }, 0);
+    const previewAfterItemDiscounts = previewSubtotal - previewItemDiscounts;
+    const previewGlobalDiscountAmt = (currentInvoice.globalDiscountType === 'fixed')
+      ? (currentInvoice.globalDiscount || 0)
+      : previewAfterItemDiscounts * ((currentInvoice.globalDiscount || 0) / 100);
+    const previewTaxable = previewAfterItemDiscounts - previewGlobalDiscountAmt;
+    const previewTax = currentInvoice.applyTax !== false ? previewTaxable * 0.18 : 0;
+    const previewTotal = previewTaxable + previewTax;
+    const previewTotalPaid = (currentInvoice.payments || []).reduce((s: number, p: Payment) => s + p.amount, 0);
+    const previewBalanceDue = previewTotal - previewTotalPaid;
+
+    return (
+      <div className="flex flex-col h-full bg-gray-100 text-black overflow-hidden print:bg-white print:h-auto print:overflow-visible">
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+        <style dangerouslySetInnerHTML={{
+          __html: `
+          @media print {
+            @page { margin: 0.5in; size: letter; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-content { width: 100% !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; }
+            * { word-break: break-word; overflow-wrap: break-word; }
+            .invoice-container { display: block !important; height: auto !important; overflow: visible !important; }
+          }
+        ` }} />
+
+        {/* Preview Top Bar */}
+        <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200 shadow-sm print:hidden shrink-0 z-10">
+          <button onClick={() => { setView('list'); setCurrentInvoice(null); }} className="flex items-center gap-2 text-gray-600 hover:text-black font-medium">
+            <ArrowLeft size={20} /> Volver
+          </button>
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-bold text-gray-500 mr-2">{previewDocLabel} #{currentInvoice.number}</span>
+            <button
+              onClick={() => handleEdit(currentInvoice)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm"
+              title="Editar"
+            >
+              <Edit2 size={15} /> Editar
+            </button>
+            <button
+              onClick={() => {
+                handleDuplicate(currentInvoice);
+                addToast('Documento duplicado. Editando la copia.', 'success');
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors font-medium text-sm"
+              title="Duplicar"
+            >
+              <Copy size={15} /> Duplicar
+            </button>
+            {currentInvoice.type === 'COTIZACION' && (
+              <button
+                onClick={() => handleConvertToInvoice(currentInvoice)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium text-sm"
+                title="Convertir en Factura"
+              >
+                <ArrowRight size={15} /> Convertir en Factura
+              </button>
+            )}
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm"
+              title="Imprimir / PDF"
+            >
+              <Printer size={15} /> PDF
+            </button>
+            <button
+              onClick={() => {
+                handleDelete(currentInvoice.id);
+                setView('list');
+                setCurrentInvoice(null);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium text-sm"
+              title="Eliminar"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+
+        {/* Document Preview */}
+        <div className="flex-1 overflow-y-auto bg-gray-200 p-8 print:p-0 print:bg-white flex justify-center invoice-container">
+          <div className="w-[8.5in] min-h-[11in] bg-white shadow-2xl print:shadow-none relative print-content">
+            {currentInvoice.templateId === 'classic' && (
+              <div className="p-10 md:p-12 h-full flex flex-col">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-8">
+                  <div className="w-64">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex flex-col">
+                        {companySettings.logoUrl ? (
+                          <img src={companySettings.logoUrl} alt="Logo" className="h-20 object-contain" />
+                        ) : (
+                          <div className="text-2xl font-black text-gray-900">{companySettings.name}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 space-y-0.5 mt-2">
+                      <p className="font-semibold text-gray-700">{companySettings.name}</p>
+                      {companySettings.rnc && <p>RNC: {companySettings.rnc}</p>}
+                      {companySettings.address && <p>{companySettings.address}</p>}
+                      {companySettings.phone && <p>Tel: {companySettings.phone}</p>}
+                      {companySettings.email && <p>{companySettings.email}</p>}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h1 className="text-3xl font-black text-gray-900 mb-1">{currentInvoice.type === 'FACTURA' ? 'FACTURA' : 'COTIZACIÓN'}</h1>
+                    <p className="text-lg font-bold text-gray-700">N. {currentInvoice.number}</p>
+                    <p className="text-sm text-gray-500 mt-1">Fecha: {currentInvoice.date}</p>
+                    {currentInvoice.ncf && <p className="text-xs font-mono text-gray-400 mt-1">NCF: {currentInvoice.ncf}</p>}
+                    <div className="mt-2">
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${currentInvoice.status === 'EMITIDA' ? 'bg-green-100 text-green-700' : currentInvoice.status === 'BORRADOR' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                        {currentInvoice.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Client Info */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                  <p className="text-xs font-bold text-gray-500 uppercase mb-1">{currentInvoice.type === 'FACTURA' ? 'Facturar a' : 'Cotizar a'}</p>
+                  <p className="font-bold text-gray-900">{currentInvoice.companyName || currentInvoice.clientName || 'Sin cliente'}</p>
+                  {currentInvoice.companyName && currentInvoice.clientName && <p className="text-sm text-gray-600">{currentInvoice.clientName}</p>}
+                  {currentInvoice.clientRnc && <p className="text-sm text-gray-500">RNC: {currentInvoice.clientRnc}</p>}
+                  {currentInvoice.clientPhone && <p className="text-sm text-gray-500">Tel: {currentInvoice.clientPhone}</p>}
+                </div>
+
+                {/* Items Table */}
+                <table className="w-full mb-6 text-sm">
+                  <thead>
+                    <tr className="bg-gray-900 text-white text-xs uppercase">
+                      <th className="py-2 px-3 text-left font-bold">Descripción</th>
+                      <th className="py-2 px-3 text-center font-bold">Cant.</th>
+                      <th className="py-2 px-3 text-right font-bold">Precio</th>
+                      <th className="py-2 px-3 text-right font-bold">Desc.</th>
+                      <th className="py-2 px-3 text-right font-bold">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentInvoice.items.map((item: InvoiceItem, idx: number) => {
+                      const lineTotal = item.quantity * item.price;
+                      const itemDisc = item.discountType === 'fixed' ? (item.discount || 0) : lineTotal * ((item.discount || 0) / 100);
+                      return (
+                        <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="py-2 px-3 text-gray-900">{item.description}</td>
+                          <td className="py-2 px-3 text-center text-gray-600">{item.quantity}</td>
+                          <td className="py-2 px-3 text-right text-gray-600">{formatCurrency(item.price)}</td>
+                          <td className="py-2 px-3 text-right text-red-500">{itemDisc > 0 ? `-${formatCurrency(itemDisc)}` : '-'}</td>
+                          <td className="py-2 px-3 text-right font-bold text-gray-900">{formatCurrency(lineTotal - itemDisc)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* Totals */}
+                <div className="flex justify-end mt-auto">
+                  <div className="w-72 space-y-1 text-sm">
+                    <div className="flex justify-between"><span className="text-gray-500">Subtotal:</span><span className="font-medium">{formatCurrency(previewSubtotal)}</span></div>
+                    {previewItemDiscounts > 0 && <div className="flex justify-between"><span className="text-gray-500">Desc. Items:</span><span className="text-red-500">-{formatCurrency(previewItemDiscounts)}</span></div>}
+                    {previewGlobalDiscountAmt > 0 && <div className="flex justify-between"><span className="text-gray-500">Desc. Global:</span><span className="text-red-500">-{formatCurrency(previewGlobalDiscountAmt)}</span></div>}
+                    {previewTax > 0 && <div className="flex justify-between"><span className="text-gray-500">ITBIS (18%):</span><span>{formatCurrency(previewTax)}</span></div>}
+                    <div className="flex justify-between border-t-2 border-gray-900 pt-2 mt-2"><span className="font-black text-lg">TOTAL:</span><span className="font-black text-lg">{formatCurrency(previewTotal)}</span></div>
+                    {previewTotalPaid > 0 && (
+                      <>
+                        <div className="flex justify-between text-green-600"><span>Pagado:</span><span>{formatCurrency(previewTotalPaid)}</span></div>
+                        <div className="flex justify-between font-bold"><span>Balance:</span><span className={previewBalanceDue > 0 ? 'text-red-600' : 'text-green-600'}>{formatCurrency(previewBalanceDue)}</span></div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notes & Terms */}
+                <div className="border-t border-gray-200 pt-8 text-xs text-gray-500 grid grid-cols-2 gap-8 mt-8">
+                  {currentInvoice.notes && (
+                    <div>
+                      <p className="font-bold text-gray-900 mb-1">Notas</p>
+                      <p className="whitespace-pre-wrap">{currentInvoice.notes}</p>
+                    </div>
+                  )}
+                  {currentInvoice.paymentTerms && (
+                    <div>
+                      <p className="font-bold text-gray-900 mb-1">Términos</p>
+                      <p className="whitespace-pre-wrap">{currentInvoice.paymentTerms}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {currentInvoice.templateId === 'minimal' && (
+              <div className="p-10 md:p-12 h-full flex flex-col">
+                <div className="text-center mb-8">
+                  <h1 className="text-2xl font-black">{currentInvoice.type === 'FACTURA' ? 'FACTURA' : 'COTIZACIÓN'}</h1>
+                  <p className="text-gray-500">{currentInvoice.number} • {currentInvoice.date}</p>
+                </div>
+                <div className="mb-6">
+                  <p className="font-bold">{currentInvoice.companyName || currentInvoice.clientName || 'Sin cliente'}</p>
+                  {currentInvoice.clientRnc && <p className="text-sm text-gray-500">RNC: {currentInvoice.clientRnc}</p>}
+                </div>
+                <table className="w-full mb-6 text-sm">
+                  <thead><tr className="border-b-2 border-black text-xs uppercase"><th className="py-2 text-left">Descripción</th><th className="py-2 text-center">Cant.</th><th className="py-2 text-right">Precio</th><th className="py-2 text-right">Total</th></tr></thead>
+                  <tbody>
+                    {currentInvoice.items.map((item: InvoiceItem) => (
+                      <tr key={item.id} className="border-b border-gray-200"><td className="py-2">{item.description}</td><td className="py-2 text-center">{item.quantity}</td><td className="py-2 text-right">{formatCurrency(item.price)}</td><td className="py-2 text-right font-bold">{formatCurrency(item.quantity * item.price)}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="flex justify-end"><div className="text-right"><p className="text-2xl font-black">{formatCurrency(previewTotal)}</p></div></div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2268,7 +2493,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                           <Download size={16} />
                         </button>
                         <button
-                          onClick={() => handleEdit(invoice)}
+                          onClick={() => handleView(invoice)}
                           className="p-2 bg-cyan-500/20 text-cyan-400 rounded hover:bg-cyan-500/40 transition-colors"
                           title="Ver"
                         >
