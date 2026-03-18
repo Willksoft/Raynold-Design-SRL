@@ -228,10 +228,31 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     // Load invoices from Supabase first, fall back to localStorage
     supabase.from('invoices').select('*').order('created_at', { ascending: false }).then(({ data }) => {
       if (data && data.length > 0) {
-        setInvoices(data.map((inv) => ({
-          ...inv,
+        setInvoices(data.map((inv: any) => ({
+          id: inv.id,
+          type: inv.type || 'COTIZACION',
+          paymentType: inv.payment_type || inv.paymentType || 'CONTADO',
+          status: inv.status || 'BORRADOR',
+          ncfType: inv.ncf_type || inv.ncfType || '01',
+          ncf: inv.ncf || '',
+          date: inv.date || '',
+          number: inv.number || inv.invoice_number || '',
+          clientId: inv.client_id || inv.clientId || '',
+          clientName: inv.client_name || inv.clientName || '',
+          companyName: inv.company_name || inv.companyName || '',
+          clientRnc: inv.client_rnc || inv.clientRnc || '',
+          clientPhone: inv.client_phone || inv.clientPhone || '',
+          sellerId: inv.seller_id || inv.sellerId || '',
+          sellerName: inv.seller_name || inv.sellerName || '',
           items: Array.isArray(inv.items) ? inv.items as InvoiceItem[] : [],
+          notes: inv.notes || '',
+          paymentTerms: inv.payment_terms || inv.paymentTerms || '',
+          templateId: inv.template_id || inv.templateId || 'classic',
           payments: Array.isArray(inv.payments) ? inv.payments as Payment[] : [],
+          paymentStatus: inv.payment_status || inv.paymentStatus || 'PENDIENTE',
+          applyTax: inv.apply_tax ?? inv.applyTax ?? true,
+          globalDiscount: inv.global_discount ?? inv.globalDiscount ?? 0,
+          globalDiscountType: inv.global_discount_type || inv.globalDiscountType || 'percent',
         } as Invoice)));
       } else {
         const savedInvoices = localStorage.getItem('raynold_invoices');
