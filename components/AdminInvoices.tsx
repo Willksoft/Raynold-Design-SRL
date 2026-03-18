@@ -869,6 +869,18 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
               </div>
             </button>
 
+            {savedInvoice.type === 'COTIZACION' && (
+              <button
+                onClick={() => handleConvertToInvoice(savedInvoice)}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-blue-200 bg-blue-50 hover:bg-blue-100 transition-colors text-left"
+              >
+                <ArrowRight size={18} className="text-blue-600" />
+                <div>
+                  <p className="font-bold text-blue-700 text-sm">Convertir en Factura</p>
+                  <p className="text-xs text-blue-400">Crear una factura basada en esta cotizacion</p>
+                </div>
+              </button>
+            )}
             <button
               onClick={() => {
                 setView('list');
