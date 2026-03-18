@@ -139,6 +139,17 @@ const defaultCompanySettings: CompanySettings = {
   logoUrl: 'https://ymiqmbzsmeqexgztquwj.supabase.co/storage/v1/object/public/raynold-media/brand/logo-negro-r.svg'
 };
 
+// UUID generator for Supabase compatibility
+const generateUUID = (): string => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+};
+
 const defaultInvoice: Invoice = {
   id: '',
   type: 'COTIZACION',
@@ -295,7 +306,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     const docType = type || (moduleType === 'FACTURA' ? 'FACTURA' : moduleType === 'COTIZACION' ? 'COTIZACION' : 'COTIZACION');
     setCurrentInvoice({
       ...defaultInvoice,
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateUUID(),
       number: generateNextNumber(),
       type: docType,
       ncf: docType === 'FACTURA' ? generateNCF('02') : ''
@@ -311,7 +322,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const handleDuplicate = (invoice: Invoice) => {
     const duplicated = {
       ...invoice,
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateUUID(),
       number: generateNextNumber(),
       date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       ncf: invoice.type === 'FACTURA' ? generateNCF(invoice.ncfType) : ''
@@ -412,7 +423,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const handleConvertToInvoice = (quotation: Invoice) => {
     const converted: Invoice = {
       ...quotation,
-      id: Math.random().toString(36).substr(2, 9),
+      id: generateUUID(),
       type: 'FACTURA',
       number: generateNextNumber(),
       ncf: generateNCF(quotation.ncfType || '02'),
