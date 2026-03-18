@@ -7,7 +7,7 @@ import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
 import { Account } from './AdminAccounts';
 import { supabase } from '../lib/supabaseClient';
-import { autocompleteDGII, consultarRNC, DGIIResult } from '../lib/dgiiService';
+import { buscarContribuyentes, consultarRNC, DGIIResult } from '../lib/dgiiService';
 
 // ─── Toast Notification System ──────────────────────────────────────
 interface ToastItem {
@@ -1666,7 +1666,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   )}
                 </div>
 
-                {/* DGII Autocomplete Search */}
+                {/* DGII Search */}
                 <div className="mt-2 relative" ref={dgiiDropdownRef}>
                   <div className="flex items-center border border-blue-300 rounded-lg overflow-hidden focus-within:border-blue-500 bg-blue-50">
                     <Search size={14} className="ml-2 text-blue-500 shrink-0" />
@@ -1680,26 +1680,34 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                         setDgiiApplied(null);
                         setShowSaveAs(false);
                         if (dgiiDebounceRef.current) clearTimeout(dgiiDebounceRef.current);
-                        if (val.trim().length < 2) { setDgiiResults([]); setShowDgiiResults(false); return; }
+                        if (val.trim().length < 2) { setDgiiResults([]); setShowDgiiResults(false); setDgiiLoading(false); return; }
                         setDgiiLoading(true);
                         dgiiDebounceRef.current = setTimeout(async () => {
-                          // Try RNC lookup first if numeric
-                          const clean = val.replace(/[-\s]/g, '');
-                          if (/^\d{9,11}$/.test(clean)) {
-                            const result = await consultarRNC(clean);
-                            if (result?.rnc) {
-                              setDgiiResults([result]);
-                              setShowDgiiResults(true);
-                              setDgiiLoading(false);
-                              return;
+                          try {
+                            const clean = val.replace(/[-\s]/g, '');
+                            // If numeric 9-11 digits, try direct RNC lookup
+                            if (/^\d{9,11}$/.test(clean)) {
+                              const result = await consultarRNC(clean);
+                              if (result?.rnc) {
+                                setDgiiResults([result]);
+                                setShowDgiiResults(true);
+                                setDgiiLoading(false);
+                                return;
+                              }
                             }
+                            // Search by name using /search endpoint
+                            const resp = await buscarContribuyentes({ nombre: val.trim(), limit: 10 });
+                            const items = resp?.data || [];
+                            setDgiiResults(items);
+                            setShowDgiiResults(true);
+                            setDgiiLoading(false);
+                          } catch (err) {
+                            console.error('DGII search error:', err);
+                            setDgiiResults([]);
+                            setShowDgiiResults(false);
+                            setDgiiLoading(false);
                           }
-                          // Autocomplete by name
-                          const results = await autocompleteDGII(val);
-                          setDgiiResults(results);
-                          setShowDgiiResults(results.length > 0);
-                          setDgiiLoading(false);
-                        }, 400);
+                        }, 500);
                       }}
                       onFocus={() => { if (dgiiResults.length > 0) setShowDgiiResults(true); }}
                       className="w-full p-2 outline-none text-sm bg-transparent text-blue-900 placeholder:text-blue-400"
@@ -1707,8 +1715,11 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                     {dgiiLoading && <Loader2 size={14} className="mr-2 animate-spin text-blue-500" />}
                   </div>
 
-                  {showDgiiResults && dgiiResults.length > 0 && (
+                  {showDgiiResults && (
                     <div className="absolute z-50 w-full bg-white border border-blue-200 rounded-lg shadow-xl max-h-56 overflow-y-auto mt-1">
+                      {dgiiResults.length === 0 && !dgiiLoading && (
+                        <div className="px-3 py-3 text-xs text-gray-400 text-center">Sin resultados en DGII</div>
+                      )}
                       {dgiiResults.map((r, i) => (
                         <button
                           key={i}
@@ -1802,7 +1813,6 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   <input type="text" placeholder="RNC" value={currentInvoice.clientRnc}
                     onChange={(e) => {
                       updateCurrentInvoice('clientRnc', e.target.value);
-                      // Auto-lookup when RNC is 9+ digits
                       const clean = e.target.value.replace(/[-\s]/g, '');
                       if (/^\d{9,11}$/.test(clean)) {
                         if (dgiiDebounceRef.current) clearTimeout(dgiiDebounceRef.current);
@@ -1822,6 +1832,40 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                     className="w-full border border-gray-300 rounded p-2 text-sm font-mono" />
                   <input type="text" placeholder="Teléfono" value={currentInvoice.clientPhone} onChange={(e) => updateCurrentInvoice('clientPhone', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
                 </div>
+
+                {/* Create new client from current fields */}
+                {(currentInvoice.clientName || currentInvoice.companyName) && !currentInvoice.clientId && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const name = currentInvoice.companyName || currentInvoice.clientName;
+                      const isEmpresa = !!(currentInvoice.companyName);
+                      const { data, error } = await supabase.from('clients').insert([{
+                        name,
+                        rnc: currentInvoice.clientRnc?.replace(/[-\s]/g, '') || null,
+                        phone: currentInvoice.clientPhone || null,
+                        type: isEmpresa ? 'Juridica' : 'Natural',
+                      }]).select();
+                      if (!error && data?.[0]) {
+                        handleClientSelect(data[0].id);
+                        setClientSearch(name);
+                        addToast('Cliente creado y asignado', 'success');
+                        // Refresh clients list
+                        const { data: updated } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
+                        if (updated) setClients(updated.map((c: any) => ({
+                          id: c.id, type: c.type === 'Juridica' ? 'EMPRESA' : 'FISICA' as const,
+                          name: c.type === 'Natural' ? c.name : '', company: c.type === 'Juridica' ? c.name : '',
+                          rnc: c.rnc || '', phone: c.phone || '', email: c.email || '', address: c.address || '',
+                        })));
+                      } else {
+                        addToast('Error al crear cliente: ' + (error?.message || ''), 'error');
+                      }
+                    }}
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium text-xs border border-blue-200"
+                  >
+                    <UserPlus size={13} /> Guardar como nuevo cliente
+                  </button>
+                )}
               </div>
 
               <div className="pt-4 border-t border-gray-100">
