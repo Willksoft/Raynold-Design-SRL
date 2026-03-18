@@ -189,6 +189,10 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterType, setFilterType] = useState<string>('ALL');
 
+  // Unsaved changes tracking
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+
   // Toast system
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const addToast = useCallback((message: string, type: ToastItem['type'] = 'info') => {
@@ -304,6 +308,18 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     });
   }, []);
 
+  // Warn before closing/reloading page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && view === 'editor') {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, view]);
+
   // Save invoices to localStorage as backup
   useEffect(() => {
     localStorage.setItem('raynold_invoices', JSON.stringify(invoices));
@@ -333,6 +349,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
       ncf: docType === 'FACTURA' ? generateNCF('02') : ''
     });
     setView('editor');
+    setHasUnsavedChanges(false);
   };
 
   // Normalize invoice data from any source (Supabase snake_case or localStorage camelCase)
@@ -366,6 +383,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const handleEdit = (invoice: Invoice) => {
     setCurrentInvoice(normalizeInvoice(invoice));
     setView('editor');
+    setHasUnsavedChanges(false);
   };
 
   const handleDuplicate = (invoice: Invoice) => {
@@ -400,15 +418,24 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   };
 
   const handleBack = () => {
-    if (currentInvoice) {
-      const exists = invoices.find(i => i.id === currentInvoice.id);
-      if (!exists) {
-        setInvoices([...invoices, { ...currentInvoice, status: 'BORRADOR' }]);
-      } else {
-        setInvoices(invoices.map(i => i.id === currentInvoice.id ? currentInvoice : i));
-      }
+    if (hasUnsavedChanges) {
+      setShowExitDialog(true);
+      return;
     }
     setView('list');
+    setCurrentInvoice(null);
+  };
+
+  const handleExitWithoutSaving = () => {
+    setShowExitDialog(false);
+    setHasUnsavedChanges(false);
+    setView('list');
+    setCurrentInvoice(null);
+  };
+
+  const handleSaveAndExit = async () => {
+    setShowExitDialog(false);
+    await handleSave('BORRADOR');
   };
 
   const handleSave = async (status: 'BORRADOR' | 'EMITIDA' = 'EMITIDA') => {
@@ -478,6 +505,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     setSavedInvoice(invoiceToSave);
     setSavedStatus(status);
     setView('saved');
+    setHasUnsavedChanges(false);
     addToast(`${invoiceToSave.type === 'FACTURA' ? 'Factura' : 'Cotizacion'} guardada correctamente`, 'success');
   };
 
@@ -527,6 +555,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     }
 
     setCurrentInvoice({ ...currentInvoice, ...updates });
+    setHasUnsavedChanges(true);
   };
 
   const handleClientSelect = (clientId: string) => {
@@ -573,6 +602,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     }
 
     setCurrentInvoice({ ...currentInvoice, items: newItems });
+    setHasUnsavedChanges(true);
     setIsItemModalOpen(false);
   };
 
@@ -583,6 +613,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         ...currentInvoice,
         items: currentInvoice.items.filter(item => item.id !== id)
       });
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -871,6 +902,41 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
             }
           }
         ` }} />
+
+        {/* Exit Confirmation Dialog */}
+        {showExitDialog && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 print:hidden">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+              <div className="p-6 text-center">
+                <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle size={28} className="text-amber-600" />
+                </div>
+                <h3 className="text-lg font-black text-gray-900 mb-2">Cambios sin guardar</h3>
+                <p className="text-sm text-gray-500">Tienes cambios sin guardar en este documento. Que deseas hacer?</p>
+              </div>
+              <div className="p-4 space-y-2 border-t border-gray-100 bg-gray-50">
+                <button
+                  onClick={handleSaveAndExit}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors font-bold text-sm"
+                >
+                  <Save size={16} /> Guardar como Borrador y Salir
+                </button>
+                <button
+                  onClick={handleExitWithoutSaving}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors font-bold text-sm"
+                >
+                  <Trash2 size={16} /> Salir sin Guardar
+                </button>
+                <button
+                  onClick={() => setShowExitDialog(false)}
+                  className="w-full px-4 py-3 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-medium text-sm text-center"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Top Bar */}
         <div className="flex justify-between items-center p-4 bg-white border-b border-gray-200 shadow-sm print:hidden shrink-0 z-10">
