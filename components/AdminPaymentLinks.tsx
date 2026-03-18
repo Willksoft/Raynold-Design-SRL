@@ -957,64 +957,56 @@ const PaymentPagePreview: React.FC<{ page: PaymentPage; methods: PaymentMethod[]
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {Object.entries(bankGroups).map(([bankName, accounts]) => {
               const first = accounts[0];
+              const isOpen = expanded === `bank-${bankName}`;
               return (
                 <div key={bankName} style={{ borderRadius: '12px', overflow: 'hidden', border: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}` }}>
-                  {/* Bank Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: theme.card }}>
+                  {/* Bank Header - toggleable */}
+                  <button onClick={() => setExpanded(isOpen ? '' : `bank-${bankName}`)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', backgroundColor: theme.card, cursor: 'pointer', textAlign: 'left', border: 'none', color: theme.text, transition: 'all 0.2s' }}>
                     <img src={first.logo_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover', backgroundColor: '#fff' }} />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>{bankName}</p>
                       <p style={{ fontSize: '9px', opacity: 0.4, margin: 0 }}>{accounts.length} cuenta{accounts.length > 1 ? 's' : ''} · {accounts.map(a => a.currency).filter((v,i,a)=>a.indexOf(v)===i).join(' / ')}</p>
                     </div>
-                  </div>
-                  {/* Sub-accounts - always visible */}
-                  <div style={{ borderTop: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}` }}>
-                    {accounts.map((m, idx) => (
-                      <div key={m.id} style={{ borderTop: idx > 0 ? `1px solid ${isLight ? '#f1f5f9' : 'rgba(255,255,255,0.04)'}` : 'none' }}>
-                        <button onClick={() => setExpanded(expanded === m.id ? '' : m.id)}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', backgroundColor: expanded === m.id ? `${page.accent_color}06` : 'transparent', cursor: 'pointer', textAlign: 'left', border: 'none', transition: 'background 0.2s', color: theme.text }}>
-                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: page.accent_color, opacity: expanded === m.id ? 1 : 0.3 }} />
-                          <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: '11px', fontWeight: 600, margin: 0 }}>{m.account_type}</p>
-                            <p style={{ fontSize: '9px', opacity: 0.35, margin: 0 }}>{m.currency} · {m.account_holder}</p>
-                          </div>
-                          <ChevronDown size={12} style={{ opacity: 0.2, transform: expanded === m.id ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                        </button>
-                        {expanded === m.id && (
-                          <div style={{ padding: '8px 12px 12px', backgroundColor: `${page.accent_color}05` }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '8px' }}>
-                              <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
-                                <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Tipo</p>
-                                <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_type}</p>
-                              </div>
-                              <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
-                                <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Titular</p>
-                                <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_holder}</p>
-                              </div>
-                              <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
-                                <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Moneda</p>
-                                <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.currency}</p>
-                              </div>
+                    <ChevronDown size={14} style={{ opacity: 0.25, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s' }} />
+                  </button>
+                  {/* Sub-accounts - fully expanded when bank is open */}
+                  {isOpen && (
+                    <div style={{ borderTop: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.06)'}` }}>
+                      {accounts.map((m, idx) => (
+                        <div key={m.id} style={{ borderTop: idx > 0 ? `1px solid ${isLight ? '#f1f5f9' : 'rgba(255,255,255,0.04)'}` : 'none', padding: '8px 12px', backgroundColor: `${page.accent_color}03` }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+                            <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                              <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Tipo</p>
+                              <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_type}</p>
                             </div>
-                            {page.rnc && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', padding: '5px 8px', borderRadius: '6px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}12` }}>
-                                <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>RNC:</span>
-                                <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{page.rnc}</span>
-                                <Copy size={8} style={{ opacity: 0.3 }} />
-                              </div>
-                            )}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
-                              <p style={{ flex: 1, fontSize: '12px', fontWeight: 800, fontFamily: 'monospace', margin: 0, letterSpacing: '0.5px' }}>{m.account_number}</p>
-                              <button onClick={() => copy(m.account_number, m.id)}
-                                style={{ padding: '5px 10px', borderRadius: '6px', backgroundColor: page.accent_color, color: '#fff', fontSize: '9px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
-                                {copied === m.id ? <><Check size={10} /> ¡Copiado!</> : <><Copy size={10} /> Copiar</>}
-                              </button>
+                            <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                              <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Titular</p>
+                              <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.account_holder}</p>
+                            </div>
+                            <div style={{ padding: '6px 8px', borderRadius: '8px', backgroundColor: `${page.accent_color}10` }}>
+                              <p style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.4, margin: '0 0 1px' }}>Moneda</p>
+                              <p style={{ fontSize: '10px', fontWeight: 700, margin: 0 }}>{m.currency}</p>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                          {page.rnc && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', padding: '5px 8px', borderRadius: '6px', backgroundColor: `${page.accent_color}08`, border: `1px solid ${page.accent_color}12` }}>
+                              <span style={{ fontSize: '7px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>RNC:</span>
+                              <span style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{page.rnc}</span>
+                              <Copy size={8} style={{ opacity: 0.3 }} />
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 10px', borderRadius: '8px', backgroundColor: `${page.accent_color}12`, border: `1px solid ${page.accent_color}20` }}>
+                            <p style={{ flex: 1, fontSize: '12px', fontWeight: 800, fontFamily: 'monospace', margin: 0, letterSpacing: '0.5px' }}>{m.account_number}</p>
+                            <button onClick={() => copy(m.account_number, m.id)}
+                              style={{ padding: '5px 10px', borderRadius: '6px', backgroundColor: page.accent_color, color: '#fff', fontSize: '9px', fontWeight: 800, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
+                              {copied === m.id ? <><Check size={10} /> ¡Copiado!</> : <><Copy size={10} /> Copiar</>}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
