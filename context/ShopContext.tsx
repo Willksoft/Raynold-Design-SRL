@@ -32,6 +32,8 @@ const mapRow = (row: SupabaseProductRow): ProductItem & { slug?: string } => ({
   unit: row.unit || 'Unidad',
   show_price: row.show_price ?? false,
   slug: row.slug || '',
+  discount: row.discount || 0,
+  discountType: (row.discount_type as 'percent' | 'fixed') || 'percent',
 });
 
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -84,6 +86,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       description: product.description, reference: product.reference,
       type: product.type || 'product', unit: product.unit || 'Unidad',
       show_price: product.show_price ?? false,
+      discount: product.discount || 0,
+      discount_type: product.discountType || 'percent',
       slug
     }]);
     await refreshProducts();
@@ -93,14 +97,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     type ProductUpdateRow = {
       title?: string; category?: string; image?: string; price?: string;
       description?: string; reference?: string; type?: string; unit?: string; slug?: string;
-      show_price?: boolean;
+      show_price?: boolean; discount?: number; discount_type?: string;
     };
     const updates: ProductUpdateRow = {
       title: updatedFields.title, category: updatedFields.category,
       image: updatedFields.image, price: updatedFields.price,
       description: updatedFields.description, reference: updatedFields.reference,
       type: updatedFields.type, unit: updatedFields.unit,
-      show_price: updatedFields.show_price
+      show_price: updatedFields.show_price,
+      discount: updatedFields.discount ?? 0,
+      discount_type: updatedFields.discountType || 'percent'
     };
     if (updatedFields.title) updates.slug = generateSlug(updatedFields.title);
     await supabase.from('products').update(updates).eq('id', id);

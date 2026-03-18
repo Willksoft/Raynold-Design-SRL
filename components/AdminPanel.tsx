@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Edit2, Trash2, X, Save, ShieldAlert, Copy, LayoutGrid, List as ListIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, ShieldAlert, Copy, LayoutGrid, List as ListIcon, Percent } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { ProductItem, Category } from '../types';
 import { supabase } from '../lib/supabaseClient';
@@ -28,13 +28,15 @@ const AdminPanel: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     reference: '',
-    category: 'Señalización',
+    category: 'Senalizacion',
     image: '',
     price: '',
     description: '',
     type: 'product' as 'product' | 'service',
     unit: 'Unidad',
-    show_price: false
+    show_price: false,
+    discount: 0,
+    discountType: 'percent' as 'percent' | 'fixed'
   });
 
   const handleCreateCategory = async () => {
@@ -61,7 +63,9 @@ const AdminPanel: React.FC = () => {
         description: product.description || '',
         type: product.type || 'product',
         unit: product.unit || 'Unidad',
-        show_price: product.show_price ?? false
+        show_price: product.show_price ?? false,
+        discount: product.discount || 0,
+        discountType: product.discountType || 'percent'
       });
     } else {
       setEditingProduct(null);
@@ -69,13 +73,15 @@ const AdminPanel: React.FC = () => {
       setFormData({
         title: '',
         reference: generatedRef,
-        category: categories.length > 0 ? categories[0].name : 'Señalización',
+        category: categories.length > 0 ? categories[0].name : 'Senalizacion',
         image: '',
         price: '',
         description: '',
         type: 'product',
         unit: 'Unidad',
-        show_price: false
+        show_price: false,
+        discount: 0,
+        discountType: 'percent'
       });
     }
     setIsModalOpen(true);
@@ -187,6 +193,7 @@ const AdminPanel: React.FC = () => {
                     <th className="p-4 font-bold">Tipo</th>
                     <th className="p-4 font-bold">Categoría</th>
                     <th className="p-4 font-bold">Precio</th>
+                    <th className="p-4 font-bold">Descuento</th>
                     <th className="p-4 font-bold text-right">Acciones</th>
                   </tr>
                 </thead>
@@ -211,6 +218,15 @@ const AdminPanel: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-4 text-raynold-green font-mono text-sm">{product.price}</td>
+                      <td className="p-4 text-center text-sm">
+                        {(product.discount || 0) > 0 ? (
+                          <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full font-bold">
+                            {product.discountType === 'fixed' ? `-$${product.discount}` : `-${product.discount}%`}
+                          </span>
+                        ) : (
+                          <span className="text-gray-600">-</span>
+                        )}
+                      </td>
                       <td className="p-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button
@@ -240,7 +256,7 @@ const AdminPanel: React.FC = () => {
                   ))}
                   {products.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-gray-500">
+                      <td colSpan={8} className="p-8 text-center text-gray-500">
                         No hay productos en el catálogo.
                       </td>
                     </tr>
@@ -465,6 +481,32 @@ const AdminPanel: React.FC = () => {
                       <option value="Servicio">Servicio</option>
                       <option value="Proyecto">Proyecto</option>
                     </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                      <Percent size={12} /> Descuento por Defecto
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.discount || ''}
+                        onChange={e => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
+                        placeholder="0"
+                        className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
+                      />
+                      <select
+                        value={formData.discountType}
+                        onChange={e => setFormData({ ...formData, discountType: e.target.value as 'percent' | 'fixed' })}
+                        className="w-20 bg-black border border-white/20 rounded-lg px-2 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors font-bold"
+                      >
+                        <option value="percent">%</option>
+                        <option value="fixed">$</option>
+                      </select>
+                    </div>
+                    <p className="text-[10px] text-gray-500">Se aplicara automaticamente al seleccionar este producto en facturas/POS</p>
                   </div>
 
                   <div className="space-y-2">

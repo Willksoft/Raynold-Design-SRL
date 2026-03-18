@@ -104,7 +104,9 @@ const AdminPOS = () => {
         title: product.title,
         price: numericPrice,
         quantity: 1,
-        reference: product.reference || product.id.substring(0, 6)
+        reference: product.reference || product.id.substring(0, 6),
+        discount: product.discount || 0,
+        discountType: product.discountType || 'percent'
       }]);
     }
   };

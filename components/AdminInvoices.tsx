@@ -404,7 +404,9 @@ const AdminInvoices = () => {
         ...editingItem,
         reference: product.reference || product.id.substring(0, 6),
         description: product.title,
-        unitPrice: numericPrice
+        unitPrice: numericPrice,
+        discount: product.discount || 0,
+        discountType: product.discountType || 'percent'
       });
     }
   };

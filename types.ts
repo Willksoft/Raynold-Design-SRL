@@ -19,6 +19,8 @@ export interface ProductItem {
   type?: 'product' | 'service';
   unit?: string;
   show_price?: boolean;
+  discount?: number;
+  discountType?: 'percent' | 'fixed';
 }
 
 export interface Category {
@@ -213,6 +215,8 @@ export interface SupabaseProductRow {
   show_price?: boolean;
   is_active?: boolean;
   created_at?: string;
+  discount?: number;
+  discount_type?: string;
 }
 
 export interface SupabaseServiceRow {
