@@ -599,30 +599,46 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     if (!el) return;
     addToast('Generando PDF...', 'info');
     try {
-      // Force white background temporarily for modern template
+      // Save original styles
       const origBg = el.style.background;
+      const origMinH = el.style.minHeight;
+      const origBoxShadow = el.style.boxShadow;
+      // Temporarily adjust for clean capture
       el.style.background = 'white';
+      el.style.minHeight = 'auto';
+      el.style.boxShadow = 'none';
+      // Also force inner bg-gray-50 elements to white
+      const grayEls = el.querySelectorAll('.bg-gray-50') as NodeListOf<HTMLElement>;
+      grayEls.forEach(g => g.style.setProperty('background', 'white', 'important'));
+
       const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
-        windowWidth: el.scrollWidth,
-        windowHeight: el.scrollHeight,
       });
+
+      // Restore styles
       el.style.background = origBg;
+      el.style.minHeight = origMinH;
+      el.style.boxShadow = origBoxShadow;
+      grayEls.forEach(g => g.style.removeProperty('background'));
+
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
       const pageW = 8.5;
       const pageH = 11;
       const imgW = pageW;
       const imgH = (canvas.height * imgW) / canvas.width;
-      let y = 0;
-      // If image fits in one page
-      if (imgH <= pageH) {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+
+      // If content fits on one page (with 15% tolerance), scale to fit
+      if (imgH <= pageH * 1.15) {
+        const finalH = Math.min(imgH, pageH);
+        const scale = finalH / imgH;
+        pdf.addImage(imgData, 'PNG', 0, 0, imgW * scale, imgH * scale);
       } else {
-        // Multi-page
+        // Truly multi-page content
+        let y = 0;
         while (y < imgH) {
           if (y > 0) pdf.addPage();
           pdf.addImage(imgData, 'PNG', 0, -y, imgW, imgH);
