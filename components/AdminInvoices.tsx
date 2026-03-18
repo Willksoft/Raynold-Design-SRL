@@ -1723,20 +1723,11 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                             setShowSaveAs(true);
                             setHasUnsavedChanges(true);
                           }}
-                          className="w-full text-left px-3 py-2.5 text-sm hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0"
                         >
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="min-w-0">
-                              <p className="font-bold text-gray-900 truncate">{r.nombre_comercial || r.nombre}</p>
-                              {r.nombre_comercial && r.nombre && r.nombre !== r.nombre_comercial && (
-                                <p className="text-gray-500 text-xs truncate">{r.nombre}</p>
-                              )}
-                              {r.actividad_economica && <p className="text-gray-400 text-[10px] truncate">{r.actividad_economica}</p>}
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <p className="text-blue-600 font-mono text-xs font-bold">{r.rnc}</p>
-                              <p className={`text-[10px] ${r.estado === 'ACTIVO' ? 'text-green-600' : 'text-red-500'}`}>{r.estado || ''}</p>
-                            </div>
+                          <div className="flex justify-between items-center gap-2">
+                            <p className="font-medium text-gray-900 truncate">{r.nombre_comercial || r.nombre}</p>
+                            <p className="text-blue-600 font-mono text-xs font-bold shrink-0">{r.rnc}</p>
                           </div>
                         </button>
                       ))}
