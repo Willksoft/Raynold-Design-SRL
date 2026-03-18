@@ -121,6 +121,9 @@ interface Invoice {
   applyTax?: boolean;
   globalDiscount?: number;
   globalDiscountType?: 'percent' | 'fixed';
+  linkedDocId?: string;
+  linkedDocNumber?: string;
+  linkedDocType?: 'FACTURA' | 'COTIZACION';
 }
 
 const ncfTypes = [
@@ -407,6 +410,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     applyTax: inv.apply_tax ?? inv.applyTax ?? true,
     globalDiscount: inv.global_discount ?? inv.globalDiscount ?? 0,
     globalDiscountType: inv.global_discount_type || inv.globalDiscountType || 'percent',
+    linkedDocId: inv.linked_doc_id || inv.linkedDocId || '',
+    linkedDocNumber: inv.linked_doc_number || inv.linkedDocNumber || '',
+    linkedDocType: inv.linked_doc_type || inv.linkedDocType || '',
   });
 
   const handleEdit = (invoice: Invoice) => {
@@ -522,6 +528,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
       apply_tax: invoiceToSave.applyTax ?? true,
       global_discount: invoiceToSave.globalDiscount || 0,
       global_discount_type: invoiceToSave.globalDiscountType || 'percent',
+      linked_doc_id: invoiceToSave.linkedDocId || null,
+      linked_doc_number: invoiceToSave.linkedDocNumber || null,
+      linked_doc_type: invoiceToSave.linkedDocType || null,
     });
 
     if (error) {
@@ -547,20 +556,36 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     addToast(`${invoiceToSave.type === 'FACTURA' ? 'Factura' : 'Cotizacion'} guardada correctamente`, 'success');
   };
 
-  const handleConvertToInvoice = (quotation: Invoice) => {
+  const handleConvertToInvoice = async (quotation: Invoice) => {
     const normalized = normalizeInvoice(quotation);
+    const newNumber = generateNextNumber();
     const converted: Invoice = {
       ...normalized,
       id: generateUUID(),
       type: 'FACTURA',
-      number: generateNextNumber(),
+      number: newNumber,
       ncf: generateNCF(normalized.ncfType || '02'),
       status: 'BORRADOR',
-      date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+      linkedDocId: quotation.id,
+      linkedDocNumber: quotation.number,
+      linkedDocType: 'COTIZACION',
+      payments: [],
+      paymentStatus: 'PENDIENTE'
     };
+    // Update the original quotation to link to the new invoice
+    if (quotation.id) {
+      await supabase.from('invoices').update({
+        linked_doc_id: converted.id,
+        linked_doc_number: newNumber,
+        linked_doc_type: 'FACTURA'
+      }).eq('id', quotation.id);
+      // Update local state
+      setInvoices(prev => prev.map(i => i.id === quotation.id ? { ...i, linkedDocId: converted.id, linkedDocNumber: newNumber, linkedDocType: 'FACTURA' } : i));
+    }
     setCurrentInvoice(converted);
     setView('editor');
-    addToast('Cotizacion convertida a factura. Revisa y guarda.', 'info');
+    addToast('Cotización convertida a factura. Revisa y guarda.', 'info');
   };
 
   const handlePrint = () => {
@@ -569,7 +594,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
   const handlePrintFromList = (invoice: Invoice) => {
     setCurrentInvoice(normalizeInvoice(invoice));
-    setView('editor');
+    setView('preview');
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         window.print();
@@ -924,11 +949,20 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         <style dangerouslySetInnerHTML={{
           __html: `
           @media print {
-            @page { margin: 0.5in; size: letter; }
-            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .print-content { width: 100% !important; max-width: none !important; margin: 0 !important; box-shadow: none !important; }
-            * { word-break: break-word; overflow-wrap: break-word; }
-            .invoice-container { display: block !important; height: auto !important; overflow: visible !important; }
+            @page { margin: 0; size: letter; }
+            html, body { margin: 0 !important; padding: 0 !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body * { visibility: hidden; }
+            .print-content, .print-content * { visibility: visible; }
+            .print-content {
+              position: fixed !important; left: 0 !important; top: 0 !important;
+              width: 100% !important; min-height: auto !important;
+              max-width: none !important; margin: 0 !important;
+              padding: 0.5in !important;
+              box-shadow: none !important; border: none !important;
+              background: white !important;
+            }
+            .invoice-container { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; background: white !important; }
+            .print\\:hidden, [class*="print:hidden"] { display: none !important; }
           }
         ` }} />
 
@@ -1290,37 +1324,22 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         <style dangerouslySetInnerHTML={{
           __html: `
           @media print {
-            @page {
-              margin: 0.5in;
-              size: letter;
-            }
-            body {
-              background: white !important;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
+            @page { margin: 0; size: letter; }
+            html, body { margin: 0 !important; padding: 0 !important; background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body * { visibility: hidden; }
+            .print-content, .print-content * { visibility: visible; }
             .print-content {
-              width: 100% !important;
-              min-height: auto !important;
-              box-shadow: none !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              border: none !important;
+              position: fixed !important; left: 0 !important; top: 0 !important;
+              width: 100% !important; min-height: auto !important;
+              max-width: none !important; margin: 0 !important;
+              padding: 0.5in !important;
+              box-shadow: none !important; border: none !important;
+              background: white !important;
             }
-            .print-hidden {
-              display: none !important;
-            }
-            /* Ensure terms and conditions don't get cut off */
-            .whitespace-pre-wrap {
-              word-break: break-word;
-              overflow-wrap: break-word;
-            }
-            /* Fix for bottom cutting */
-            .invoice-container {
-              display: block !important;
-              height: auto !important;
-              overflow: visible !important;
-            }
+            .print-hidden, .print\\:hidden, [class*="print:hidden"] { display: none !important; }
+            .invoice-container { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; background: white !important; }
+            /* Ensure terms don't get cut off */
+            .whitespace-pre-wrap { word-break: break-word; overflow-wrap: break-word; }
           }
         ` }} />
 
@@ -2581,9 +2600,23 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
             </thead>
             <tbody>
               {filteredInvoices.map((invoice) => {
-                const subtotal = invoice.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+                const listGetItemTotal = (item: InvoiceItem) => {
+                  const raw = item.quantity * item.unitPrice;
+                  if (!item.discount || item.discount <= 0) return raw;
+                  if (item.discountType === 'fixed') return Math.max(0, raw - item.discount);
+                  return raw * (1 - (item.discount / 100));
+                };
+                const listRawSubtotal = invoice.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+                const listItemDiscounts = invoice.items.reduce((sum, item) => sum + ((item.quantity * item.unitPrice) - listGetItemTotal(item)), 0);
+                const listAfterItemDiscounts = listRawSubtotal - listItemDiscounts;
+                const listGDiscount = invoice.globalDiscount || 0;
+                const listGDiscountType = invoice.globalDiscountType || 'percent';
+                const listGlobalDiscountAmt = listGDiscount > 0 ? (listGDiscountType === 'fixed' ? listGDiscount : listAfterItemDiscounts * (listGDiscount / 100)) : 0;
+                const listSubtotal = Math.max(0, listAfterItemDiscounts - listGlobalDiscountAmt);
+                const listTotalDiscounts = listItemDiscounts + listGlobalDiscountAmt;
                 const applyTax = invoice.applyTax !== false;
-                const total = subtotal + (applyTax ? subtotal * 0.18 : 0);
+                const total = listSubtotal + (applyTax ? listSubtotal * 0.18 : 0);
+                const linkedDoc = invoice.linkedDocId ? invoices.find(i => i.id === invoice.linkedDocId) : null;
 
                 return (
                   <tr key={invoice.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
@@ -2618,9 +2651,27 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                           {invoice.paymentStatus || 'PENDIENTE'}
                         </span>
                       )}
+                      {invoice.linkedDocId && (
+                        <div className="mt-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); const linked = invoices.find(i => i.id === invoice.linkedDocId); if (linked) handleView(linked); }}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition-colors cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <ArrowRight size={10} />
+                            {invoice.linkedDocType === 'FACTURA' ? 'Factura' : 'Cotización'} #{invoice.linkedDocNumber}
+                          </button>
+                        </div>
+                      )}
                     </td>
-                    <td className="p-4 text-raynold-green font-mono">
-                      {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(total)}
+                    <td className="p-4">
+                      <div className="text-raynold-green font-mono">
+                        {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(total)}
+                      </div>
+                      {listTotalDiscounts > 0 && (
+                        <div className="text-[10px] text-red-400 font-bold mt-0.5">
+                          -{new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(listTotalDiscounts)} desc.
+                        </div>
+                      )}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
