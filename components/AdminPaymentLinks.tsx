@@ -376,13 +376,13 @@ const AdminPaymentLinks: React.FC = () => {
               {/* iPhone 14 Pro Max Mockup */}
               <div style={{ width: '300px', minHeight: '620px', borderRadius: '44px', border: '4px solid #2a2a2a', backgroundColor: '#000', padding: '3px', overflow: 'hidden', boxShadow: '0 10px 50px rgba(0,0,0,0.6), inset 0 0 0 2px #1a1a1a', position: 'relative' }}>
                 {/* Stainless steel inner frame */}
-                <div style={{ borderRadius: '40px', overflow: 'hidden', height: '100%', position: 'relative', backgroundColor: previewTheme.bg }}>
+                <div style={{ borderRadius: '40px', overflow: 'hidden', height: '100%', position: 'relative', backgroundColor: previewTheme.bg, display: 'flex', flexDirection: 'column' }}>
                   {/* Dynamic Island */}
-                  <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', justifyContent: 'center', paddingTop: '10px', backgroundColor: previewTheme.bg }}>
+                  <div style={{ zIndex: 10, display: 'flex', justifyContent: 'center', paddingTop: '10px', paddingBottom: '6px', backgroundColor: previewTheme.bg, flexShrink: 0 }}>
                     <div style={{ width: '120px', height: '28px', backgroundColor: '#000', borderRadius: '20px' }} />
                   </div>
                   {/* Content */}
-                  <div style={{ overflowY: 'auto', height: 'calc(100% - 38px)', paddingBottom: '16px' }}>
+                  <div style={{ overflowY: 'auto', flex: 1, paddingBottom: '20px' }}>
                     <PaymentPagePreview page={currentPage} methods={methods.filter(m => m.page_id === currentPage.id && m.is_active)} />
                   </div>
                   {/* Home indicator */}
