@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   BookOpen, Eye, Download, Settings2, Palette, Grid3X3, List, LayoutGrid,
   Check, X, ChevronRight, ChevronLeft, Plus, Minus, Image as ImageIcon,
-  Hash, Columns, Rows, Square, Printer, Filter, Search,
+  Hash, Columns, Rows, Square, Printer, Filter, Search, Move,
   ToggleLeft, ToggleRight, Loader2, Sparkles, ArrowUpDown, Save, FolderOpen,
   Trash2, Clock, Upload, Globe, FileText, Phone, Mail, Instagram, Facebook, ClipboardList, Edit2, Copy
 } from 'lucide-react';
@@ -345,9 +345,12 @@ const AdminCatalog: React.FC = () => {
   };
 
   const coverDate = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long' });
+  const coverPos = `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%`;
+  const coverScale = (config.coverImageScale ?? 100) / 100;
+  const coverImgStyle: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover', objectPosition: coverPos, transform: `scale(${coverScale})`, transformOrigin: coverPos };
   const renderCover = (idx: number) => {
     const cs = config.coverStyle || 'centered';
-    const bgImg = config.coverImage ? { position: 'absolute' as const, inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.2 } : undefined;
+    const bgImg = config.coverImage ? { position: 'absolute' as const, inset: 0, backgroundImage: `url(${config.coverImage})`, backgroundSize: `${config.coverImageScale ?? 100}%`, backgroundPosition: coverPos, opacity: 0.2 } : undefined;
 
     if (cs === 'centered') return (
       <div key={idx} style={{ ...PAGE, background: config.coverGradient, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '1.5in 1in' }}>
@@ -375,7 +378,7 @@ const AdminCatalog: React.FC = () => {
           <div />
         </div>
         <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative' }}>
-          {config.coverImage && <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', mixBlendMode: 'multiply', opacity: 0.6 }} />}
+          {config.coverImage && <img src={config.coverImage} alt="" style={{ ...coverImgStyle, mixBlendMode: 'multiply', opacity: 0.6 }} />}
         </div>
       </div>
     );
@@ -408,7 +411,7 @@ const AdminCatalog: React.FC = () => {
             <h1 style={{ fontSize: '42px', fontWeight: 900, color: '#fff', lineHeight: 1, margin: 0 }}>CATALOG</h1>
           </div>
           <div style={{ width: '280px', height: '280px', borderRadius: '50%', backgroundColor: '#e0e0e0', marginTop: 'auto', marginBottom: 'auto', overflow: 'hidden', border: '6px solid #fff', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
-            {config.coverImage ? <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', backgroundColor: '#d0d0d0' }} />}
+            {config.coverImage ? <img src={config.coverImage} alt="" style={coverImgStyle} /> : <div style={{ width: '100%', height: '100%', backgroundColor: '#d0d0d0' }} />}
           </div>
           <div style={{ textAlign: 'center', marginTop: 'auto' }}>
             {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain', marginBottom: '10px' }} />}
@@ -425,7 +428,7 @@ const AdminCatalog: React.FC = () => {
           {config.logoUrl && <img src={config.logoUrl} alt="" style={{ height: '30px', objectFit: 'contain' }} />}
           <div style={{ width: '60%', height: '1px', backgroundColor: config.accentColor, margin: '15px 0' }} />
           {config.coverImage && <div style={{ position: 'absolute', top: '1.2in', right: '0.8in', width: '55%', height: '60%', borderRadius: '8px', overflow: 'hidden', border: `3px solid ${config.accentColor}20` }}>
-            <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={config.coverImage} alt="" style={coverImgStyle} />
           </div>}
         </div>
         <div style={{ backgroundColor: config.accentColor, padding: '0.8in 1in 0.6in', position: 'relative' }}>
@@ -465,7 +468,7 @@ const AdminCatalog: React.FC = () => {
           <div />
         </div>
         <div style={{ width: '45%', backgroundColor: config.accentColor, position: 'relative' }}>
-          {config.coverImage ? <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} /> : null}
+          {config.coverImage ? <img src={config.coverImage} alt="" style={{ ...coverImgStyle, opacity: 0.7 }} /> : null}
         </div>
       </div>
     );
@@ -483,7 +486,7 @@ const AdminCatalog: React.FC = () => {
             <p style={{ fontSize: '9px', color: '#888', lineHeight: 1.5, maxWidth: '80%' }}>{config.title}</p>
           </div>
           <div style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {config.coverImage && <div style={{ width: '70%', aspectRatio: '4/3', borderRadius: '12px', overflow: 'hidden' }}><img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}
+            {config.coverImage && <div style={{ width: '70%', aspectRatio: '4/3', borderRadius: '12px', overflow: 'hidden' }}><img src={config.coverImage} alt="" style={coverImgStyle} /></div>}
           </div>
         </div>
       </div>
@@ -899,8 +902,48 @@ const AdminCatalog: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => coverInputRef.current?.click()} className="px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 hover:bg-white/10 flex items-center gap-1.5"><Upload size={12} /> Imagen Portada</button>
-                    {config.coverImage && <button onClick={() => setConfig({ ...config, coverImage: '' })} className="px-2.5 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-[10px]">Quitar</button>}
+                    {config.coverImage && <button onClick={() => setConfig({ ...config, coverImage: '', coverImageX: 50, coverImageY: 50, coverImageScale: 100 })} className="px-2.5 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-[10px]">Quitar</button>}
                   </div>
+                  {/* Cover Image Crop/Position Panel */}
+                  {config.coverImage && (
+                    <div className="mt-3 p-3 bg-white/5 border border-white/10 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold text-gray-300 flex items-center gap-1.5"><Move size={12} className="text-raynold-red" /> Ajustar Imagen</p>
+                        <button onClick={() => setConfig({ ...config, coverImageX: 50, coverImageY: 50, coverImageScale: 100 })} className="text-[9px] text-gray-500 hover:text-white px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10">Resetear</button>
+                      </div>
+                      {/* Preview */}
+                      <div className="relative w-full h-28 rounded-lg overflow-hidden border border-white/10 bg-black">
+                        <img src={config.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%`, transform: `scale(${(config.coverImageScale ?? 100) / 100})`, transformOrigin: `${config.coverImageX ?? 50}% ${config.coverImageY ?? 50}%` }} />
+                        <div className="absolute inset-0 border-2 border-dashed border-white/20 rounded-lg pointer-events-none" />
+                        <div className="absolute top-1 left-1 px-1 py-0.5 bg-black/70 text-[7px] text-gray-400 rounded">Vista previa del recorte</div>
+                      </div>
+                      {/* Controls */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-gray-400 w-14 shrink-0">Pos X</span>
+                          <input type="range" min="0" max="100" value={config.coverImageX ?? 50} onChange={e => setConfig({ ...config, coverImageX: Number(e.target.value) })} className="flex-1 h-1 accent-raynold-red cursor-pointer" />
+                          <span className="text-[9px] text-gray-500 w-8 text-right">{config.coverImageX ?? 50}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-gray-400 w-14 shrink-0">Pos Y</span>
+                          <input type="range" min="0" max="100" value={config.coverImageY ?? 50} onChange={e => setConfig({ ...config, coverImageY: Number(e.target.value) })} className="flex-1 h-1 accent-raynold-red cursor-pointer" />
+                          <span className="text-[9px] text-gray-500 w-8 text-right">{config.coverImageY ?? 50}%</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-gray-400 w-14 shrink-0">Zoom</span>
+                          <input type="range" min="100" max="300" step="5" value={config.coverImageScale ?? 100} onChange={e => setConfig({ ...config, coverImageScale: Number(e.target.value) })} className="flex-1 h-1 accent-raynold-red cursor-pointer" />
+                          <span className="text-[9px] text-gray-500 w-8 text-right">{config.coverImageScale ?? 100}%</span>
+                        </div>
+                      </div>
+                      <p className="text-[8px] text-gray-600">
+                        {config.coverStyle === 'photo-circle' ? 'La imagen aparecerá dentro del círculo central' :
+                         config.coverStyle === 'bold-bottom' ? 'La imagen aparecerá como recuadro en la parte superior' :
+                         config.coverStyle === 'left-block' || config.coverStyle === 'landscape-corporate' ? 'La imagen aparecerá en el panel lateral derecho' :
+                         config.coverStyle === 'landscape-wave' ? 'La imagen aparecerá en el recuadro redondeado derecho' :
+                         'La imagen aparecerá como fondo de portada'}
+                      </p>
+                    </div>
+                  )}
                   <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
                 </div>
               </div>

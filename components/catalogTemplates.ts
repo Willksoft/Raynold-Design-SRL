@@ -10,6 +10,9 @@ export interface CatalogConfig {
   subtitle: string;
   templateId: string;
   coverImage: string;
+  coverImageX: number;
+  coverImageY: number;
+  coverImageScale: number;
   logoUrl: string;
   showBackCover: boolean;
   backCoverText: string;
@@ -177,6 +180,9 @@ export const DEFAULT_CONFIG: CatalogConfig = {
   subtitle: 'Raynold Designs SRL',
   templateId: 'corporate-red',
   coverImage: '',
+  coverImageX: 50,
+  coverImageY: 50,
+  coverImageScale: 100,
   logoUrl: '',
   showBackCover: true,
   backCoverText: '',
