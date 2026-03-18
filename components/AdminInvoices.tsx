@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
@@ -592,6 +594,51 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
     window.print();
   };
 
+  const handleDownloadPDF = async () => {
+    const el = document.querySelector('.print-content') as HTMLElement;
+    if (!el) return;
+    addToast('Generando PDF...', 'info');
+    try {
+      // Force white background temporarily for modern template
+      const origBg = el.style.background;
+      el.style.background = 'white';
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight,
+      });
+      el.style.background = origBg;
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
+      const pageW = 8.5;
+      const pageH = 11;
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      let y = 0;
+      // If image fits in one page
+      if (imgH <= pageH) {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+      } else {
+        // Multi-page
+        while (y < imgH) {
+          if (y > 0) pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, -y, imgW, imgH);
+          y += pageH;
+        }
+      }
+      const docType = currentInvoice?.type === 'FACTURA' ? 'Factura' : 'Cotizacion';
+      const docNum = currentInvoice?.number || 'sin-numero';
+      pdf.save(`${docType}_${docNum}.pdf`);
+      addToast('PDF descargado correctamente', 'success');
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      addToast('Error al generar PDF', 'error');
+    }
+  };
+
   const handlePrintFromList = (invoice: Invoice) => {
     setCurrentInvoice(normalizeInvoice(invoice));
     setView('preview');
@@ -961,6 +1008,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
               box-shadow: none !important; border: none !important;
               background: white !important;
             }
+            .print-content .bg-gray-50 { background: white !important; }
             .invoice-container { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; background: white !important; }
             .print\\:hidden, [class*="print:hidden"] { display: none !important; }
           }
@@ -1002,9 +1050,16 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
             <button
               onClick={() => window.print()}
               className="flex items-center gap-1.5 px-3 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors font-medium text-sm"
-              title="Imprimir / PDF"
+              title="Imprimir"
             >
-              <Printer size={15} /> PDF
+              <Printer size={15} /> Imprimir
+            </button>
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center gap-1.5 px-3 py-2 bg-cyan-50 text-cyan-600 rounded-lg hover:bg-cyan-100 transition-colors font-medium text-sm"
+              title="Descargar PDF"
+            >
+              <Download size={15} /> PDF
             </button>
             <button
               onClick={() => {
@@ -1337,6 +1392,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
               background: white !important;
             }
             .print-hidden, .print\\:hidden, [class*="print:hidden"] { display: none !important; }
+            .print-content .bg-gray-50 { background: white !important; }
             .invoice-container { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; background: white !important; }
             /* Ensure terms don't get cut off */
             .whitespace-pre-wrap { word-break: break-word; overflow-wrap: break-word; }
@@ -2694,7 +2750,18 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                         <button
                           onClick={() => handlePrintFromList(invoice)}
                           className="p-2 bg-purple-500/20 text-purple-400 rounded hover:bg-purple-500/40 transition-colors"
-                          title="Descargar / Imprimir PDF"
+                          title="Imprimir"
+                        >
+                          <Printer size={16} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setCurrentInvoice(normalizeInvoice(invoice));
+                            setView('preview');
+                            requestAnimationFrame(() => { requestAnimationFrame(() => { handleDownloadPDF(); }); });
+                          }}
+                          className="p-2 bg-cyan-500/20 text-cyan-400 rounded hover:bg-cyan-500/40 transition-colors"
+                          title="Descargar PDF"
                         >
                           <Download size={16} />
                         </button>
