@@ -1034,10 +1034,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   </div>
                   <div className="w-48 space-y-4 text-right">
                     <div className="font-bold">Fecha: {currentInvoice.date}</div>
-                    <div>
-                      <span className="font-bold">N°</span>
-                      <div className="mt-2">{currentInvoice.number}</div>
-                    </div>
+                    <div className="font-bold">N° {currentInvoice.number}</div>
                   </div>
                 </div>
 
@@ -1676,10 +1673,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
                     <div className="w-48 space-y-4 text-right">
                       <div className="font-bold">Fecha: {currentInvoice.date}</div>
-                      <div>
-                        <span className="font-bold">N°</span>
-                        <div className="mt-2">{currentInvoice.number}</div>
-                      </div>
+                      <div className="font-bold">N° {currentInvoice.number}</div>
                     </div>
                   </div>
 
