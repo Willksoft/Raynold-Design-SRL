@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search } from 'lucide-react';
+import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
@@ -12,6 +12,8 @@ interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  discount?: number;
+  discountType?: 'percent' | 'fixed';
 }
 
 export interface Payment {
@@ -56,6 +58,8 @@ interface Invoice {
   payments: Payment[];
   paymentStatus: 'PENDIENTE' | 'PARCIAL' | 'PAGADA';
   applyTax?: boolean;
+  globalDiscount?: number;
+  globalDiscountType?: 'percent' | 'fixed';
 }
 
 const ncfTypes = [
@@ -95,7 +99,9 @@ const defaultInvoice: Invoice = {
   templateId: 'classic',
   payments: [],
   paymentStatus: 'PENDIENTE',
-  applyTax: true
+  applyTax: true,
+  globalDiscount: 0,
+  globalDiscountType: 'percent'
 };
 
 const AdminInvoices = () => {
@@ -294,6 +300,8 @@ const AdminInvoices = () => {
       payments: invoiceToSave.payments,
       payment_status: invoiceToSave.paymentStatus,
       apply_tax: invoiceToSave.applyTax,
+      global_discount: invoiceToSave.globalDiscount || 0,
+      global_discount_type: invoiceToSave.globalDiscountType || 'percent',
     });
     if (error) console.error('Supabase save error:', error.message);
     alert(`Documento guardado como ${status}`);
@@ -438,13 +446,32 @@ const AdminInvoices = () => {
     setSavingProduct(false);
   };
 
+  // Helper: Calculate item line total with discount
+  const getItemTotal = (item: InvoiceItem) => {
+    const raw = item.quantity * item.unitPrice;
+    if (!item.discount || item.discount <= 0) return raw;
+    if (item.discountType === 'fixed') return Math.max(0, raw - item.discount);
+    return raw * (1 - (item.discount / 100));
+  };
+
   // Calculations
-  const subtotal = currentInvoice?.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) || 0;
+  const rawSubtotal = currentInvoice?.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) || 0;
+  const itemDiscountsTotal = currentInvoice?.items.reduce((sum, item) => sum + ((item.quantity * item.unitPrice) - getItemTotal(item)), 0) || 0;
+  const subtotalAfterItemDiscounts = rawSubtotal - itemDiscountsTotal;
+
+  const gDiscount = currentInvoice?.globalDiscount || 0;
+  const gDiscountType = currentInvoice?.globalDiscountType || 'percent';
+  const globalDiscountAmount = gDiscount > 0
+    ? (gDiscountType === 'fixed' ? gDiscount : subtotalAfterItemDiscounts * (gDiscount / 100))
+    : 0;
+  const subtotal = Math.max(0, subtotalAfterItemDiscounts - globalDiscountAmount);
+
   const applyTax = currentInvoice?.applyTax !== false;
   const itbis = applyTax ? subtotal * 0.18 : 0;
   const total = subtotal + itbis;
   const totalPaid = currentInvoice?.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
   const balanceDue = total - totalPaid;
+  const totalDiscounts = itemDiscountsTotal + globalDiscountAmount;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(amount);
@@ -646,6 +673,34 @@ const AdminInvoices = () => {
                 <label htmlFor="applyTax" className="text-sm font-bold text-gray-700 cursor-pointer">Aplicar ITBIS (18%)</label>
               </div>
 
+              <div className="pt-3 border-t border-gray-100">
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1 flex items-center gap-1">
+                  <Percent size={12} /> Descuento Global
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={currentInvoice.globalDiscount || ''}
+                    onChange={(e) => updateCurrentInvoice('globalDiscount', parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    className="flex-1 border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-sm"
+                  />
+                  <select
+                    value={currentInvoice.globalDiscountType || 'percent'}
+                    onChange={(e) => updateCurrentInvoice('globalDiscountType', e.target.value)}
+                    className="w-20 border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-raynold-red font-bold"
+                  >
+                    <option value="percent">%</option>
+                    <option value="fixed">$</option>
+                  </select>
+                </div>
+                {globalDiscountAmount > 0 && (
+                  <p className="text-xs text-red-500 font-bold mt-1">-{formatCurrency(globalDiscountAmount)}</p>
+                )}
+              </div>
+
               {currentInvoice.type === 'FACTURA' && (
                 <>
                   <div>
@@ -834,10 +889,11 @@ const AdminInvoices = () => {
                       <thead>
                         <tr className="bg-red-600 text-white">
                           <th className="py-2 px-3 text-left font-bold w-24">Ref/ID</th>
-                          <th className="py-2 px-3 text-left font-bold">Descripción</th>
-                          <th className="py-2 px-3 text-center font-bold w-24">Cantidad</th>
-                          <th className="py-2 px-3 text-center font-bold w-32">Precio unitario</th>
-                          <th className="py-2 px-3 text-right font-bold w-32">Precio total</th>
+                          <th className="py-2 px-3 text-left font-bold">Descripcion</th>
+                          <th className="py-2 px-3 text-center font-bold w-20">Cant.</th>
+                          <th className="py-2 px-3 text-center font-bold w-28">Precio unit.</th>
+                          <th className="py-2 px-3 text-center font-bold w-20">Desc.</th>
+                          <th className="py-2 px-3 text-right font-bold w-28">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -851,8 +907,15 @@ const AdminInvoices = () => {
                             <td className="py-3 px-3 uppercase">{item.description || '-'}</td>
                             <td className="py-3 px-3 text-center">{item.quantity}</td>
                             <td className="py-3 px-3 text-center">{formatCurrency(item.unitPrice).replace('DOP', '$')}</td>
+                            <td className="py-3 px-3 text-center text-xs">
+                              {(item.discount || 0) > 0 ? (
+                                <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">
+                                  {item.discountType === 'fixed' ? `-$${item.discount}` : `-${item.discount}%`}
+                                </span>
+                              ) : '-'}
+                            </td>
                             <td className="py-3 px-3 text-right text-gray-600 font-medium">
-                              {formatCurrency(item.quantity * item.unitPrice).replace('DOP', '$')}
+                              {formatCurrency(getItemTotal(item)).replace('DOP', '$')}
                             </td>
                             {/* Delete button overlay on hover */}
                             <td className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-2 opacity-0 group-hover:opacity-100 print:hidden">
@@ -866,7 +929,7 @@ const AdminInvoices = () => {
                         {/* Empty rows for visual padding */}
                         {[...Array(Math.max(0, 5 - currentInvoice.items.length))].map((_, i) => (
                           <tr key={`empty-${i}`} className={(currentInvoice.items.length + i) % 2 === 0 ? 'bg-white' : 'bg-gray-100'}>
-                            <td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td>
+                            <td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td><td className="py-5 px-3"></td>
                           </tr>
                         ))}
                       </tbody>
@@ -895,6 +958,18 @@ const AdminInvoices = () => {
                     </div>
 
                     <div className="w-2/5">
+                      {totalDiscounts > 0 && (
+                        <>
+                          <div className="flex justify-between py-1">
+                            <span className="text-gray-500 font-bold">BRUTO</span>
+                            <span className="font-bold text-gray-500">{formatCurrency(rawSubtotal).replace('DOP', '$')}</span>
+                          </div>
+                          <div className="flex justify-between py-1 text-red-500">
+                            <span className="font-bold">DESCUENTOS</span>
+                            <span className="font-bold">-{formatCurrency(totalDiscounts).replace('DOP', '$')}</span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex justify-between py-1">
                         <span className="text-red-600 font-bold">SUB TOTAL</span>
                         <span className="font-bold">{formatCurrency(subtotal).replace('DOP', '$')}</span>
@@ -1001,10 +1076,11 @@ const AdminInvoices = () => {
                       <thead>
                         <tr className="bg-gray-900 text-white">
                           <th className="py-4 px-6 text-left font-medium w-24">Ref</th>
-                          <th className="py-4 px-6 text-left font-medium">Descripción</th>
-                          <th className="py-4 px-6 text-center font-medium w-24">Cant.</th>
-                          <th className="py-4 px-6 text-right font-medium w-32">Precio</th>
-                          <th className="py-4 px-6 text-right font-medium w-32">Total</th>
+                          <th className="py-4 px-6 text-left font-medium">Descripcion</th>
+                          <th className="py-4 px-6 text-center font-medium w-20">Cant.</th>
+                          <th className="py-4 px-6 text-right font-medium w-28">Precio</th>
+                          <th className="py-4 px-6 text-center font-medium w-20">Desc.</th>
+                          <th className="py-4 px-6 text-right font-medium w-28">Total</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -1018,8 +1094,15 @@ const AdminInvoices = () => {
                             <td className="py-4 px-6 font-medium text-gray-900">{item.description || '-'}</td>
                             <td className="py-4 px-6 text-center text-gray-600">{item.quantity}</td>
                             <td className="py-4 px-6 text-right text-gray-600">{formatCurrency(item.unitPrice).replace('DOP', '$')}</td>
+                            <td className="py-4 px-6 text-center text-xs">
+                              {(item.discount || 0) > 0 ? (
+                                <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">
+                                  {item.discountType === 'fixed' ? `-$${item.discount}` : `-${item.discount}%`}
+                                </span>
+                              ) : '-'}
+                            </td>
                             <td className="py-4 px-6 text-right font-bold text-gray-900">
-                              {formatCurrency(item.quantity * item.unitPrice).replace('DOP', '$')}
+                              {formatCurrency(getItemTotal(item)).replace('DOP', '$')}
                             </td>
                             <td className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-2 opacity-0 group-hover:opacity-100 print:hidden">
                               <button onClick={(e) => removeItem(item.id, e)} className="p-1.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200">
@@ -1060,6 +1143,18 @@ const AdminInvoices = () => {
 
                     <div className="w-72 bg-gray-900 text-white p-6 rounded-xl shadow-lg flex flex-col justify-center">
                       <div className="space-y-3 mb-4 text-sm">
+                        {totalDiscounts > 0 && (
+                          <>
+                            <div className="flex justify-between text-gray-400">
+                              <span>Bruto</span>
+                              <span className="text-gray-300">{formatCurrency(rawSubtotal).replace('DOP', '$')}</span>
+                            </div>
+                            <div className="flex justify-between text-red-400">
+                              <span>Descuentos</span>
+                              <span>-{formatCurrency(totalDiscounts).replace('DOP', '$')}</span>
+                            </div>
+                          </>
+                        )}
                         <div className="flex justify-between text-gray-400">
                           <span>Subtotal</span>
                           <span className="text-white">{formatCurrency(subtotal).replace('DOP', '$')}</span>
@@ -1149,10 +1244,11 @@ const AdminInvoices = () => {
                     <table className="w-full text-sm print:table">
                       <thead>
                         <tr className="border-b-2 border-gray-900 text-gray-900">
-                          <th className="py-3 text-left font-bold">Descripción</th>
-                          <th className="py-3 text-center font-bold w-24">Cant.</th>
-                          <th className="py-3 text-right font-bold w-32">Precio</th>
-                          <th className="py-3 text-right font-bold w-32">Total</th>
+                          <th className="py-3 text-left font-bold">Descripcion</th>
+                          <th className="py-3 text-center font-bold w-20">Cant.</th>
+                          <th className="py-3 text-right font-bold w-28">Precio</th>
+                          <th className="py-3 text-center font-bold w-20">Desc.</th>
+                          <th className="py-3 text-right font-bold w-28">Total</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -1168,8 +1264,15 @@ const AdminInvoices = () => {
                             </td>
                             <td className="py-4 text-center text-gray-600">{item.quantity}</td>
                             <td className="py-4 text-right text-gray-600">{formatCurrency(item.unitPrice).replace('DOP', '$')}</td>
+                            <td className="py-4 text-center text-xs">
+                              {(item.discount || 0) > 0 ? (
+                                <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">
+                                  {item.discountType === 'fixed' ? `-$${item.discount}` : `-${item.discount}%`}
+                                </span>
+                              ) : '-'}
+                            </td>
                             <td className="py-4 text-right font-medium text-gray-900">
-                              {formatCurrency(item.quantity * item.unitPrice).replace('DOP', '$')}
+                              {formatCurrency(getItemTotal(item)).replace('DOP', '$')}
                             </td>
                             <td className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-full pl-2 opacity-0 group-hover:opacity-100 print:hidden">
                               <button onClick={(e) => removeItem(item.id, e)} className="p-1.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200">
@@ -1195,6 +1298,18 @@ const AdminInvoices = () => {
                   <div className="mt-8 print:mt-4 flex justify-end mb-12 print:break-inside-avoid">
                     <div className="w-1/2">
                       <div className="space-y-2 text-sm border-t border-gray-200 pt-4">
+                        {totalDiscounts > 0 && (
+                          <>
+                            <div className="flex justify-between text-gray-400">
+                              <span>Bruto</span>
+                              <span className="text-gray-500">{formatCurrency(rawSubtotal).replace('DOP', '$')}</span>
+                            </div>
+                            <div className="flex justify-between text-red-500">
+                              <span>Descuentos</span>
+                              <span>-{formatCurrency(totalDiscounts).replace('DOP', '$')}</span>
+                            </div>
+                          </>
+                        )}
                         <div className="flex justify-between text-gray-500">
                           <span>Subtotal</span>
                           <span className="text-gray-900">{formatCurrency(subtotal).replace('DOP', '$')}</span>
@@ -1383,6 +1498,40 @@ const AdminInvoices = () => {
                       onChange={(e) => setEditingItem({ ...editingItem, unitPrice: parseFloat(e.target.value) || 0 })}
                       className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-right"
                     />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1 flex items-center gap-1">
+                      <Percent size={11} /> Descuento
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editingItem.discount || ''}
+                        onChange={(e) => setEditingItem({ ...editingItem, discount: parseFloat(e.target.value) || 0 })}
+                        placeholder="0"
+                        className="flex-1 border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-right text-sm"
+                      />
+                      <select
+                        value={editingItem.discountType || 'percent'}
+                        onChange={(e) => setEditingItem({ ...editingItem, discountType: e.target.value as 'percent' | 'fixed' })}
+                        className="w-16 border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-raynold-red font-bold"
+                      >
+                        <option value="percent">%</option>
+                        <option value="fixed">$</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="text-right pb-1">
+                    <p className="text-xs text-gray-400 uppercase font-bold">Total Linea</p>
+                    <p className="text-sm font-bold text-black">{formatCurrency(getItemTotal(editingItem))}</p>
+                    {(editingItem.discount || 0) > 0 && (
+                      <p className="text-[10px] text-red-500 font-bold">-{formatCurrency((editingItem.quantity * editingItem.unitPrice) - getItemTotal(editingItem))}</p>
+                    )}
                   </div>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, Plus, Minus, Trash2, Search, CreditCard, User, FileText, Printer, X, DollarSign, Save } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, Search, CreditCard, User, FileText, Printer, X, DollarSign, Save, Percent } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { Client } from './AdminClients';
 import { Seller } from './AdminSellers';
@@ -13,6 +13,8 @@ interface CartItem {
   price: number;
   quantity: number;
   reference: string;
+  discount?: number;
+  discountType?: 'percent' | 'fixed';
 }
 
 const AdminPOS = () => {
@@ -32,6 +34,8 @@ const AdminPOS = () => {
   const [isQuickProductModalOpen, setIsQuickProductModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [applyTax, setApplyTax] = useState(true);
+  const [globalDiscount, setGlobalDiscount] = useState(0);
+  const [globalDiscountType, setGlobalDiscountType] = useState<'percent' | 'fixed'>('percent');
 
   // Payment state
   const [paymentMethod1, setPaymentMethod1] = useState<string>('');
@@ -119,9 +123,23 @@ const AdminPOS = () => {
     setCart(cart.filter(item => item.id !== id));
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const getCartItemTotal = (item: CartItem) => {
+    const raw = item.price * item.quantity;
+    if (!item.discount || item.discount <= 0) return raw;
+    if (item.discountType === 'fixed') return Math.max(0, raw - item.discount);
+    return raw * (1 - (item.discount / 100));
+  };
+
+  const rawSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const itemDiscountsTotal = cart.reduce((sum, item) => sum + ((item.price * item.quantity) - getCartItemTotal(item)), 0);
+  const subtotalAfterItemDiscounts = rawSubtotal - itemDiscountsTotal;
+  const globalDiscountAmount = globalDiscount > 0
+    ? (globalDiscountType === 'fixed' ? globalDiscount : subtotalAfterItemDiscounts * (globalDiscount / 100))
+    : 0;
+  const subtotal = Math.max(0, subtotalAfterItemDiscounts - globalDiscountAmount);
   const itbis = applyTax ? subtotal * 0.18 : 0;
   const total = subtotal + itbis;
+  const totalDiscounts = itemDiscountsTotal + globalDiscountAmount;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(amount);
@@ -242,14 +260,18 @@ const AdminPOS = () => {
         reference: item.reference,
         description: item.title,
         quantity: item.quantity,
-        unitPrice: item.price
+        unitPrice: item.price,
+        discount: item.discount || 0,
+        discountType: item.discountType || 'percent'
       })),
       notes: 'Generado desde POS',
       paymentTerms: paymentType === 'CONTADO' ? 'PAGO AL CONTADO' : 'VENTA A CREDITO',
       templateId: 'modern',
       payments: payments,
       paymentStatus: invoiceType === 'COTIZACION' ? 'PENDIENTE' : (totalPaid >= total - 0.01 ? 'PAGADA' : (totalPaid > 0 ? 'PARCIAL' : 'PENDIENTE')),
-      applyTax: applyTax
+      applyTax: applyTax,
+      globalDiscount: globalDiscount || 0,
+      globalDiscountType: globalDiscountType || 'percent'
     };
 
     invoices.push(newInvoice);
@@ -279,6 +301,8 @@ const AdminPOS = () => {
       payments: newInvoice.payments,
       payment_status: newInvoice.paymentStatus,
       apply_tax: newInvoice.applyTax,
+      global_discount: newInvoice.globalDiscount || 0,
+      global_discount_type: newInvoice.globalDiscountType || 'percent',
     }).then(({ error }) => { if (error) console.error('POS Supabase:', error.message); });
 
     setLastInvoice(newInvoice);
@@ -497,7 +521,33 @@ const AdminPOS = () => {
                     <Plus size={14} />
                   </button>
                 </div>
-                <span className="font-mono text-sm text-raynold-green">{formatCurrency(item.price * item.quantity)}</span>
+                <div className="text-right">
+                  <span className="font-mono text-sm text-raynold-green">{formatCurrency(getCartItemTotal(item))}</span>
+                  {(item.discount || 0) > 0 && (
+                    <p className="text-[10px] text-red-400 font-bold">-{item.discountType === 'fixed' ? formatCurrency(item.discount!) : `${item.discount}%`}</p>
+                  )}
+                </div>
+              </div>
+              {/* Per-item discount row */}
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/5">
+                <Percent size={11} className="text-gray-500 shrink-0" />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={item.discount || ''}
+                  onChange={(e) => setCart(cart.map(c => c.id === item.id ? { ...c, discount: parseFloat(e.target.value) || 0 } : c))}
+                  placeholder="Desc."
+                  className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-raynold-red focus:outline-none"
+                />
+                <select
+                  value={item.discountType || 'percent'}
+                  onChange={(e) => setCart(cart.map(c => c.id === item.id ? { ...c, discountType: e.target.value as 'percent' | 'fixed' } : c))}
+                  className="bg-white/5 border border-white/10 rounded px-1 py-1 text-white text-xs focus:border-raynold-red focus:outline-none font-bold"
+                >
+                  <option value="percent">%</option>
+                  <option value="fixed">$</option>
+                </select>
               </div>
             </div>
           ))}
@@ -510,7 +560,45 @@ const AdminPOS = () => {
         </div>
 
         <div className="p-4 border-t border-white/10 bg-black shrink-0">
+          {/* Global Discount */}
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/5">
+            <Percent size={13} className="text-gray-500 shrink-0" />
+            <span className="text-xs font-bold text-gray-400 uppercase whitespace-nowrap">Desc. Global</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={globalDiscount || ''}
+              onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)}
+              placeholder="0"
+              className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-raynold-red focus:outline-none text-right"
+            />
+            <select
+              value={globalDiscountType}
+              onChange={(e) => setGlobalDiscountType(e.target.value as 'percent' | 'fixed')}
+              className="bg-white/5 border border-white/10 rounded px-1 py-1 text-white text-xs focus:border-raynold-red focus:outline-none font-bold"
+            >
+              <option value="percent">%</option>
+              <option value="fixed">$</option>
+            </select>
+            {globalDiscountAmount > 0 && (
+              <span className="text-xs text-red-400 font-bold ml-auto">-{formatCurrency(globalDiscountAmount)}</span>
+            )}
+          </div>
+
           <div className="space-y-2 mb-4 text-sm">
+            {totalDiscounts > 0 && (
+              <>
+                <div className="flex justify-between text-gray-500">
+                  <span>Bruto</span>
+                  <span>{formatCurrency(rawSubtotal)}</span>
+                </div>
+                <div className="flex justify-between text-red-400">
+                  <span>Descuentos</span>
+                  <span>-{formatCurrency(totalDiscounts)}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between text-gray-400">
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
@@ -765,6 +853,18 @@ const AdminPOS = () => {
               <p>--------------------------------</p>
 
               <div className="space-y-1">
+                {totalDiscounts > 0 && (
+                  <>
+                    <div className="flex justify-between">
+                      <span>Bruto:</span>
+                      <span>{formatCurrency(rawSubtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Descuento:</span>
+                      <span>-{formatCurrency(totalDiscounts)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
                   <span>{formatCurrency(lastInvoice.subtotal || subtotal)}</span>
