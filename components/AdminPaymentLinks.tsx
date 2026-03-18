@@ -75,7 +75,7 @@ const AdminPaymentLinks: React.FC = () => {
   const [showBankPicker, setShowBankPicker] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [showQrModal, setShowQrModal] = useState(false);
-  const [qrStyle, setQrStyle] = useState<'classic'|'modern'|'card'>('card');
+  const [qrStyle, setQrStyle] = useState<'classic'|'modern'|'card'|'banner'|'badge'|'sticker'|'phone'|'minimal'>('card');
   const [qrAccent, setQrAccent] = useState('#E60000');
   const [qrBg, setQrBg] = useState('#ffffff');
   const [qrFg, setQrFg] = useState('#000000');
@@ -640,10 +640,19 @@ const AdminPaymentLinks: React.FC = () => {
                   <input type="text" value={qrName} onChange={e => setQrName(e.target.value)} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-xs" placeholder="Mi QR" />
                 </div>
                 {/* Style Tabs */}
-                <div className="flex rounded-xl bg-white/5 p-1">
-                  {([['classic','Clásico'],['modern','Moderno'],['card','Tarjeta']] as const).map(([v,l]) => (
-                    <button key={v} onClick={() => setQrStyle(v)} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${qrStyle === v ? 'bg-raynold-red text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>{l}</button>
-                  ))}
+                <div className="bg-white/5 rounded-xl p-3">
+                  <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-2">Estilo de Diseño</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {([
+                      ['classic','Clásico','□'],['modern','Moderno','▢'],['card','Tarjeta','▣'],['banner','Banner','▬'],
+                      ['badge','Badge','◇'],['sticker','Sticker','◉'],['phone','Teléfono','📱'],['minimal','Mínimal','◻'],
+                    ] as [typeof qrStyle, string, string][]).map(([v,l,ico]) => (
+                      <button key={v} onClick={() => setQrStyle(v)} className={`py-2 px-1 rounded-lg border text-center transition-all ${qrStyle === v ? 'bg-raynold-red/20 border-raynold-red/50 text-white' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                        <div className="text-sm">{ico}</div>
+                        <div className="text-[8px] font-bold">{l}</div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Page Selector */}
@@ -735,57 +744,94 @@ const AdminPaymentLinks: React.FC = () => {
 
               {/* Right: QR Preview */}
               <div className="flex-1 flex flex-col items-center justify-center bg-[#111] p-6 overflow-auto">
-                <div ref={qrContainerRef} className="flex flex-col items-center" style={{
-                  backgroundColor: qrBg,
-                  borderRadius: qrStyle === 'card' ? '24px' : qrStyle === 'modern' ? '16px' : '0',
-                  padding: qrStyle === 'card' ? '32px 28px' : qrStyle === 'modern' ? '24px 20px' : '20px',
-                  boxShadow: qrStyle === 'card' ? `0 20px 60px ${qrAccent}15, 0 4px 20px rgba(0,0,0,0.3)` : 'none',
-                  border: qrStyle === 'card' ? `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.1)'}` : 'none',
-                  minWidth: '300px',
-                }}>
-                  {/* Photo */}
-                  {qrShowPhoto && currentPage.avatar_url && (
-                    <img src={currentPage.avatar_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${qrAccent}`, marginBottom: '12px', boxShadow: `0 4px 12px ${qrAccent}25` }} />
-                  )}
-                  {/* Name + Badge */}
-                  {qrShowName && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '18px', fontWeight: 800, color: qrFg, fontFamily: "'Inter',sans-serif" }}>{currentPage.name}</span>
-                      <img src="/verified-badge.svg" alt="" style={{ width: '18px', height: '18px' }} />
+                {(() => {
+                  const qrVal = qrLink;
+                  const qrImgSt = qrShowLogo && currentPage.avatar_url ? { src: currentPage.avatar_url, height: 36, width: 36, excavate: true } : undefined;
+                  const QREl = ({ sz }: { sz?: number }) => <QRCodeSVG value={qrVal} size={sz || qrSize} level="H" fgColor={qrAccent} bgColor="#ffffff" imageSettings={qrImgSt} />;
+                  const PhotoQ = () => qrShowPhoto && currentPage.avatar_url ? <img src={currentPage.avatar_url} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${qrAccent}`, boxShadow: `0 4px 12px ${qrAccent}25` }} /> : null;
+                  const NameQ = ({ fs }: { fs?: string }) => qrShowName ? <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><span style={{ fontSize: fs || '18px', fontWeight: 800, color: qrFg, fontFamily: "'Inter',sans-serif" }}>{currentPage.name}</span><img src="/verified-badge.svg" alt="" style={{ width: '18px', height: '18px' }} /></div> : null;
+                  const UserQ = () => qrShowUser ? <p style={{ fontSize: '12px', color: qrAccent, fontWeight: 600, margin: 0, fontFamily: "'Inter',sans-serif" }}>@{currentPage.username}</p> : null;
+                  const TextQ = () => qrCustomText ? <p style={{ fontSize: '10px', color: qrFg, opacity: 0.4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Inter',sans-serif", margin: 0 }}>{qrCustomText}</p> : null;
+                  const LinkQ = () => qrShowLink ? <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 16px', borderRadius: '20px', border: `1.5px solid ${qrAccent}30`, backgroundColor: `${qrAccent}08` }}><Globe size={10} style={{ color: qrAccent }} /><span style={{ fontSize: '10px', fontWeight: 700, color: qrAccent, letterSpacing: '0.3px', fontFamily: "'Inter',sans-serif" }}>{window.location.host}/pagar/{currentPage.slug}</span></div> : null;
+
+                  if (qrStyle === 'classic') return (
+                    <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: qrBg, padding: '20px', gap: '8px' }}>
+                      <PhotoQ /><NameQ /><UserQ /><TextQ />
+                      <div style={{ padding: '10px', border: `3px solid ${qrAccent}`, backgroundColor: '#fff' }}><QREl /></div>
+                      <LinkQ />
                     </div>
-                  )}
-                  {/* Username */}
-                  {qrShowUser && (
-                    <p style={{ fontSize: '12px', color: qrAccent, fontWeight: 600, marginBottom: '16px', fontFamily: "'Inter',sans-serif" }}>@{currentPage.username}</p>
-                  )}
-                  {/* Custom text */}
-                  {qrCustomText && (
-                    <p style={{ fontSize: '10px', color: qrFg, opacity: 0.4, marginBottom: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Inter',sans-serif" }}>{qrCustomText}</p>
-                  )}
-                  {/* QR */}
-                  <div style={{
-                    padding: qrStyle === 'card' ? '14px' : '10px',
-                    borderRadius: qrStyle === 'classic' ? '0' : '16px',
-                    border: `3px solid ${qrAccent}`,
-                    backgroundColor: '#ffffff',
-                  }}>
-                    <QRCodeSVG
-                      value={qrLink}
-                      size={qrSize}
-                      level="H"
-                      fgColor={qrAccent}
-                      bgColor="#ffffff"
-                      imageSettings={qrShowLogo && currentPage.avatar_url ? { src: currentPage.avatar_url, height: 36, width: 36, excavate: true } : undefined}
-                    />
-                  </div>
-                  {/* Link */}
-                  {qrShowLink && (
-                    <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 16px', borderRadius: '20px', border: `1.5px solid ${qrAccent}30`, backgroundColor: `${qrAccent}08` }}>
-                      <Globe size={10} style={{ color: qrAccent }} />
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: qrAccent, letterSpacing: '0.3px', fontFamily: "'Inter',sans-serif", textTransform: 'uppercase' }}>{window.location.host}/pagar/{currentPage.slug}</span>
+                  );
+                  if (qrStyle === 'modern') return (
+                    <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: qrBg, borderRadius: '16px', padding: '24px 20px', gap: '8px' }}>
+                      <PhotoQ /><NameQ /><UserQ /><TextQ />
+                      <div style={{ padding: '10px', borderRadius: '16px', border: `3px solid ${qrAccent}`, backgroundColor: '#fff' }}><QREl /></div>
+                      <LinkQ />
                     </div>
-                  )}
-                </div>
+                  );
+                  if (qrStyle === 'card') return (
+                    <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: qrBg, borderRadius: '24px', padding: '32px 28px', boxShadow: `0 20px 60px ${qrAccent}15, 0 4px 20px rgba(0,0,0,0.3)`, border: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.1)'}`, minWidth: '300px', gap: '6px' }}>
+                      <PhotoQ /><NameQ /><UserQ /><TextQ />
+                      <div style={{ padding: '14px', borderRadius: '16px', border: `3px solid ${qrAccent}`, backgroundColor: '#fff', marginTop: '4px' }}><QREl /></div>
+                      <div style={{ height: '6px' }} /><LinkQ />
+                    </div>
+                  );
+                  if (qrStyle === 'banner') return (
+                    <div ref={qrContainerRef} style={{ display: 'flex', alignItems: 'center', gap: '28px', backgroundColor: qrBg, borderRadius: '20px', padding: '28px 32px', boxShadow: `0 12px 40px ${qrAccent}12`, border: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.08)'}` }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '140px' }}>
+                        <PhotoQ /><NameQ /><UserQ /><TextQ /><LinkQ />
+                      </div>
+                      <div style={{ padding: '12px', borderRadius: '16px', border: `3px solid ${qrAccent}`, backgroundColor: '#fff', flexShrink: 0 }}><QREl sz={Math.min(qrSize, 200)} /></div>
+                    </div>
+                  );
+                  if (qrStyle === 'badge') return (
+                    <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: qrBg, borderRadius: '24px', overflow: 'hidden', boxShadow: `0 16px 50px ${qrAccent}15`, border: `2px solid ${qrAccent}`, minWidth: '300px' }}>
+                      <div style={{ width: '100%', padding: '16px 24px', backgroundColor: qrAccent, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        {qrShowPhoto && currentPage.avatar_url && <img src={currentPage.avatar_url} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.5)' }} />}
+                        {qrShowName && <span style={{ fontSize: '16px', fontWeight: 800, color: '#fff', fontFamily: "'Inter',sans-serif" }}>{currentPage.name}</span>}
+                        <img src="/verified-badge.svg" alt="" style={{ width: '16px', height: '16px', filter: 'brightness(10)' }} />
+                      </div>
+                      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                        <UserQ /><TextQ />
+                        <div style={{ padding: '12px', borderRadius: '16px', border: `2px solid ${qrAccent}40`, backgroundColor: '#fff' }}><QREl /></div>
+                        <LinkQ />
+                      </div>
+                    </div>
+                  );
+                  if (qrStyle === 'sticker') {
+                    const sz = Math.max(qrSize + 100, 320);
+                    return (
+                      <div ref={qrContainerRef} style={{ width: `${sz}px`, height: `${sz}px`, borderRadius: '50%', backgroundColor: qrBg, border: `4px solid ${qrAccent}`, boxShadow: `0 0 0 8px ${qrBg}, 0 0 0 10px ${qrAccent}40, 0 20px 50px ${qrAccent}20`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '30px' }}>
+                        {qrShowName && <span style={{ fontSize: '11px', fontWeight: 800, color: qrFg, textTransform: 'uppercase', letterSpacing: '3px', fontFamily: "'Inter',sans-serif" }}>{currentPage.name}</span>}
+                        <div style={{ padding: '8px', borderRadius: '12px', border: `2px solid ${qrAccent}`, backgroundColor: '#fff' }}><QREl sz={Math.min(qrSize, sz - 160)} /></div>
+                        {qrCustomText && <span style={{ fontSize: '9px', fontWeight: 700, color: qrAccent, textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Inter',sans-serif" }}>{qrCustomText}</span>}
+                      </div>
+                    );
+                  }
+                  if (qrStyle === 'phone') return (
+                    <div ref={qrContainerRef} style={{ width: '280px', minHeight: '500px', borderRadius: '40px', border: `4px solid ${isLight ? '#d1d5db' : '#333'}`, backgroundColor: qrBg, padding: '3px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}>
+                      <div style={{ borderRadius: '36px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: qrBg }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '10px', marginBottom: '20px' }}><div style={{ width: '100px', height: '24px', backgroundColor: isLight ? '#222' : '#000', borderRadius: '16px' }} /></div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '0 20px 24px', flex: 1 }}>
+                          <PhotoQ /><NameQ fs="15px" /><UserQ /><TextQ />
+                          <div style={{ padding: '10px', borderRadius: '14px', border: `2.5px solid ${qrAccent}`, backgroundColor: '#fff', marginTop: '4px' }}><QREl sz={Math.min(qrSize, 180)} /></div>
+                          <LinkQ />
+                        </div>
+                        <div style={{ width: '90px', height: '4px', backgroundColor: qrFg, opacity: 0.15, borderRadius: '4px', marginBottom: '8px' }} />
+                      </div>
+                    </div>
+                  );
+                  if (qrStyle === 'minimal') return (
+                    <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: qrBg, padding: '40px', position: 'relative', minWidth: '300px' }}>
+                      <div style={{ position: 'absolute', inset: '12px', border: `1.5px solid ${qrAccent}30`, borderRadius: '4px', pointerEvents: 'none' }} />
+                      <div style={{ position: 'absolute', inset: '8px', border: `0.5px solid ${qrAccent}15`, borderRadius: '2px', pointerEvents: 'none' }} />
+                      {qrShowName && <span style={{ fontSize: '10px', fontWeight: 800, color: qrFg, textTransform: 'uppercase', letterSpacing: '4px', fontFamily: "'Inter',sans-serif", marginBottom: '20px', opacity: 0.6 }}>{currentPage.name}</span>}
+                      <div style={{ backgroundColor: '#fff', padding: '6px' }}><QREl /></div>
+                      {qrCustomText && <span style={{ fontSize: '9px', fontWeight: 600, color: qrFg, textTransform: 'uppercase', letterSpacing: '3px', fontFamily: "'Inter',sans-serif", marginTop: '16px', opacity: 0.35 }}>{qrCustomText}</span>}
+                      {qrShowLink && <span style={{ fontSize: '9px', fontWeight: 600, color: qrAccent, letterSpacing: '1px', fontFamily: "'Inter',sans-serif", marginTop: '8px', opacity: 0.5 }}>{window.location.host}/pagar/{currentPage.slug}</span>}
+                    </div>
+                  );
+                  return <div ref={qrContainerRef} style={{ padding: '20px', backgroundColor: qrBg }}><QREl /></div>;
+                })()}
 
                 {/* Download Buttons */}
                 <div className="flex gap-2 mt-6">

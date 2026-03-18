@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
 
-type QRStyle = 'classic' | 'modern' | 'card';
+type QRStyle = 'classic' | 'modern' | 'card' | 'banner' | 'badge' | 'sticker' | 'phone' | 'minimal';
 
 interface QRConfig {
   url: string;
@@ -276,6 +276,198 @@ const AdminQR: React.FC = () => {
   };
 
   const isLight = config.bgColor === '#ffffff' || config.bgColor === '#f8fafc';
+  const urlClean = config.url.replace('https://', '').replace('http://', '').replace(/\/$/, '');
+  const qrValue = config.url || 'https://raynolddesignssrl.com';
+  const qrImgSettings = config.showLogo && config.logoUrl ? { src: config.logoUrl, height: 36, width: 36, excavate: true } : undefined;
+
+  /* ─────── Shared sub-components ─────── */
+  const QR = ({ size, accent }: { size?: number; accent?: string }) => (
+    <QRCodeSVG value={qrValue} size={size || config.qrSize} level="H" fgColor={accent || config.accentColor} bgColor="#ffffff" imageSettings={qrImgSettings} />
+  );
+
+  const PhotoEl = () => config.showPhoto && config.photoUrl ? (
+    <img src={config.photoUrl} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${config.accentColor}`, boxShadow: `0 4px 12px ${config.accentColor}25` }} />
+  ) : null;
+
+  const NameEl = ({ size, color }: { size?: string; color?: string }) => config.showName && config.displayName ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <span style={{ fontSize: size || '18px', fontWeight: 800, color: color || config.fgColor, fontFamily: "'Inter',sans-serif" }}>{config.displayName}</span>
+      <img src="/verified-badge.svg" alt="" style={{ width: '18px', height: '18px' }} />
+    </div>
+  ) : null;
+
+  const CustomTextEl = ({ color }: { color?: string }) => config.customText ? (
+    <p style={{ fontSize: '10px', color: color || config.fgColor, opacity: 0.4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Inter',sans-serif", margin: 0 }}>{config.customText}</p>
+  ) : null;
+
+  const LinkEl = ({ accent }: { accent?: string }) => config.showLink ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 16px', borderRadius: '20px', border: `1.5px solid ${(accent || config.accentColor)}30`, backgroundColor: `${(accent || config.accentColor)}08` }}>
+      <Globe size={10} style={{ color: accent || config.accentColor }} />
+      <span style={{ fontSize: '10px', fontWeight: 700, color: accent || config.accentColor, letterSpacing: '0.3px', fontFamily: "'Inter',sans-serif" }}>{urlClean}</span>
+    </div>
+  ) : null;
+
+  /* ─────── Render QR Design ─────── */
+  const renderQrDesign = () => {
+    const S = config.style;
+
+    // ── CLASSIC ──
+    if (S === 'classic') return (
+      <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: config.bgColor, padding: '20px' }}>
+        <PhotoEl />
+        {config.showPhoto && config.photoUrl && <div style={{ height: '12px' }} />}
+        <NameEl />
+        {config.showName && <div style={{ height: '4px' }} />}
+        <CustomTextEl />
+        {config.customText && <div style={{ height: '12px' }} />}
+        <div style={{ padding: '10px', border: `3px solid ${config.accentColor}`, backgroundColor: '#fff' }}><QR /></div>
+        <div style={{ height: '14px' }} />
+        <LinkEl />
+      </div>
+    );
+
+    // ── MODERN ──
+    if (S === 'modern') return (
+      <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: config.bgColor, borderRadius: '16px', padding: '24px 20px' }}>
+        <PhotoEl />
+        {config.showPhoto && config.photoUrl && <div style={{ height: '12px' }} />}
+        <NameEl />
+        {config.showName && <div style={{ height: '4px' }} />}
+        <CustomTextEl />
+        {config.customText && <div style={{ height: '12px' }} />}
+        <div style={{ padding: '10px', borderRadius: '16px', border: `3px solid ${config.accentColor}`, backgroundColor: '#fff' }}><QR /></div>
+        <div style={{ height: '14px' }} />
+        <LinkEl />
+      </div>
+    );
+
+    // ── CARD ──
+    if (S === 'card') return (
+      <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: config.bgColor, borderRadius: '24px', padding: '32px 28px', boxShadow: `0 20px 60px ${config.accentColor}15, 0 4px 20px rgba(0,0,0,0.3)`, border: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.1)'}`, minWidth: '300px' }}>
+        <PhotoEl />
+        {config.showPhoto && config.photoUrl && <div style={{ height: '12px' }} />}
+        <NameEl />
+        {config.showName && <div style={{ height: '4px' }} />}
+        <CustomTextEl />
+        {config.customText && <div style={{ height: '12px' }} />}
+        <div style={{ padding: '14px', borderRadius: '16px', border: `3px solid ${config.accentColor}`, backgroundColor: '#fff' }}><QR /></div>
+        <div style={{ height: '14px' }} />
+        <LinkEl />
+      </div>
+    );
+
+    // ── BANNER (horizontal) ──
+    if (S === 'banner') return (
+      <div ref={qrContainerRef} style={{ display: 'flex', alignItems: 'center', gap: '28px', backgroundColor: config.bgColor, borderRadius: '20px', padding: '28px 32px', boxShadow: `0 12px 40px ${config.accentColor}12, 0 2px 15px rgba(0,0,0,0.2)`, border: `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.08)'}` }}>
+        {/* Left side: info */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, minWidth: '140px' }}>
+          <PhotoEl />
+          <NameEl />
+          <CustomTextEl />
+          <LinkEl />
+        </div>
+        {/* Right side: QR */}
+        <div style={{ padding: '12px', borderRadius: '16px', border: `3px solid ${config.accentColor}`, backgroundColor: '#fff', flexShrink: 0 }}>
+          <QR size={Math.min(config.qrSize, 200)} />
+        </div>
+      </div>
+    );
+
+    // ── BADGE (shield outline) ──
+    if (S === 'badge') return (
+      <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: config.bgColor, borderRadius: '24px', padding: '0', overflow: 'hidden', boxShadow: `0 16px 50px ${config.accentColor}15`, border: `2px solid ${config.accentColor}`, minWidth: '300px' }}>
+        {/* Top accent bar */}
+        <div style={{ width: '100%', padding: '16px 24px', backgroundColor: config.accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          {config.showPhoto && config.photoUrl && (
+            <img src={config.photoUrl} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.5)' }} />
+          )}
+          {config.showName && config.displayName && (
+            <span style={{ fontSize: '16px', fontWeight: 800, color: '#fff', fontFamily: "'Inter',sans-serif" }}>{config.displayName}</span>
+          )}
+          <img src="/verified-badge.svg" alt="" style={{ width: '16px', height: '16px', filter: 'brightness(10)' }} />
+        </div>
+        {/* Body */}
+        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <CustomTextEl />
+          <div style={{ padding: '12px', borderRadius: '16px', border: `2px solid ${config.accentColor}40`, backgroundColor: '#fff' }}><QR /></div>
+          <LinkEl />
+        </div>
+      </div>
+    );
+
+    // ── STICKER (circular frame) ──
+    if (S === 'sticker') {
+      const stickerSize = Math.max(config.qrSize + 100, 320);
+      return (
+        <div ref={qrContainerRef} style={{ width: `${stickerSize}px`, height: `${stickerSize}px`, borderRadius: '50%', backgroundColor: config.bgColor, border: `4px solid ${config.accentColor}`, boxShadow: `0 0 0 8px ${config.bgColor}, 0 0 0 10px ${config.accentColor}40, 0 20px 50px ${config.accentColor}20`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '30px', position: 'relative' }}>
+          {/* Top text arc simulation */}
+          {config.showName && config.displayName && (
+            <span style={{ fontSize: '11px', fontWeight: 800, color: config.fgColor, textTransform: 'uppercase', letterSpacing: '3px', fontFamily: "'Inter',sans-serif" }}>{config.displayName}</span>
+          )}
+          <div style={{ padding: '8px', borderRadius: '12px', border: `2px solid ${config.accentColor}`, backgroundColor: '#fff' }}>
+            <QR size={Math.min(config.qrSize, stickerSize - 160)} />
+          </div>
+          {config.customText && (
+            <span style={{ fontSize: '9px', fontWeight: 700, color: config.accentColor, textTransform: 'uppercase', letterSpacing: '2px', fontFamily: "'Inter',sans-serif" }}>{config.customText}</span>
+          )}
+        </div>
+      );
+    }
+
+    // ── PHONE (device mockup) ──
+    if (S === 'phone') return (
+      <div ref={qrContainerRef} style={{ width: '280px', minHeight: '500px', borderRadius: '40px', border: `4px solid ${isLight ? '#d1d5db' : '#333'}`, backgroundColor: config.bgColor, padding: '3px', overflow: 'hidden', boxShadow: `0 20px 60px rgba(0,0,0,0.5)` }}>
+        <div style={{ borderRadius: '36px', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: config.bgColor }}>
+          {/* Dynamic Island */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '10px', marginBottom: '20px' }}>
+            <div style={{ width: '100px', height: '24px', backgroundColor: isLight ? '#222' : '#000', borderRadius: '16px' }} />
+          </div>
+          {/* Content */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '0 20px 24px', flex: 1 }}>
+            <PhotoEl />
+            <NameEl size="15px" />
+            <CustomTextEl />
+            <div style={{ padding: '10px', borderRadius: '14px', border: `2.5px solid ${config.accentColor}`, backgroundColor: '#fff', marginTop: '4px' }}>
+              <QR size={Math.min(config.qrSize, 180)} />
+            </div>
+            <LinkEl />
+          </div>
+          {/* Home indicator */}
+          <div style={{ width: '90px', height: '4px', backgroundColor: config.fgColor, opacity: 0.15, borderRadius: '4px', marginBottom: '8px' }} />
+        </div>
+      </div>
+    );
+
+    // ── MINIMAL (elegant thin frame) ──
+    if (S === 'minimal') return (
+      <div ref={qrContainerRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: config.bgColor, padding: '40px', position: 'relative', minWidth: '300px' }}>
+        {/* Thin elegant border */}
+        <div style={{ position: 'absolute', inset: '12px', border: `1.5px solid ${config.accentColor}30`, borderRadius: '4px', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: '8px', border: `0.5px solid ${config.accentColor}15`, borderRadius: '2px', pointerEvents: 'none' }} />
+
+        {config.showName && config.displayName && (
+          <span style={{ fontSize: '10px', fontWeight: 800, color: config.fgColor, textTransform: 'uppercase', letterSpacing: '4px', fontFamily: "'Inter',sans-serif", marginBottom: '20px', opacity: 0.6 }}>{config.displayName}</span>
+        )}
+        <div style={{ backgroundColor: '#fff', padding: '6px' }}>
+          <QR />
+        </div>
+        {config.customText && (
+          <span style={{ fontSize: '9px', fontWeight: 600, color: config.fgColor, textTransform: 'uppercase', letterSpacing: '3px', fontFamily: "'Inter',sans-serif", marginTop: '16px', opacity: 0.35 }}>{config.customText}</span>
+        )}
+        {config.showLink && (
+          <span style={{ fontSize: '9px', fontWeight: 600, color: config.accentColor, letterSpacing: '1px', fontFamily: "'Inter',sans-serif", marginTop: '8px', opacity: 0.5 }}>{urlClean}</span>
+        )}
+      </div>
+    );
+
+    // Fallback
+    return (
+      <div ref={qrContainerRef} style={{ padding: '20px', backgroundColor: config.bgColor }}>
+        <QR />
+      </div>
+    );
+  };
+
 
   return (
     <div className="p-6 md:p-10">
@@ -350,9 +542,15 @@ const AdminQR: React.FC = () => {
               <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <Sparkles size={14} className="text-raynold-red" /> Estilo de Diseño
               </h3>
-              <div className="flex rounded-xl bg-white/5 p-1">
-                {([['classic','Clásico'],['modern','Moderno'],['card','Tarjeta']] as const).map(([v,l]) => (
-                  <button key={v} onClick={() => setConfig({ ...config, style: v })} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${config.style === v ? 'bg-raynold-red text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}>{l}</button>
+              <div className="grid grid-cols-4 gap-2">
+                {([
+                  ['classic','Clásico','□'],['modern','Moderno','▢'],['card','Tarjeta','▣'],['banner','Banner','▬'],
+                  ['badge','Badge','◇'],['sticker','Sticker','◉'],['phone','Teléfono','📱'],['minimal','Mínimal','◻'],
+                ] as [QRStyle, string, string][]).map(([v,l,ico]) => (
+                  <button key={v} onClick={() => setConfig({ ...config, style: v })} className={`py-2.5 px-2 rounded-xl border text-center transition-all ${config.style === v ? 'bg-raynold-red/20 border-raynold-red/50 text-white shadow-[0_0_10px_rgba(230,0,0,0.15)]' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/20'}`}>
+                    <div className="text-lg mb-0.5">{ico}</div>
+                    <div className="text-[9px] font-bold">{l}</div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -509,54 +707,8 @@ const AdminQR: React.FC = () => {
               </div>
 
               {/* Preview Area */}
-              <div className="flex-1 flex items-center justify-center p-8 bg-[#111]">
-                <div ref={qrContainerRef} className="flex flex-col items-center" style={{
-                  backgroundColor: config.bgColor,
-                  borderRadius: config.style === 'card' ? '24px' : config.style === 'modern' ? '16px' : '0',
-                  padding: config.style === 'card' ? '32px 28px' : config.style === 'modern' ? '24px 20px' : '20px',
-                  boxShadow: config.style === 'card' ? `0 20px 60px ${config.accentColor}15, 0 4px 20px rgba(0,0,0,0.3)` : 'none',
-                  border: config.style === 'card' ? `1px solid ${isLight ? '#e5e7eb' : 'rgba(255,255,255,0.1)'}` : 'none',
-                  minWidth: '300px',
-                }}>
-                  {/* Photo */}
-                  {config.showPhoto && config.photoUrl && (
-                    <img src={config.photoUrl} alt="" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `3px solid ${config.accentColor}`, marginBottom: '12px', boxShadow: `0 4px 12px ${config.accentColor}25` }} />
-                  )}
-                  {/* Name + Badge */}
-                  {config.showName && config.displayName && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '18px', fontWeight: 800, color: config.fgColor, fontFamily: "'Inter',sans-serif" }}>{config.displayName}</span>
-                      <img src="/verified-badge.svg" alt="" style={{ width: '18px', height: '18px' }} />
-                    </div>
-                  )}
-                  {/* Custom text */}
-                  {config.customText && (
-                    <p style={{ fontSize: '10px', color: config.fgColor, opacity: 0.4, marginBottom: '12px', marginTop: config.showName ? '4px' : '0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Inter',sans-serif" }}>{config.customText}</p>
-                  )}
-                  {/* QR Code */}
-                  <div style={{
-                    padding: config.style === 'card' ? '14px' : '10px',
-                    borderRadius: config.style === 'classic' ? '0' : '16px',
-                    border: `3px solid ${config.accentColor}`,
-                    backgroundColor: '#ffffff',
-                  }}>
-                    <QRCodeSVG
-                      value={config.url || 'https://raynolddesignssrl.com'}
-                      size={config.qrSize}
-                      level="H"
-                      fgColor={config.accentColor}
-                      bgColor="#ffffff"
-                      imageSettings={config.showLogo && config.logoUrl ? { src: config.logoUrl, height: 36, width: 36, excavate: true } : undefined}
-                    />
-                  </div>
-                  {/* Link */}
-                  {config.showLink && (
-                    <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 16px', borderRadius: '20px', border: `1.5px solid ${config.accentColor}30`, backgroundColor: `${config.accentColor}08` }}>
-                      <Globe size={10} style={{ color: config.accentColor }} />
-                      <span style={{ fontSize: '10px', fontWeight: 700, color: config.accentColor, letterSpacing: '0.3px', fontFamily: "'Inter',sans-serif" }}>{config.url.replace('https://', '').replace('http://', '').replace(/\/$/, '')}</span>
-                    </div>
-                  )}
-                </div>
+              <div className="flex-1 flex items-center justify-center p-8 bg-[#111] overflow-auto">
+                {renderQrDesign()}
               </div>
 
               {/* Download Buttons */}
