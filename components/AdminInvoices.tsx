@@ -388,14 +388,18 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
   const handleDuplicate = (invoice: Invoice) => {
     const normalized = normalizeInvoice(invoice);
-    const duplicated = {
+    const duplicated: Invoice = {
       ...normalized,
       id: generateUUID(),
       number: generateNextNumber(),
+      status: 'BORRADOR',
       date: new Date().toLocaleDateString('es-DO', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       ncf: normalized.type === 'FACTURA' ? generateNCF(normalized.ncfType) : ''
     };
     setInvoices([...invoices, duplicated]);
+    setCurrentInvoice(duplicated);
+    setView('editor');
+    setHasUnsavedChanges(true);
   };
 
   const handleDelete = (id: string) => {
@@ -943,15 +947,33 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
           <button onClick={handleBack} className="flex items-center gap-2 text-gray-600 hover:text-black font-medium">
             <ArrowLeft size={20} /> Volver
           </button>
-          <div className="flex gap-3">
-            <button onClick={() => handleSave('BORRADOR')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium">
-              <Save size={18} /> Guardar Borrador
+          <div className="flex gap-2">
+            {currentInvoice && (
+              <button
+                onClick={() => {
+                  handleDuplicate(currentInvoice);
+                  addToast('Documento duplicado. Editando la copia.', 'success');
+                  setHasUnsavedChanges(true);
+                }}
+                className="flex items-center gap-2 px-3 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors font-medium text-sm"
+              >
+                <Copy size={16} /> Duplicar
+              </button>
+            )}
+            <button onClick={() => handleSave('BORRADOR')} className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm">
+              <Save size={16} /> Guardar Borrador
             </button>
-            <button onClick={() => handleSave('EMITIDA')} className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
-              <Save size={18} /> Emitir / Guardar
-            </button>
-            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-raynold-red text-white rounded-lg hover:bg-red-700 transition-colors">
-              <Printer size={18} /> Imprimir / PDF
+            {currentInvoice?.type === 'FACTURA' ? (
+              <button onClick={() => handleSave('EMITIDA')} className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold">
+                <Save size={16} /> Emitir Factura
+              </button>
+            ) : (
+              <button onClick={() => handleSave('EMITIDA')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold">
+                <Save size={16} /> Guardar Cotizacion
+              </button>
+            )}
+            <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-raynold-red text-white rounded-lg hover:bg-red-700 transition-colors text-sm">
+              <Printer size={16} /> PDF
             </button>
           </div>
         </div>
@@ -981,14 +1003,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Documento</label>
-                <select
-                  value={currentInvoice.type}
-                  onChange={(e) => updateCurrentInvoice('type', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
-                >
-                  <option value="COTIZACION">Cotización</option>
-                  <option value="FACTURA">Factura</option>
-                </select>
+                <div className="w-full border border-gray-200 rounded-lg p-2 bg-gray-50 text-gray-700 font-medium">
+                  {currentInvoice.type === 'FACTURA' ? 'Factura' : 'Cotizacion'}
+                </div>
               </div>
 
               <div>
