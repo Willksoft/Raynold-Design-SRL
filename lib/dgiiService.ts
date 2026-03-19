@@ -85,16 +85,29 @@ export async function buscarContribuyentes(filtros: {
         });
         if (!params.has('limit')) params.set('limit', '10');
 
-        const response = await fetch(`${DGII_API_URL}/search?${params}`, {
+        const url = `${DGII_API_URL}/search?${params}`;
+        console.log('[DGII] Searching:', url);
+        console.log('[DGII] API Key present:', !!DGII_API_KEY, 'length:', DGII_API_KEY.length);
+
+        const response = await fetch(url, {
             headers: { 'x-api-key': DGII_API_KEY },
         });
 
-        if (!response.ok) return { error: 'Error en consulta DGII' };
+        console.log('[DGII] Response status:', response.status, response.statusText);
+
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error('[DGII] Error response:', errText);
+            return { error: `Error en consulta DGII (${response.status})` };
+        }
         const raw = await response.json();
+        console.log('[DGII] Raw response:', JSON.stringify(raw).substring(0, 300));
         // Normalize each result in the data array
         const data = (raw?.data || []).map(normalizeDGIIResult);
+        console.log('[DGII] Normalized results:', data.length);
         return { data, total: raw?.total || data.length };
-    } catch {
+    } catch (err) {
+        console.error('[DGII] Fetch error:', err);
         return { error: 'No se pudo conectar con la DGII' };
     }
 }
