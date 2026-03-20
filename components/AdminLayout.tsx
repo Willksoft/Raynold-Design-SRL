@@ -195,7 +195,7 @@ export const AdminLayout = () => {
   }
 
   return (
-    <div className="h-screen bg-raynold-black flex flex-col md:flex-row relative z-40 overflow-hidden">
+    <div id="admin-panel" className="h-screen bg-raynold-black flex flex-col md:flex-row relative z-40 overflow-hidden">
       {/* Sidebar */}
       <div className="w-full md:w-64 bg-[#0A0A0A] border-r border-white/10 flex flex-col h-full print:hidden">
         <div className="p-6 border-b border-white/10 shrink-0">
