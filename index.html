@@ -444,6 +444,190 @@
       opacity: 0.5 !important;
       text-shadow: 0 0 10px #00ff55;
     }
+
+    /* ══════════════════════════════════════════════════
+       ADMIN PANEL — Premium Form Controls
+       ══════════════════════════════════════════════════ */
+
+    /* ── All selects, inputs, textareas inside admin ── */
+    [class*="bg-white"] select,
+    [class*="bg-white"] input[type="text"],
+    [class*="bg-white"] input[type="number"],
+    [class*="bg-white"] input[type="email"],
+    [class*="bg-white"] input[type="tel"],
+    [class*="bg-white"] input[type="date"],
+    [class*="bg-white"] input[type="search"],
+    [class*="bg-white"] textarea {
+      background: #f8f8fa !important;
+      border: 1.5px solid #e5e5ea !important;
+      border-radius: 10px !important;
+      padding: 10px 14px !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      color: #1a1a1a !important;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+      outline: none !important;
+    }
+
+    [class*="bg-white"] select:hover,
+    [class*="bg-white"] input[type="text"]:hover,
+    [class*="bg-white"] input[type="number"]:hover,
+    [class*="bg-white"] input[type="email"]:hover,
+    [class*="bg-white"] input[type="tel"]:hover,
+    [class*="bg-white"] input[type="date"]:hover,
+    [class*="bg-white"] textarea:hover {
+      border-color: #c5c5cc !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    [class*="bg-white"] select:focus,
+    [class*="bg-white"] input[type="text"]:focus,
+    [class*="bg-white"] input[type="number"]:focus,
+    [class*="bg-white"] input[type="email"]:focus,
+    [class*="bg-white"] input[type="tel"]:focus,
+    [class*="bg-white"] input[type="date"]:focus,
+    [class*="bg-white"] textarea:focus {
+      border-color: #E60000 !important;
+      box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.08), 0 2px 8px rgba(230, 0, 0, 0.10) !important;
+      background: #ffffff !important;
+    }
+
+    /* ── Custom select arrow ── */
+    [class*="bg-white"] select {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      padding-right: 36px !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 12px center !important;
+      background-size: 16px !important;
+      cursor: pointer !important;
+    }
+
+    [class*="bg-white"] select:focus {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23E60000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+    }
+
+    /* ── Select option styling ── */
+    [class*="bg-white"] select option {
+      padding: 10px 14px !important;
+      font-weight: 500 !important;
+      color: #1a1a1a !important;
+      background: #ffffff !important;
+    }
+
+    [class*="bg-white"] select option:checked {
+      background: #fff0f0 !important;
+      color: #E60000 !important;
+      font-weight: 700 !important;
+    }
+
+    [class*="bg-white"] select option:hover {
+      background: #f5f5f5 !important;
+    }
+
+    /* ── Labels styling ── */
+    [class*="bg-white"] label {
+      letter-spacing: 0.05em !important;
+    }
+
+    /* ── Placeholder styling ── */
+    [class*="bg-white"] input::placeholder,
+    [class*="bg-white"] textarea::placeholder {
+      color: #b0b0b8 !important;
+      font-weight: 400 !important;
+    }
+
+    /* ── Textarea specific ── */
+    [class*="bg-white"] textarea {
+      resize: vertical !important;
+      min-height: 60px !important;
+    }
+
+    /* ═══ Dark-themed admin elements (modals, sidebar filters) ═══ */
+    [class*="bg-gray-9"] select,
+    [class*="bg-[#0"] select,
+    [class*="bg-[#1"] select {
+      background: rgba(255,255,255,0.05) !important;
+      border: 1.5px solid rgba(255,255,255,0.12) !important;
+      border-radius: 10px !important;
+      color: #e5e5e5 !important;
+      font-weight: 500 !important;
+      font-size: 13px !important;
+      padding: 10px 36px 10px 14px !important;
+      transition: all 0.25s ease !important;
+      outline: none !important;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 12px center !important;
+      background-size: 16px !important;
+    }
+
+    [class*="bg-gray-9"] select:focus,
+    [class*="bg-[#0"] select:focus,
+    [class*="bg-[#1"] select:focus {
+      border-color: #E60000 !important;
+      box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.15), 0 0 15px rgba(230, 0, 0, 0.08) !important;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23E60000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+    }
+
+    [class*="bg-gray-9"] select:hover,
+    [class*="bg-[#0"] select:hover,
+    [class*="bg-[#1"] select:hover {
+      border-color: rgba(255,255,255,0.25) !important;
+    }
+
+    [class*="bg-gray-9"] select option,
+    [class*="bg-[#0"] select option,
+    [class*="bg-[#1"] select option {
+      background: #1a1a1a !important;
+      color: #e5e5e5 !important;
+      padding: 10px !important;
+    }
+
+    [class*="bg-gray-9"] select option:checked,
+    [class*="bg-[#0"] select option:checked,
+    [class*="bg-[#1"] select option:checked {
+      background: #330000 !important;
+      color: #ff4444 !important;
+    }
+
+    /* ═══ Custom searchable dropdown items ═══ */
+    .searchable-dropdown .bg-white {
+      border-radius: 12px !important;
+      border: 1.5px solid #e5e5ea !important;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+      overflow: hidden !important;
+    }
+
+    .searchable-dropdown button:hover {
+      background: #f8f0f0 !important;
+    }
+
+    /* ═══ Print / Preview — override back to clean ═══ */
+    .print-content select,
+    .print-content input,
+    .print-content textarea {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      background-image: none !important;
+    }
+
+    @media print {
+      select, input, textarea {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        background-image: none !important;
+      }
+    }
   </style>
   <script type="importmap">
 {
