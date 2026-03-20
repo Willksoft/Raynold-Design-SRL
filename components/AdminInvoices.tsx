@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw, UserPlus } from 'lucide-react';
+import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw, UserPlus, Receipt } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useShop } from '../context/ShopContext';
@@ -2806,10 +2806,16 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                         {invoice.type === 'COTIZACION' && (
                           <button
                             onClick={() => handleConvertToInvoice(invoice)}
-                            className="p-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/40 transition-colors"
+                            className="p-2 bg-indigo-500/20 text-indigo-400 rounded hover:bg-indigo-500/40 transition-colors relative group"
                             title="Convertir a Factura"
                           >
-                            <ArrowRight size={16} />
+                            <Receipt size={16} />
+                            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-indigo-500 rounded-full flex items-center justify-center">
+                              <ArrowRight size={8} className="text-white" />
+                            </span>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                              Convertir a Factura
+                            </span>
                           </button>
                         )}
                         <button
