@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Copy, LayoutGrid, List as ListIcon, Save, X, Loader2, Monitor, Printer, Image, Wrench, Truck, Gift, Building2, PenTool, Video, Smartphone, Palette, Camera, Briefcase, Layers, Layout, Megaphone } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import CustomSelect from './CustomSelect';
 
 const AVAILABLE_ICONS = [
   { name: 'Monitor', icon: Monitor },
@@ -229,11 +230,11 @@ const AdminServices = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Color de Acento</label>
-                    <select value={editingService.color} onChange={e => setEditingService({ ...editingService, color: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
-                      <option value="red">Rojo</option>
-                      <option value="green">Verde</option>
-                      <option value="white">Blanco</option>
-                    </select>
+                    <CustomSelect variant="dark" value={editingService.color} onChange={v => setEditingService({ ...editingService, color: v })} options={[
+                      { value: 'red', label: 'Rojo' },
+                      { value: 'green', label: 'Verde' },
+                      { value: 'white', label: 'Blanco' },
+                    ]} />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Orden</label>

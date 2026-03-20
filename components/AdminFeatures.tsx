@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import CustomSelect from './CustomSelect';
 
 interface Feature {
     title: string;
@@ -92,13 +93,7 @@ const AdminFeatures: React.FC = () => {
                             </div>
                             <div>
                                 <label className="block text-xs text-gray-500 mb-1">Color</label>
-                                <select
-                                    value={f.color}
-                                    onChange={e => updateFeature(i, 'color', e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:outline-none"
-                                >
-                                    {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
+                                <CustomSelect variant="dark" value={f.color} onChange={v => updateFeature(i, 'color', v)} options={COLORS.map(c => ({ value: c, label: c }))} />
                             </div>
                             <div className="md:col-span-3">
                                 <label className="block text-xs text-gray-500 mb-1">Descripción</label>

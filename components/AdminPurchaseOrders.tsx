@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import { Supplier } from '../types';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import CustomSelect from './CustomSelect';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 interface POItem {
@@ -451,12 +452,12 @@ const AdminPurchaseOrders = () => {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase">Estado</label>
-                    <select value={currentOrder.status} onChange={e => setCurrentOrder({ ...currentOrder, status: e.target.value as any })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none mt-1">
-                      <option value="PENDIENTE">Pendiente</option>
-                      <option value="RECIBIDA">Recibida</option>
-                      <option value="PARCIAL">Parcial</option>
-                      <option value="CANCELADA">Cancelada</option>
-                    </select>
+                    <CustomSelect variant="dark" value={currentOrder.status} onChange={v => setCurrentOrder({ ...currentOrder, status: v as any })} options={[
+                      { value: 'PENDIENTE', label: 'Pendiente' },
+                      { value: 'RECIBIDA', label: 'Recibida' },
+                      { value: 'PARCIAL', label: 'Parcial' },
+                      { value: 'CANCELADA', label: 'Cancelada' },
+                    ]} className="mt-1" />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase">Fecha Emisión</label>
@@ -638,13 +639,13 @@ const AdminPurchaseOrders = () => {
                 className="w-full bg-[#0A0A0A] border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:border-raynold-red focus:outline-none transition-colors"
               />
             </div>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-[#0A0A0A] border border-white/10 rounded-lg px-4 py-3 text-white focus:border-raynold-red focus:outline-none transition-colors text-sm">
-              <option value="">Todos</option>
-              <option value="PENDIENTE">Pendiente</option>
-              <option value="RECIBIDA">Recibida</option>
-              <option value="PARCIAL">Parcial</option>
-              <option value="CANCELADA">Cancelada</option>
-            </select>
+            <CustomSelect variant="dark" value={filterStatus} onChange={v => setFilterStatus(v)} placeholder="Todos" options={[
+              { value: '', label: 'Todos' },
+              { value: 'PENDIENTE', label: 'Pendiente' },
+              { value: 'RECIBIDA', label: 'Recibida' },
+              { value: 'PARCIAL', label: 'Parcial' },
+              { value: 'CANCELADA', label: 'Cancelada' },
+            ]} />
             <button onClick={handleNew} className="px-6 py-3 btn-animated font-bold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap">
               <Plus size={18} /> Nueva Orden
             </button>

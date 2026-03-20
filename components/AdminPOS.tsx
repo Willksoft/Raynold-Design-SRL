@@ -6,6 +6,7 @@ import { Seller } from './AdminSellers';
 import { Account } from './AdminAccounts';
 import { supabase } from '../lib/supabaseClient';
 import { ProductItem, POSInvoice, InvoiceItem as POSItem, Payment } from '../types';
+import CustomSelect from './CustomSelect';
 
 interface CartItem {
   id: string;
@@ -477,58 +478,36 @@ const AdminPOS = () => {
               <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
                 <FileText size={14} /> Documento
               </label>
-              <select
-                value={invoiceType}
-                onChange={(e) => setInvoiceType(e.target.value as 'FACTURA' | 'COTIZACION')}
-                className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
-              >
-                <option value="FACTURA">Factura</option>
-                <option value="COTIZACION">Cotización</option>
-              </select>
+              <CustomSelect variant="dark" value={invoiceType} onChange={v => setInvoiceType(v as 'FACTURA' | 'COTIZACION')} options={[
+                { value: 'FACTURA', label: 'Factura' }, { value: 'COTIZACION', label: 'Cotización' },
+              ]} />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
                 <DollarSign size={14} /> Tipo Pago
               </label>
-              <select
-                value={paymentType}
-                onChange={(e) => setPaymentType(e.target.value as 'CONTADO' | 'CREDITO')}
-                className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
-              >
-                <option value="CONTADO">Contado</option>
-                <option value="CREDITO">Crédito</option>
-              </select>
+              <CustomSelect variant="dark" value={paymentType} onChange={v => setPaymentType(v as 'CONTADO' | 'CREDITO')} options={[
+                { value: 'CONTADO', label: 'Contado' }, { value: 'CREDITO', label: 'Crédito' },
+              ]} />
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
               <User size={14} /> Cliente
             </label>
-            <select
-              value={selectedClient}
-              onChange={(e) => setSelectedClient(e.target.value)}
-              className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
-            >
-              <option value="">Cliente de Contado</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.company || c.name}</option>
-              ))}
-            </select>
+            <CustomSelect variant="dark" value={selectedClient} onChange={v => setSelectedClient(v)} options={[
+              { value: '', label: 'Cliente de Contado' },
+              ...clients.map(c => ({ value: c.id, label: c.company || c.name })),
+            ]} />
           </div>
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase mb-1 flex items-center gap-2">
               <User size={14} /> Vendedor
             </label>
-            <select
-              value={selectedSeller}
-              onChange={(e) => setSelectedSeller(e.target.value)}
-              className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
-            >
-              <option value="">Seleccionar Vendedor...</option>
-              {sellers.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+            <CustomSelect variant="dark" value={selectedSeller} onChange={v => setSelectedSeller(v)} options={[
+              { value: '', label: 'Seleccionar Vendedor...' },
+              ...sellers.map(s => ({ value: s.id, label: s.name })),
+            ]} />
           </div>
         </div>
 
@@ -570,14 +549,9 @@ const AdminPOS = () => {
                   placeholder="Desc."
                   className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-raynold-red focus:outline-none"
                 />
-                <select
-                  value={item.discountType || 'percent'}
-                  onChange={(e) => setCart(cart.map(c => c.id === item.id ? { ...c, discountType: e.target.value as 'percent' | 'fixed' } : c))}
-                  className="bg-white/5 border border-white/10 rounded px-1 py-1 text-white text-xs focus:border-raynold-red focus:outline-none font-bold"
-                >
-                  <option value="percent">%</option>
-                  <option value="fixed">$</option>
-                </select>
+                <CustomSelect variant="dark" value={item.discountType || 'percent'} onChange={v => setCart(cart.map(c => c.id === item.id ? { ...c, discountType: v as 'percent' | 'fixed' } : c))} options={[
+                  { value: 'percent', label: '%' }, { value: 'fixed', label: '$' },
+                ]} />
               </div>
             </div>
           ))}
@@ -603,14 +577,9 @@ const AdminPOS = () => {
               placeholder="0"
               className="w-16 bg-white/5 border border-white/10 rounded px-2 py-1 text-white text-xs focus:border-raynold-red focus:outline-none text-right"
             />
-            <select
-              value={globalDiscountType}
-              onChange={(e) => setGlobalDiscountType(e.target.value as 'percent' | 'fixed')}
-              className="bg-white/5 border border-white/10 rounded px-1 py-1 text-white text-xs focus:border-raynold-red focus:outline-none font-bold"
-            >
-              <option value="percent">%</option>
-              <option value="fixed">$</option>
-            </select>
+            <CustomSelect variant="dark" value={globalDiscountType} onChange={v => setGlobalDiscountType(v as 'percent' | 'fixed')} options={[
+              { value: 'percent', label: '%' }, { value: 'fixed', label: '$' },
+            ]} />
             {globalDiscountAmount > 0 && (
               <span className="text-xs text-red-400 font-bold ml-auto">-{formatCurrency(globalDiscountAmount)}</span>
             )}
@@ -734,16 +703,10 @@ const AdminPOS = () => {
                   <label className="block text-xs font-bold text-gray-400 uppercase">Método 1</label>
                   <span className="text-xs text-gray-500">Requerido</span>
                 </div>
-                <select
-                  value={paymentMethod1}
-                  onChange={(e) => setPaymentMethod1(e.target.value)}
-                  className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
-                >
-                  <option value="">Seleccionar cuenta...</option>
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>
-                  ))}
-                </select>
+                <CustomSelect variant="dark" value={paymentMethod1} onChange={v => setPaymentMethod1(v)} options={[
+                  { value: '', label: 'Seleccionar cuenta...' },
+                  ...accounts.map(a => ({ value: a.id, label: `${a.name} (${formatCurrency(a.balance)})` })),
+                ]} />
                 <input
                   type="number"
                   value={amountPaid1}
@@ -763,16 +726,10 @@ const AdminPOS = () => {
                     </button>
                   )}
                 </div>
-                <select
-                  value={paymentMethod2}
-                  onChange={(e) => setPaymentMethod2(e.target.value)}
-                  className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white focus:border-raynold-red focus:outline-none text-sm"
-                >
-                  <option value="">Seleccionar cuenta...</option>
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
+                <CustomSelect variant="dark" value={paymentMethod2} onChange={v => setPaymentMethod2(v)} options={[
+                  { value: '', label: 'Seleccionar cuenta...' },
+                  ...accounts.map(a => ({ value: a.id, label: a.name })),
+                ]} />
                 {paymentMethod2 && (
                   <input
                     type="number"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Copy, LayoutGrid, List as ListIcon, X, Save, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import CustomSelect from './CustomSelect';
 
 interface Project {
   id: string;
@@ -246,10 +247,7 @@ const AdminProjects = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Categoría</label>
-                <select value={editingProject.category} onChange={e => setEditingProject({ ...editingProject, category: e.target.value })}
-                  className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors">
-                  {PROJECT_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
+                <CustomSelect variant="dark" value={editingProject.category} onChange={v => setEditingProject({ ...editingProject, category: v })} options={PROJECT_CATEGORIES.map(cat => ({ value: cat, label: cat }))} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Imagen (Max 5MB)</label>

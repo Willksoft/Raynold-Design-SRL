@@ -9,6 +9,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
 import { BANK_OPTIONS, BankOption } from './bankOptions';
+import CustomSelect from './CustomSelect';
 
 const VerifiedBadge: React.FC<{ size?: number }> = ({ size = 14 }) => (
   <img src="/verified-badge.svg" alt="Verificado" style={{ width: size, height: size, display: 'inline-block', verticalAlign: 'middle' }} />
@@ -558,14 +559,14 @@ const AdminPaymentLinks: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Tipo de Cuenta</label>
-                  <select value={editMethod.account_type} onChange={e => setEditMethod({ ...editMethod, account_type: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm">
-                    <option>Ahorros</option><option>Corriente</option><option>Empresarial</option><option>Nómina</option><option>Wallet</option><option>Otro</option>
-                  </select>
+                  <CustomSelect variant="dark" value={editMethod.account_type} onChange={v => setEditMethod({ ...editMethod, account_type: v })} options={[
+                    { value: 'Ahorros', label: 'Ahorros' }, { value: 'Corriente', label: 'Corriente' }, { value: 'Empresarial', label: 'Empresarial' }, { value: 'Nómina', label: 'Nómina' }, { value: 'Wallet', label: 'Wallet' }, { value: 'Otro', label: 'Otro' },
+                  ]} />
                 </div>
                 <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Moneda</label>
-                  <select value={editMethod.currency} onChange={e => setEditMethod({ ...editMethod, currency: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm">
-                    <option>DOP</option><option>USD</option><option>EUR</option><option>BTC</option>
-                  </select>
+                  <CustomSelect variant="dark" value={editMethod.currency} onChange={v => setEditMethod({ ...editMethod, currency: v })} options={[
+                    { value: 'DOP', label: 'DOP' }, { value: 'USD', label: 'USD' }, { value: 'EUR', label: 'EUR' }, { value: 'BTC', label: 'BTC' },
+                  ]} />
                 </div>
               </div>
               <div><label className="text-[10px] text-gray-500 uppercase block mb-1">Titular</label><input type="text" value={editMethod.account_holder} onChange={e => setEditMethod({ ...editMethod, account_holder: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm" /></div>
@@ -660,9 +661,7 @@ const AdminPaymentLinks: React.FC = () => {
                 {/* Page Selector */}
                 <div className="bg-white/5 rounded-xl p-3">
                   <label className="text-[9px] text-gray-500 uppercase font-bold tracking-wider block mb-1.5">Enlace de Pago</label>
-                  <select value={selectedPageId} onChange={e => setSelectedPageId(e.target.value)} className="w-full bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm">
-                    {pages.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <CustomSelect variant="dark" value={selectedPageId} onChange={v => setSelectedPageId(v)} options={pages.map(p => ({ value: p.id, label: p.name }))} />
                 </div>
 
                 {/* Toggle Elements */}

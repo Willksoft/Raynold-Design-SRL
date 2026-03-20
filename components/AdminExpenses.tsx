@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Receipt, Search, Filter, Paperclip, FileText, X, UserPlus, Users, Copy } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { ExpenseRow } from '../types';
+import CustomSelect from './CustomSelect';
 
 export interface Expense {
   id: string;
@@ -242,11 +243,7 @@ const AdminExpenses = () => {
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Categoría</label>
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full bg-black border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white focus:border-raynold-red focus:outline-none appearance-none">
-                <option value="">Todas las categorías</option>
-                {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
+              <CustomSelect variant="dark" value={filterCategory} onChange={v => setFilterCategory(v)} placeholder="Todas las categorías" options={[{ value: '', label: 'Todas las categorías' }, ...EXPENSE_CATEGORIES.map(cat => ({ value: cat, label: cat }))]} />
             </div>
           </div>
         </div>
@@ -325,10 +322,7 @@ const AdminExpenses = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Categoría</label>
-                  <select required value={editingExpense.category} onChange={(e) => setEditingExpense({ ...editingExpense, category: e.target.value })}
-                    className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
-                    {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
+                  <CustomSelect required variant="dark" value={editingExpense.category} onChange={v => setEditingExpense({ ...editingExpense, category: v })} options={EXPENSE_CATEGORIES.map(cat => ({ value: cat, label: cat }))} />
                 </div>
               </div>
 
@@ -441,11 +435,7 @@ const AdminExpenses = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Cuenta / Pago</label>
-                  <select value={editingExpense.accountId || ''} onChange={(e) => setEditingExpense({ ...editingExpense, accountId: e.target.value })}
-                    className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
-                    <option value="">Seleccionar...</option>
-                    {accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.name}</option>)}
-                  </select>
+                  <CustomSelect variant="dark" value={editingExpense.accountId || ''} onChange={v => setEditingExpense({ ...editingExpense, accountId: v })} placeholder="Seleccionar..." options={[{ value: '', label: 'Seleccionar...' }, ...accounts.map(acc => ({ value: acc.id, label: acc.name }))]} />
                 </div>
               </div>
 

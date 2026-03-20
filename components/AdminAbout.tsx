@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Plus, Trash2, Edit2, X, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import CustomSelect from './CustomSelect';
 
 interface TeamMember {
   id: string;
@@ -266,14 +267,14 @@ const AdminAbout: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Color de Borde</label>
-                <select value={editingMember.color || 'border-raynold-red'} onChange={(e) => setEditingMember({ ...editingMember, color: e.target.value })} className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
-                  <option value="border-raynold-red">Rojo Raynold</option>
-                  <option value="border-raynold-green">Verde Raynold</option>
-                  <option value="border-blue-500">Azul</option>
-                  <option value="border-yellow-500">Amarillo</option>
-                  <option value="border-purple-500">Púrpura</option>
-                  <option value="border-white">Blanco</option>
-                </select>
+                <CustomSelect variant="dark" value={editingMember.color || 'border-raynold-red'} onChange={v => setEditingMember({ ...editingMember, color: v })} options={[
+                  { value: 'border-raynold-red', label: 'Rojo Raynold' },
+                  { value: 'border-raynold-green', label: 'Verde Raynold' },
+                  { value: 'border-blue-500', label: 'Azul' },
+                  { value: 'border-yellow-500', label: 'Amarillo' },
+                  { value: 'border-purple-500', label: 'Púrpura' },
+                  { value: 'border-white', label: 'Blanco' },
+                ]} />
               </div>
               <div className="pt-4">
                 <button type="submit" className="w-full py-3 bg-raynold-red text-white font-bold rounded-lg hover:bg-red-700 transition-colors">Guardar Miembro</button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Building2, ArrowRightLeft, LayoutGrid, List as ListIcon, ArrowDownRight, ArrowUpRight, Wallet, CreditCard, HelpCircle } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { BANK_OPTIONS } from './bankOptions';
+import CustomSelect from './CustomSelect';
 
 export type AccountType = 'BANK' | 'CASH' | 'CARD_PROCESSOR' | 'OTHER';
 
@@ -240,12 +241,12 @@ const AdminAccounts = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">Tipo de Cuenta *</label>
-                  <select required value={accountForm.type} onChange={e => setAccountForm({ ...accountForm, type: e.target.value as AccountType })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
-                    <option value="BANK">Banco</option>
-                    <option value="CASH">Efectivo / Caja</option>
-                    <option value="CARD_PROCESSOR">Procesador de Tarjeta</option>
-                    <option value="OTHER">Otro</option>
-                  </select>
+                  <CustomSelect required variant="dark" value={accountForm.type || 'BANK'} onChange={v => setAccountForm({ ...accountForm, type: v as AccountType })} options={[
+                    { value: 'BANK', label: 'Banco' },
+                    { value: 'CASH', label: 'Efectivo / Caja' },
+                    { value: 'CARD_PROCESSOR', label: 'Procesador de Tarjeta' },
+                    { value: 'OTHER', label: 'Otro' },
+                  ]} />
                 </div>
               </div>
               {accountForm.type === 'BANK' && (
@@ -302,20 +303,14 @@ const AdminAccounts = () => {
             <form onSubmit={handleTransferSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Cuenta de Origen</label>
-                <select required value={transferForm.fromAccountId} onChange={e => setTransferForm({ ...transferForm, fromAccountId: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
-                  <option value="">Seleccionar cuenta...</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.bankName ? `${a.bankName} - ` : ''}{a.name} ({formatCurrency(a.balance)})</option>)}
-                </select>
+                <CustomSelect required variant="dark" value={transferForm.fromAccountId} onChange={v => setTransferForm({ ...transferForm, fromAccountId: v })} placeholder="Seleccionar cuenta..." options={[{ value: '', label: 'Seleccionar cuenta...' }, ...accounts.map(a => ({ value: a.id, label: `${a.bankName ? a.bankName + ' - ' : ''}${a.name} (${formatCurrency(a.balance)})` }))]} />
               </div>
               <div className="flex items-center justify-center">
                 <ArrowRightLeft size={24} className="text-blue-400" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Cuenta de Destino</label>
-                <select required value={transferForm.toAccountId} onChange={e => setTransferForm({ ...transferForm, toAccountId: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none">
-                  <option value="">Seleccionar cuenta...</option>
-                  {accounts.map(a => <option key={a.id} value={a.id}>{a.bankName ? `${a.bankName} - ` : ''}{a.name}</option>)}
-                </select>
+                <CustomSelect required variant="dark" value={transferForm.toAccountId} onChange={v => setTransferForm({ ...transferForm, toAccountId: v })} placeholder="Seleccionar cuenta..." options={[{ value: '', label: 'Seleccionar cuenta...' }, ...accounts.map(a => ({ value: a.id, label: `${a.bankName ? a.bankName + ' - ' : ''}${a.name}` }))]} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Monto a Transferir</label>

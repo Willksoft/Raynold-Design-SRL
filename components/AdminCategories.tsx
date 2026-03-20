@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, ShieldAlert, Save, X } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import CustomSelect from './CustomSelect';
 
 interface Category {
   id: string;
@@ -112,11 +113,10 @@ const AdminCategories = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo</label>
-                <select value={editingCategory.type} onChange={e => setEditingCategory({ ...editingCategory, type: e.target.value as 'product' | 'project' })}
-                  className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors">
-                  <option value="product">Productos y Servicios</option>
-                  <option value="project">Proyectos</option>
-                </select>
+                <CustomSelect variant="dark" value={editingCategory.type} onChange={v => setEditingCategory({ ...editingCategory, type: v as 'product' | 'project' })} options={[
+                  { value: 'product', label: 'Productos y Servicios' },
+                  { value: 'project', label: 'Proyectos' },
+                ]} />
               </div>
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2 rounded-lg font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">Cancelar</button>

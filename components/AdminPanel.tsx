@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, X, Save, ShieldAlert, Copy, LayoutGrid, List as Li
 import { useShop } from '../context/ShopContext';
 import { ProductItem, Category } from '../types';
 import { supabase } from '../lib/supabaseClient';
+import CustomSelect from './CustomSelect';
 
 const AdminPanel: React.FC = () => {
   const { products, addProduct, updateProduct, deleteProduct } = useShop();
@@ -352,14 +353,9 @@ const AdminPanel: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tipo</label>
-                    <select
-                      value={formData.type}
-                      onChange={e => setFormData({ ...formData, type: e.target.value as 'product' | 'service' })}
-                      className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
-                    >
-                      <option value="product">Producto</option>
-                      <option value="service">Servicio</option>
-                    </select>
+                    <CustomSelect variant="dark" value={formData.type} onChange={v => setFormData({ ...formData, type: v as 'product' | 'service' })} options={[
+                      { value: 'product', label: 'Producto' }, { value: 'service', label: 'Servicio' },
+                    ]} />
                   </div>
 
                   <div className="space-y-2">
@@ -417,15 +413,7 @@ const AdminPanel: React.FC = () => {
                       </div>
                     ) : (
                       <div className="flex gap-2">
-                        <select
-                          value={formData.category}
-                          onChange={e => setFormData({ ...formData, category: e.target.value })}
-                          className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
-                        >
-                          {categories.map(cat => (
-                            <option key={cat.id} value={cat.name}>{cat.name}</option>
-                          ))}
-                        </select>
+                        <CustomSelect variant="dark" value={formData.category} onChange={v => setFormData({ ...formData, category: v })} options={categories.map(cat => ({ value: cat.name, label: cat.name }))} />
                         <button
                           type="button"
                           onClick={() => setIsCreatingCategory(true)}
@@ -463,24 +451,12 @@ const AdminPanel: React.FC = () => {
 
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Unidad de Medida</label>
-                    <select
-                      value={formData.unit}
-                      onChange={e => setFormData({ ...formData, unit: e.target.value })}
-                      className="w-full bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
-                    >
-                      <option value="Unidad">Unidad</option>
-                      <option value="Metro">Metro</option>
-                      <option value="Pie">Pie</option>
-                      <option value="Pulgada">Pulgada</option>
-                      <option value="Kg">Kg</option>
-                      <option value="Libra">Libra</option>
-                      <option value="Litro">Litro</option>
-                      <option value="Galón">Galón</option>
-                      <option value="Hora">Hora</option>
-                      <option value="Día">Día</option>
-                      <option value="Servicio">Servicio</option>
-                      <option value="Proyecto">Proyecto</option>
-                    </select>
+                    <CustomSelect variant="dark" value={formData.unit} onChange={v => setFormData({ ...formData, unit: v })} options={[
+                      { value: 'Unidad', label: 'Unidad' }, { value: 'Metro', label: 'Metro' }, { value: 'Pie', label: 'Pie' },
+                      { value: 'Pulgada', label: 'Pulgada' }, { value: 'Kg', label: 'Kg' }, { value: 'Libra', label: 'Libra' },
+                      { value: 'Litro', label: 'Litro' }, { value: 'Galón', label: 'Galón' }, { value: 'Hora', label: 'Hora' },
+                      { value: 'Día', label: 'Día' }, { value: 'Servicio', label: 'Servicio' }, { value: 'Proyecto', label: 'Proyecto' },
+                    ]} />
                   </div>
 
                   <div className="space-y-2">
@@ -497,14 +473,9 @@ const AdminPanel: React.FC = () => {
                         placeholder="0"
                         className="flex-1 bg-black border border-white/20 rounded-lg px-4 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors"
                       />
-                      <select
-                        value={formData.discountType}
-                        onChange={e => setFormData({ ...formData, discountType: e.target.value as 'percent' | 'fixed' })}
-                        className="w-20 bg-black border border-white/20 rounded-lg px-2 py-2 text-white focus:border-raynold-red focus:outline-none transition-colors font-bold"
-                      >
-                        <option value="percent">%</option>
-                        <option value="fixed">$</option>
-                      </select>
+                      <CustomSelect variant="dark" value={formData.discountType} onChange={v => setFormData({ ...formData, discountType: v as 'percent' | 'fixed' })} options={[
+                        { value: 'percent', label: '%' }, { value: 'fixed', label: '$' },
+                      ]} />
                     </div>
                     <p className="text-[10px] text-gray-500">Se aplicara automaticamente al seleccionar este producto en facturas/POS</p>
                   </div>

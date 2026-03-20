@@ -10,6 +10,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { supabase } from '../lib/supabaseClient';
 import { ProductItem } from '../types';
+import CustomSelect from './CustomSelect';
 import {
   CatalogConfig, PageLayout, CoverStyle, PageOrientation, DEFAULT_CONFIG, TEMPLATES, GRADIENT_PRESETS,
   LAYOUT_OPTIONS, FONTS, getProductsPerPage
@@ -1021,7 +1022,7 @@ const AdminCatalog: React.FC = () => {
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={config.fontFamily} onChange={e => setConfig({ ...config, fontFamily: e.target.value as any })} className="bg-black border border-white/20 rounded-lg px-2 py-1.5 text-white text-[10px]">{FONTS.map(f => <option key={f}>{f}</option>)}</select>
+                  <CustomSelect variant="dark" value={config.fontFamily} onChange={v => setConfig({ ...config, fontFamily: v as any })} options={FONTS.map(f => ({ value: f, label: f }))} />
                   <div className="flex rounded-lg border border-white/10 overflow-hidden">{(['sm', 'md', 'lg'] as const).map(s => (<button key={s} onClick={() => setConfig({ ...config, fontSize: s })} className={`flex-1 py-1.5 text-[10px] font-bold ${config.fontSize === s ? 'bg-raynold-red/20 text-raynold-red' : 'text-gray-400'}`}>{s.toUpperCase()}</button>))}</div>
                 </div>
               </div>
