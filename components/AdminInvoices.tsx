@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw, UserPlus, Receipt } from 'lucide-react';
+import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw, UserPlus, Receipt, ChevronDown } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useShop } from '../context/ShopContext';
@@ -180,6 +180,74 @@ const defaultInvoice: Invoice = {
   applyTax: true,
   globalDiscount: 0,
   globalDiscountType: 'percent'
+};
+
+// ─── HeroUI-inspired Custom Select ────────────────────────────────
+const CustomSelect: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+  placeholder?: string;
+  variant?: 'light' | 'dark';
+}> = ({ value, onChange, options, className = '', placeholder, variant = 'light' }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selected = options.find(o => o.value === value);
+  const isDark = variant === 'dark';
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm transition-colors outline-none text-left ${
+          isDark
+            ? 'bg-black/50 border border-white/10 hover:border-white/20 focus:border-raynold-red text-white'
+            : 'bg-white border border-gray-300 hover:border-gray-400 focus:border-raynold-red'
+        }`}
+      >
+        <span className={selected ? (isDark ? 'text-white font-medium' : 'text-gray-900 font-medium') : (isDark ? 'text-gray-500' : 'text-gray-400')}>
+          {selected?.label || placeholder || 'Seleccionar...'}
+        </span>
+        <ChevronDown size={14} className={`transition-transform ${open ? 'rotate-180' : ''} ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+      </button>
+      {open && (
+        <div
+          className={`absolute top-full left-0 right-0 mt-1 rounded-xl shadow-lg py-1 z-[150] overflow-hidden ${
+            isDark ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white border border-gray-100'
+          }`}
+          style={{ animation: 'dropdownFadeIn 0.15s ease-out' }}
+        >
+          <div className="max-h-56 overflow-y-auto p-1">
+            {options.map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  isDark
+                    ? (opt.value === value ? 'bg-white/10 text-white font-semibold' : 'text-gray-400 hover:bg-white/5 hover:text-white')
+                    : (opt.value === value ? 'bg-gray-100 text-gray-900 font-semibold' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900')
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 interface Seller {
@@ -1524,15 +1592,15 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
             <div className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Plantilla</label>
-                <select
+                <CustomSelect
                   value={currentInvoice.templateId}
-                  onChange={(e) => updateCurrentInvoice('templateId', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
-                >
-                  <option value="classic">Clásica</option>
-                  <option value="modern">Moderna</option>
-                  <option value="minimal">Minimalista</option>
-                </select>
+                  onChange={(v) => updateCurrentInvoice('templateId', v)}
+                  options={[
+                    { value: 'classic', label: 'Clásica' },
+                    { value: 'modern', label: 'Moderna' },
+                    { value: 'minimal', label: 'Minimalista' },
+                  ]}
+                />
               </div>
 
               <div>
@@ -1544,14 +1612,14 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Pago</label>
-                <select
+                <CustomSelect
                   value={currentInvoice.paymentType}
-                  onChange={(e) => updateCurrentInvoice('paymentType', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
-                >
-                  <option value="CONTADO">Contado</option>
-                  <option value="CREDITO">Crédito</option>
-                </select>
+                  onChange={(v) => updateCurrentInvoice('paymentType', v)}
+                  options={[
+                    { value: 'CONTADO', label: 'Contado' },
+                    { value: 'CREDITO', label: 'Crédito' },
+                  ]}
+                />
               </div>
 
               <div className="flex items-center gap-2 py-2">
@@ -1579,14 +1647,15 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                     placeholder="0"
                     className="flex-1 border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-sm"
                   />
-                  <select
+                  <CustomSelect
                     value={currentInvoice.globalDiscountType || 'percent'}
-                    onChange={(e) => updateCurrentInvoice('globalDiscountType', e.target.value)}
-                    className="w-20 border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-raynold-red font-bold"
-                  >
-                    <option value="percent">%</option>
-                    <option value="fixed">$</option>
-                  </select>
+                    onChange={(v) => updateCurrentInvoice('globalDiscountType', v)}
+                    options={[
+                      { value: 'percent', label: '%' },
+                      { value: 'fixed', label: '$' },
+                    ]}
+                    className="w-20"
+                  />
                 </div>
                 {globalDiscountAmount > 0 && (
                   <p className="text-xs text-red-500 font-bold mt-1">-{formatCurrency(globalDiscountAmount)}</p>
@@ -1597,13 +1666,11 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Comprobante (NCF)</label>
-                    <select
+                    <CustomSelect
                       value={currentInvoice.ncfType}
-                      onChange={(e) => updateCurrentInvoice('ncfType', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
-                    >
-                      {ncfTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
+                      onChange={(v) => updateCurrentInvoice('ncfType', v)}
+                      options={ncfTypes.map(t => ({ value: t.value, label: t.label }))}
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Número de NCF</label>
@@ -1732,20 +1799,16 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
               {/* Seller selector */}
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vendedor</label>
-                <select
+                <CustomSelect
                   value={currentInvoice.sellerId || ''}
-                  onChange={(e) => {
-                    const seller = sellers.find(s => s.id === e.target.value);
-                    updateCurrentInvoice('sellerId', e.target.value);
+                  onChange={(v) => {
+                    const seller = sellers.find(s => s.id === v);
+                    updateCurrentInvoice('sellerId', v);
                     updateCurrentInvoice('sellerName', seller?.name || '');
                   }}
-                  className="w-full border border-gray-300 rounded p-2 text-sm"
-                >
-                  <option value="">Sin vendedor</option>
-                  {sellers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
+                  options={[{ value: '', label: 'Sin vendedor' }, ...sellers.map(s => ({ value: s.id, label: s.name }))]}
+                  placeholder="Seleccionar vendedor"
+                />
               </div>
 
               <div className="pt-4 border-t border-gray-100">
@@ -2572,14 +2635,15 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                         placeholder="0"
                         className="flex-1 border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red text-right text-sm"
                       />
-                      <select
+                      <CustomSelect
                         value={editingItem.discountType || 'percent'}
-                        onChange={(e) => setEditingItem({ ...editingItem, discountType: e.target.value as 'percent' | 'fixed' })}
-                        className="w-16 border border-gray-300 rounded-lg p-2 text-sm outline-none focus:border-raynold-red font-bold"
-                      >
-                        <option value="percent">%</option>
-                        <option value="fixed">$</option>
-                      </select>
+                        onChange={(v) => setEditingItem({ ...editingItem, discountType: v as 'percent' | 'fixed' })}
+                        options={[
+                          { value: 'percent', label: '%' },
+                          { value: 'fixed', label: '$' },
+                        ]}
+                        className="w-16"
+                      />
                     </div>
                   </div>
                   <div className="text-right pb-1">
@@ -2636,16 +2700,12 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cuenta de Destino</label>
-                    <select
+                    <CustomSelect
                       value={newPayment.accountId}
-                      onChange={(e) => setNewPayment({ ...newPayment, accountId: e.target.value })}
-                      className="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-raynold-red"
-                    >
-                      <option value="">Seleccionar cuenta...</option>
-                      {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id}>{acc.name} ({formatCurrency(acc.balance)})</option>
-                      ))}
-                    </select>
+                      onChange={(v) => setNewPayment({ ...newPayment, accountId: v })}
+                      options={[{ value: '', label: 'Seleccionar cuenta...' }, ...accounts.map(acc => ({ value: acc.id, label: `${acc.name} (${formatCurrency(acc.balance)})` }))]}
+                      placeholder="Seleccionar cuenta..."
+                    />
                   </div>
                 </div>
 
@@ -2736,27 +2796,29 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         </div>
         <div className="flex gap-3">
           {moduleType === 'ALL' && (
-            <select
+            <CustomSelect
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-raynold-red transition-colors cursor-pointer"
-            >
-              <option value="ALL">Todo Tipo</option>
-              <option value="FACTURA">Facturas</option>
-              <option value="COTIZACION">Cotizaciones</option>
-            </select>
+              onChange={(v) => setFilterType(v)}
+              options={[
+                { value: 'ALL', label: 'Todo Tipo' },
+                { value: 'FACTURA', label: 'Facturas' },
+                { value: 'COTIZACION', label: 'Cotizaciones' },
+              ]}
+              variant="dark"
+            />
           )}
-          <select
+          <CustomSelect
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm outline-none focus:border-raynold-red transition-colors cursor-pointer"
-          >
-            <option value="ALL">Todo Estado</option>
-            <option value="PENDIENTE">Pendiente</option>
-            <option value="PARCIAL">Parcial</option>
-            <option value="PAGADA">Pagada</option>
-            <option value="BORRADOR">Borrador</option>
-          </select>
+            onChange={(v) => setFilterStatus(v)}
+            options={[
+              { value: 'ALL', label: 'Todo Estado' },
+              { value: 'PENDIENTE', label: 'Pendiente' },
+              { value: 'PARCIAL', label: 'Parcial' },
+              { value: 'PAGADA', label: 'Pagada' },
+              { value: 'BORRADOR', label: 'Borrador' },
+            ]}
+            variant="dark"
+          />
         </div>
       </div>
 
