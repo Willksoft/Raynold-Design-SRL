@@ -7,6 +7,7 @@ import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
 import { Account } from './AdminAccounts';
 import { supabase } from '../lib/supabaseClient';
+import { consultarRNC } from '../lib/dgiiService';
 
 // ─── Toast Notification System ──────────────────────────────────────
 interface ToastItem {
@@ -240,6 +241,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [serviceSearch, setServiceSearch] = useState('');
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+
+  // RNC auto-lookup debounce
+  const rncLookupRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Load data
   useEffect(() => {
@@ -1649,6 +1653,20 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   <input type="text" placeholder="RNC" value={currentInvoice.clientRnc}
                     onChange={(e) => {
                       updateCurrentInvoice('clientRnc', e.target.value);
+                      // Auto-lookup when RNC is 9-11 digits
+                      const clean = e.target.value.replace(/[-\s]/g, '');
+                      if (/^\d{9,11}$/.test(clean)) {
+                        if (rncLookupRef.current) clearTimeout(rncLookupRef.current);
+                        rncLookupRef.current = setTimeout(async () => {
+                          const result = await consultarRNC(clean);
+                          if (result?.rnc) {
+                            updateCurrentInvoice('clientName', result.nombre || '');
+                            updateCurrentInvoice('companyName', result.nombre_comercial || result.nombre || '');
+                            if (result.telefono) updateCurrentInvoice('clientPhone', result.telefono);
+                            addToast(`DGII: ${result.nombre_comercial || result.nombre}`, 'info');
+                          }
+                        }, 500);
+                      }
                     }}
                     className="w-full border border-gray-300 rounded p-2 text-sm font-mono" />
                   <input type="text" placeholder="Teléfono" value={currentInvoice.clientPhone} onChange={(e) => updateCurrentInvoice('clientPhone', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
