@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw, UserPlus, Receipt } from 'lucide-react';
+import { Plus, Printer, Save, Trash2, ArrowLeft, FileText, Copy, Edit2, Settings, List as ListIcon, X, Download, DollarSign, Loader2, Search, Percent, CheckCircle2, Eye, ArrowRight, AlertTriangle, RefreshCw, UserPlus, Receipt, Upload } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { useShop } from '../context/ShopContext';
@@ -2945,21 +2945,27 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   {companySettings.logoUrl && (
                     <img src={companySettings.logoUrl} alt="Logo" className="h-12 max-w-[160px] object-contain border border-gray-200 rounded p-1 bg-white shrink-0" />
                   )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setCompanySettings({ ...companySettings, logoUrl: reader.result as string });
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                    className="flex-1 min-w-0 border border-gray-300 rounded-lg p-2 text-sm text-gray-600"
-                  />
+                  <label className="flex-1 min-w-0 flex items-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl cursor-pointer transition-colors group">
+                    <Upload size={16} className="text-gray-400 group-hover:text-raynold-red transition-colors shrink-0" />
+                    <span className="text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors truncate">
+                      {companySettings.logoUrl ? 'Cambiar logo...' : 'Subir logo...'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setCompanySettings({ ...companySettings, logoUrl: reader.result as string });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
                   {companySettings.logoUrl && (
                     <button
                       onClick={() => setCompanySettings({ ...companySettings, logoUrl: '' })}
