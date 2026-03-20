@@ -182,12 +182,18 @@ const defaultInvoice: Invoice = {
   globalDiscountType: 'percent'
 };
 
+interface Seller {
+  id: string;
+  name: string;
+}
+
 const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }> = ({ moduleType = 'ALL' }) => {
   const { products } = useShop();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [view, setView] = useState<'list' | 'editor' | 'saved' | 'preview'>('list');
   const [companySettings, setCompanySettings] = useState<CompanySettings>(defaultCompanySettings);
@@ -324,7 +330,18 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
         }
       }
     });
+
+    // Load sellers from Supabase
+    supabase.from('sellers').select('id, name').order('name').then(({ data }) => {
+      if (data && data.length > 0) setSellers(data);
+    });
   }, []);
+
+  // Reset view when moduleType changes (switching between Facturación and Cotización)
+  useEffect(() => {
+    setView('list');
+    setCurrentInvoice(null);
+  }, [moduleType]);
 
   // Warn before closing/reloading page with unsaved changes
   useEffect(() => {
@@ -1152,6 +1169,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                     {currentInvoice.clientPhone && (
                       <div className="flex gap-2"><span className="text-gray-600 w-16">Telefono:</span> <span>{currentInvoice.clientPhone}</span></div>
                     )}
+                    {currentInvoice.sellerName && (
+                      <div className="flex gap-2"><span className="text-gray-600 w-16">Vendedor:</span> <span>{currentInvoice.sellerName}</span></div>
+                    )}
                   </div>
                   <div className="w-48 space-y-4 text-right">
                     <div className="font-bold">Fecha: {currentInvoice.date}</div>
@@ -1304,6 +1324,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   {currentInvoice.companyName && currentInvoice.clientName && <p className="text-sm text-gray-500">{currentInvoice.clientName}</p>}
                   {currentInvoice.clientRnc && <p className="text-sm text-gray-500">RNC: {currentInvoice.clientRnc}</p>}
                   {currentInvoice.clientPhone && <p className="text-sm text-gray-500">Tel: {currentInvoice.clientPhone}</p>}
+                  {currentInvoice.sellerName && <p className="text-sm text-gray-500 mt-1">Vendedor: <span className="font-bold text-gray-700">{currentInvoice.sellerName}</span></p>}
                 </div>
 
                 <table className="w-full mb-8 text-sm">
@@ -1374,6 +1395,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                 <div className="mb-6">
                   <p className="font-bold">{currentInvoice.companyName || currentInvoice.clientName || 'Sin cliente'}</p>
                   {currentInvoice.clientRnc && <p className="text-sm text-gray-500">RNC: {currentInvoice.clientRnc}</p>}
+                  {currentInvoice.sellerName && <p className="text-sm text-gray-500">Vendedor: {currentInvoice.sellerName}</p>}
                 </div>
                 <table className="w-full mb-6 text-sm">
                   <thead><tr className="border-b-2 border-black text-xs uppercase"><th className="py-2 text-left">Descripción</th><th className="py-2 text-center">Cant.</th><th className="py-2 text-right">Precio</th><th className="py-2 text-right">Total</th></tr></thead>
@@ -1477,7 +1499,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
             </button>
             {currentInvoice?.type === 'FACTURA' ? (
               <button onClick={() => handleSave('EMITIDA')} className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-bold">
-                <Save size={16} /> Emitir Factura
+                <Save size={16} /> {currentInvoice?.id && invoices.some(i => i.id === currentInvoice.id) ? 'Guardar Factura' : 'Emitir Factura'}
               </button>
             ) : (
               <button onClick={() => handleSave('EMITIDA')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-bold">
@@ -1707,6 +1729,25 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                 )}
               </div>
 
+              {/* Seller selector */}
+              <div className="pt-4 border-t border-gray-100">
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Vendedor</label>
+                <select
+                  value={currentInvoice.sellerId || ''}
+                  onChange={(e) => {
+                    const seller = sellers.find(s => s.id === e.target.value);
+                    updateCurrentInvoice('sellerId', e.target.value);
+                    updateCurrentInvoice('sellerName', seller?.name || '');
+                  }}
+                  className="w-full border border-gray-300 rounded p-2 text-sm"
+                >
+                  <option value="">Sin vendedor</option>
+                  {sellers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="pt-4 border-t border-gray-100">
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha y Número</label>
                 <div className="flex gap-2">
@@ -1827,6 +1868,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                       )}
                       {currentInvoice.clientPhone && (
                         <div className="flex gap-2"><span className="text-gray-600 w-16">Telefono:</span> <span>{currentInvoice.clientPhone}</span></div>
+                      )}
+                      {currentInvoice.sellerName && (
+                        <div className="flex gap-2"><span className="text-gray-600 w-16">Vendedor:</span> <span>{currentInvoice.sellerName}</span></div>
                       )}
                     </div>
 
@@ -2019,6 +2063,9 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                         {currentInvoice.clientPhone && (
                           <div className="flex"><span className="text-gray-500 w-24">Teléfono:</span> <span className="text-gray-900">{currentInvoice.clientPhone}</span></div>
                         )}
+                        {currentInvoice.sellerName && (
+                          <div className="flex"><span className="text-gray-500 w-24">Vendedor:</span> <span className="font-bold text-gray-900">{currentInvoice.sellerName}</span></div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2180,6 +2227,7 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                       {currentInvoice.companyName && <p className="font-medium text-gray-700">{currentInvoice.companyName}</p>}
                       {currentInvoice.clientRnc && <p>RNC: {currentInvoice.clientRnc}</p>}
                       {currentInvoice.clientPhone && <p>{currentInvoice.clientPhone}</p>}
+                      {currentInvoice.sellerName && <p>Vendedor: {currentInvoice.sellerName}</p>}
                     </div>
 
                     <div className="w-1/4 space-y-1 text-right text-gray-500">
