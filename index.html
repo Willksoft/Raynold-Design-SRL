@@ -445,141 +445,65 @@
       text-shadow: 0 0 10px #00ff55;
     }
 
-    /* ═══ ADMIN PANEL FORM ELEMENTS ═══ */
+    /* ═══ ADMIN DROPDOWN LIST STYLING ═══ */
 
-    /* All inputs, selects, textareas inside admin */
-    #admin-panel input[type="text"],
-    #admin-panel input[type="email"],
-    #admin-panel input[type="tel"],
-    #admin-panel input[type="number"],
-    #admin-panel input[type="date"],
-    #admin-panel input[type="password"],
-    #admin-panel input[type="search"],
-    #admin-panel textarea,
-    #admin-panel select {
-      background-color: #0a0a0a !important;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
-      color: #fff !important;
+    /* Searchable dropdown popup lists (client, product, service selectors) */
+    #admin-panel .searchable-dropdown > .absolute {
+      background: #0f0f0f !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.04) !important;
+      max-height: 280px !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      backdrop-filter: blur(24px) !important;
+      padding: 4px !important;
+      z-index: 100 !important;
+    }
+
+    /* Individual dropdown items */
+    #admin-panel .searchable-dropdown > .absolute button {
+      display: block !important;
+      width: 100% !important;
+      text-align: left !important;
+      color: rgba(255, 255, 255, 0.75) !important;
+      border: none !important;
+      border-bottom: none !important;
       border-radius: 10px !important;
       padding: 10px 14px !important;
+      margin: 1px 0 !important;
       font-size: 13px !important;
-      transition: all 0.2s ease !important;
-      outline: none !important;
-      appearance: none !important;
-      -webkit-appearance: none !important;
+      transition: all 0.15s ease !important;
+      background: transparent !important;
     }
 
-    #admin-panel input:focus,
-    #admin-panel textarea:focus,
-    #admin-panel select:focus {
-      border-color: rgba(230, 0, 0, 0.5) !important;
-      box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.08), 0 0 20px rgba(230, 0, 0, 0.05) !important;
+    #admin-panel .searchable-dropdown > .absolute button:hover {
+      background: rgba(230, 0, 0, 0.08) !important;
+      color: #fff !important;
     }
 
-    #admin-panel input::placeholder,
-    #admin-panel textarea::placeholder {
-      color: rgba(255, 255, 255, 0.25) !important;
-    }
-
-    /* Select arrow */
-    #admin-panel select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
-      background-repeat: no-repeat !important;
-      background-position: right 12px center !important;
-      padding-right: 36px !important;
-    }
-
-    /* Select option styling (native) */
+    /* Native select option (dropdown list) */
     #admin-panel select option {
       background-color: #111 !important;
       color: #fff !important;
-      padding: 8px 12px !important;
-    }
-
-    /* Custom dropdown menus (React-rendered) */
-    #admin-panel .searchable-dropdown > .absolute,
-    #admin-panel .admin-dropdown {
-      background-color: #0a0a0a !important;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
-      border-radius: 12px !important;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 0, 0, 0.3) !important;
-      overflow: hidden !important;
-      backdrop-filter: blur(20px) !important;
-    }
-
-    /* Searchable dropdown containers in invoice editor */
-    #admin-panel .searchable-dropdown > .absolute {
-      max-height: 260px !important;
-      overflow-y: auto !important;
-    }
-
-    #admin-panel .searchable-dropdown > .absolute button,
-    #admin-panel .admin-dropdown button,
-    #admin-panel .admin-dropdown a {
-      color: rgba(255, 255, 255, 0.7) !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
       padding: 10px 14px !important;
-      transition: all 0.15s ease !important;
+      font-size: 13px !important;
     }
 
-    #admin-panel .searchable-dropdown > .absolute button:hover,
-    #admin-panel .admin-dropdown button:hover,
-    #admin-panel .admin-dropdown a:hover {
-      background-color: rgba(230, 0, 0, 0.08) !important;
-      color: #fff !important;
+    /* Thin modern scrollbar for dropdown lists */
+    #admin-panel .searchable-dropdown > .absolute::-webkit-scrollbar {
+      width: 5px;
     }
-
-    #admin-panel .searchable-dropdown > .absolute button:last-child,
-    #admin-panel .admin-dropdown button:last-child {
-      border-bottom: none !important;
-    }
-
-    /* Labels in admin */
-    #admin-panel label {
-      color: rgba(255, 255, 255, 0.5) !important;
-      letter-spacing: 0.05em !important;
-    }
-
-    /* Thin modern scrollbar for dropdowns */
-    #admin-panel .searchable-dropdown > .absolute::-webkit-scrollbar,
-    #admin-panel .overflow-y-auto::-webkit-scrollbar {
-      width: 4px;
-    }
-    #admin-panel .searchable-dropdown > .absolute::-webkit-scrollbar-track,
-    #admin-panel .overflow-y-auto::-webkit-scrollbar-track {
+    #admin-panel .searchable-dropdown > .absolute::-webkit-scrollbar-track {
       background: transparent;
+      margin: 4px 0;
     }
-    #admin-panel .searchable-dropdown > .absolute::-webkit-scrollbar-thumb,
-    #admin-panel .overflow-y-auto::-webkit-scrollbar-thumb {
-      background: rgba(230, 0, 0, 0.3);
-      border-radius: 4px;
+    #admin-panel .searchable-dropdown > .absolute::-webkit-scrollbar-thumb {
+      background: rgba(230, 0, 0, 0.25);
+      border-radius: 10px;
     }
-
-    /* Admin search bars - consistent styling */
-    #admin-panel input[placeholder*="Buscar"],
-    #admin-panel input[placeholder*="buscar"] {
-      background: #050505 !important;
-      border: 1px solid rgba(255, 255, 255, 0.1) !important;
-      border-radius: 12px !important;
-    }
-
-    #admin-panel input[placeholder*="Buscar"]:focus,
-    #admin-panel input[placeholder*="buscar"]:focus {
-      border-color: rgba(230, 0, 0, 0.4) !important;
-      box-shadow: 0 0 0 3px rgba(230, 0, 0, 0.06), 0 0 30px rgba(230, 0, 0, 0.04) !important;
-    }
-
-    /* ═══ PRINT: reset admin styles for invoice printing ═══ */
-    @media print {
-      #admin-panel input,
-      #admin-panel select,
-      #admin-panel textarea,
-      #admin-panel label {
-        background-color: white !important;
-        border-color: #ccc !important;
-        color: #000 !important;
-        box-shadow: none !important;
-      }
+    #admin-panel .searchable-dropdown > .absolute::-webkit-scrollbar-thumb:hover {
+      background: rgba(230, 0, 0, 0.5);
     }
   </style>
   <script type="importmap">
