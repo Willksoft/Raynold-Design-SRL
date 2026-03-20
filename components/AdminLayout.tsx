@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File, BarChart2, QrCode, BookOpen, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, ShieldAlert, MonitorPlay, Briefcase, Image as ImageIcon, Settings, Star, FileText, Users, Receipt, ShoppingCart, User, Loader2, ArrowLeft, Home, Search, Plus, ChevronDown, File, BarChart2, QrCode, BookOpen, CreditCard, Truck } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { SearchResults } from '../types';
 import AdminDashboard from './AdminDashboard';
@@ -27,6 +27,7 @@ import AdminReports from './AdminReports';
 import AdminQR from './AdminQR';
 import AdminCatalog from './AdminCatalog';
 import AdminPaymentLinks from './AdminPaymentLinks';
+import AdminPurchaseOrders from './AdminPurchaseOrders';
 
 export const AdminLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -243,6 +244,13 @@ export const AdminLayout = () => {
           >
             <Receipt size={18} />
             <span className="font-bold text-sm">Gastos</span>
+          </Link>
+          <Link
+            to="/admin/purchase-orders"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${location.pathname.includes('/purchase-orders') ? 'bg-raynold-red/20 text-raynold-red border border-raynold-red/30' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <Truck size={18} />
+            <span className="font-bold text-sm">Órdenes de Compra</span>
           </Link>
           <Link
             to="/admin/products"
@@ -467,6 +475,10 @@ export const AdminLayout = () => {
                       <File size={16} className="text-red-400" />
                       Gasto
                     </Link>
+                    <Link to="/admin/purchase-orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors" onClick={() => setIsAddMenuOpen(false)}>
+                      <Truck size={16} className="text-orange-400" />
+                      Orden de Compra
+                    </Link>
                   </div>
                 </>
               )}
@@ -613,6 +625,7 @@ export const AdminLayout = () => {
             <Route path="/qr" element={<AdminQR />} />
             <Route path="/catalog" element={<AdminCatalog />} />
             <Route path="/payment-links" element={<AdminPaymentLinks />} />
+            <Route path="/purchase-orders" element={<AdminPurchaseOrders />} />
           </Routes>
         </div>
       </div>

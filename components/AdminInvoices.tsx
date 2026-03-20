@@ -7,7 +7,6 @@ import { Client } from './AdminClients';
 import { ServiceDetail as Service } from '../data/services';
 import { Account } from './AdminAccounts';
 import { supabase } from '../lib/supabaseClient';
-import { buscarContribuyentes, consultarRNC, DGIIResult } from '../lib/dgiiService';
 
 // ─── Toast Notification System ──────────────────────────────────────
 interface ToastItem {
@@ -241,28 +240,6 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [serviceSearch, setServiceSearch] = useState('');
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
-
-  // DGII autocomplete state
-  const [dgiiQuery, setDgiiQuery] = useState('');
-  const [dgiiResults, setDgiiResults] = useState<DGIIResult[]>([]);
-  const [dgiiLoading, setDgiiLoading] = useState(false);
-  const [showDgiiResults, setShowDgiiResults] = useState(false);
-  const [dgiiApplied, setDgiiApplied] = useState<DGIIResult | null>(null);
-  const [showSaveAs, setShowSaveAs] = useState(false);
-  const [savingDgii, setSavingDgii] = useState(false);
-  const dgiiDebounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const dgiiDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close DGII dropdown on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (dgiiDropdownRef.current && !dgiiDropdownRef.current.contains(e.target as Node)) {
-        setShowDgiiResults(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => { document.removeEventListener('mousedown', handler); if (dgiiDebounceRef.current) clearTimeout(dgiiDebounceRef.current); };
-  }, []);
 
   // Load data
   useEffect(() => {
@@ -1666,168 +1643,12 @@ const AdminInvoices: React.FC<{ moduleType?: 'ALL' | 'FACTURA' | 'COTIZACION' }>
                   )}
                 </div>
 
-                {/* DGII Search */}
-                <div className="mt-2 relative" ref={dgiiDropdownRef}>
-                  <div className="flex items-center border border-blue-300 rounded-lg overflow-hidden focus-within:border-blue-500 bg-blue-50">
-                    <Search size={14} className="ml-2 text-blue-500 shrink-0" />
-                    <input
-                      type="text"
-                      placeholder="Buscar RNC o nombre en DGII..."
-                      value={dgiiQuery}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setDgiiQuery(val);
-                        setDgiiApplied(null);
-                        setShowSaveAs(false);
-                        if (dgiiDebounceRef.current) clearTimeout(dgiiDebounceRef.current);
-                        if (val.trim().length < 2) { setDgiiResults([]); setShowDgiiResults(false); setDgiiLoading(false); return; }
-                        setDgiiLoading(true);
-                        dgiiDebounceRef.current = setTimeout(async () => {
-                          try {
-                            const clean = val.replace(/[-\s]/g, '');
-                            // If numeric 9-11 digits, try direct RNC lookup
-                            if (/^\d{9,11}$/.test(clean)) {
-                              const result = await consultarRNC(clean);
-                              if (result?.rnc) {
-                                setDgiiResults([result]);
-                                setShowDgiiResults(true);
-                                setDgiiLoading(false);
-                                return;
-                              }
-                            }
-                            // Search by name using /search endpoint
-                            const resp = await buscarContribuyentes({ nombre: val.trim(), limit: 10 });
-                            const items = resp?.data || [];
-                            setDgiiResults(items);
-                            setShowDgiiResults(true);
-                            setDgiiLoading(false);
-                          } catch (err) {
-                            console.error('DGII search error:', err);
-                            setDgiiResults([]);
-                            setShowDgiiResults(false);
-                            setDgiiLoading(false);
-                          }
-                        }, 500);
-                      }}
-                      onFocus={() => { if (dgiiResults.length > 0) setShowDgiiResults(true); }}
-                      className="w-full p-2 outline-none text-sm bg-transparent text-blue-900 placeholder:text-blue-400"
-                    />
-                    {dgiiLoading && <Loader2 size={14} className="mr-2 animate-spin text-blue-500" />}
-                  </div>
-
-                  {showDgiiResults && (
-                    <div className="absolute z-50 w-full bg-white border border-blue-200 rounded-lg shadow-xl max-h-56 overflow-y-auto mt-1">
-                      {dgiiResults.length === 0 && !dgiiLoading && (
-                        <div className="px-3 py-3 text-xs text-gray-400 text-center">Sin resultados en DGII</div>
-                      )}
-                      {dgiiResults.map((r, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            updateCurrentInvoice('clientName', r.nombre || '');
-                            updateCurrentInvoice('companyName', r.nombre_comercial || r.nombre || '');
-                            updateCurrentInvoice('clientRnc', r.rnc || '');
-                            if (r.telefono) updateCurrentInvoice('clientPhone', r.telefono);
-                            setDgiiQuery(r.nombre_comercial || r.nombre || '');
-                            setShowDgiiResults(false);
-                            setDgiiApplied(r);
-                            setShowSaveAs(true);
-                            setHasUnsavedChanges(true);
-                          }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0"
-                        >
-                          <div className="flex justify-between items-center gap-2">
-                            <p className="font-medium text-gray-900 truncate">{r.nombre_comercial || r.nombre}</p>
-                            <p className="text-blue-600 font-mono text-xs font-bold shrink-0">{r.rnc}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* DGII Applied + Save As buttons */}
-                {dgiiApplied && showSaveAs && (
-                  <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-2.5 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <CheckCircle2 size={16} className="text-green-600 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-green-800 text-xs font-bold truncate">{dgiiApplied.nombre_comercial || dgiiApplied.nombre}</p>
-                        <p className="text-green-600 text-[10px] font-mono">{dgiiApplied.rnc}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button
-                        type="button"
-                        disabled={savingDgii}
-                        onClick={async () => {
-                          setSavingDgii(true);
-                          const isJuridica = dgiiApplied.tipo?.toLowerCase().includes('juridica') || (dgiiApplied.rnc?.replace(/[-\s]/g, '').length === 9);
-                          const { error } = await supabase.from('clients').insert([{
-                            name: isJuridica ? (dgiiApplied.nombre_comercial || dgiiApplied.nombre) : dgiiApplied.nombre,
-                            rnc: dgiiApplied.rnc?.replace(/[-\s]/g, '') || null,
-                            phone: dgiiApplied.telefono || null,
-                            address: dgiiApplied.direccion || null,
-                            type: isJuridica ? 'Juridica' : 'Natural',
-                          }]);
-                          if (!error) { addToast('Guardado como cliente', 'success'); setShowSaveAs(false); }
-                          else addToast('Error: ' + error.message, 'error');
-                          setSavingDgii(false);
-                        }}
-                        className="px-2 py-1 bg-blue-600 text-white text-[10px] font-bold rounded hover:bg-blue-700 transition-colors flex items-center gap-1"
-                      >
-                        <UserPlus size={10} /> Cliente
-                      </button>
-                      <button
-                        type="button"
-                        disabled={savingDgii}
-                        onClick={async () => {
-                          setSavingDgii(true);
-                          const { error } = await supabase.from('suppliers').insert([{
-                            name: dgiiApplied.nombre_comercial || dgiiApplied.nombre,
-                            supplier_rnc: dgiiApplied.rnc?.replace(/[-\s]/g, '') || null,
-                            phone: dgiiApplied.telefono || null,
-                            address: dgiiApplied.direccion || null,
-                          }]);
-                          if (!error) { addToast('Guardado como proveedor', 'success'); setShowSaveAs(false); }
-                          else addToast('Error: ' + error.message, 'error');
-                          setSavingDgii(false);
-                        }}
-                        className="px-2 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded hover:bg-emerald-700 transition-colors flex items-center gap-1"
-                      >
-                        <UserPlus size={10} /> Proveedor
-                      </button>
-                      <button
-                        onClick={() => setShowSaveAs(false)}
-                        className="px-1.5 py-1 text-gray-400 hover:text-gray-600 text-[10px]"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 <div className="space-y-2 mt-2">
                   <input type="text" placeholder="Nombre" value={currentInvoice.clientName} onChange={(e) => updateCurrentInvoice('clientName', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
                   <input type="text" placeholder="Empresa" value={currentInvoice.companyName} onChange={(e) => updateCurrentInvoice('companyName', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
                   <input type="text" placeholder="RNC" value={currentInvoice.clientRnc}
                     onChange={(e) => {
                       updateCurrentInvoice('clientRnc', e.target.value);
-                      const clean = e.target.value.replace(/[-\s]/g, '');
-                      if (/^\d{9,11}$/.test(clean)) {
-                        if (dgiiDebounceRef.current) clearTimeout(dgiiDebounceRef.current);
-                        dgiiDebounceRef.current = setTimeout(async () => {
-                          const result = await consultarRNC(clean);
-                          if (result?.rnc) {
-                            updateCurrentInvoice('clientName', result.nombre || '');
-                            updateCurrentInvoice('companyName', result.nombre_comercial || result.nombre || '');
-                            if (result.telefono) updateCurrentInvoice('clientPhone', result.telefono);
-                            setDgiiApplied(result);
-                            setShowSaveAs(true);
-                            addToast(`DGII: ${result.nombre_comercial || result.nombre}`, 'info');
-                          }
-                        }, 500);
-                      }
                     }}
                     className="w-full border border-gray-300 rounded p-2 text-sm font-mono" />
                   <input type="text" placeholder="Teléfono" value={currentInvoice.clientPhone} onChange={(e) => updateCurrentInvoice('clientPhone', e.target.value)} className="w-full border border-gray-300 rounded p-2 text-sm" />
